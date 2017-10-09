@@ -1,0 +1,3 @@
+*.blob
+*.blob.gz
+*.sqlite
