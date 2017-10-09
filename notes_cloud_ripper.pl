@@ -1,14 +1,29 @@
 use DBI;
 use File::Copy;
 use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
+use Getopt::Long qw(:config no_auto_abbrev);
 
-# Rudimentary check to make sure we have a file to parse
-if($ARGV != 1) {
-  die print_usage();
+# Set up initial variables
+my $original_file = 0;
+my $leave_dirty = 0;
+my $help = 0;
+
+# Read in options
+GetOptions('file=s' => \$original_file,
+           'dirty' => \$leave_dirty,
+           'help' => \$help);
+
+# Ensure we have a file to work on
+if($help || !$original_file) {
+  print_usage();
+  die();
+}
+
+if(! -f $original_file) {
+  die "File $original_file does not exist\n";
 }
 
 # Make sure we don't mess up our original
-my $original_file = @ARGV[0];
 my $output_db_file = $original_file;
 $output_db_file =~ s/.sqlite/.decompressed.sqlite/;
 copy($original_file, $output_db_file);
@@ -45,6 +60,11 @@ while(my @row = $query_handler->fetchrow_array()) {
 # Gunzip all saved blobs
 print "Extracting gzipped notes\n";
 gunzip '<./note_*.blob.gz>' => '<./note_#1.blob>' or die "Error gunzipping: $GunzipError\n";
+
+# Clean up behind us unless the user wants these files
+if(!$leave_dirty) {
+  unlink(glob "./note_*.blob.gz");
+}
 
 # Create decompressed data column
 print "Modifying table to hold our content\n";
@@ -89,6 +109,11 @@ for $file (glob "note_*.blob") {
   } else {
     print "\t\tSkipping note $note_number as it appears to be encrypted or otherwise not parsed correctly\n";
   }
+
+  # Clean up behind us unless the user wants to keep the files (sets the --dirty flag)
+  if(!$leave_dirty) {
+    unlink($file);
+  }
 }
 
 # Close database handle
@@ -124,6 +149,11 @@ sub is_valid_note {
 
 # Function to print the usage
 sub print_usage {
-  print "\nUsage: perl notes_cloud_ripper.pl <path to NoteStore.sqlite>\n";
-  print "Example: perl notes_cloud_ripper.pl ../NoteStore.sqlite\n\n";
+  print "Apple Cloud Notes Parser: \"perl notes_cloud_ripper.pl --file=<path to NoteStore.sqlite> [--dirty] [--help]\"\n";
+  print "Options:\n";
+  print "\t--file=<path>: Identifies the NoteStore.sqlite file to workon\n";
+  print "\t--dirty: If set, will not delete the .gz and .blob files, letting the user play with them\n";
+  print "\t--help: Prints this message\n";
+  print "Example: perl notes_cloud_ripper.pl --file=NoteStore.sqlite\n";
+  return 1;
 }
