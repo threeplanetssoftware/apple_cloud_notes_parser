@@ -1,5 +1,5 @@
 # Apple Cloud Notes Parser
-By: Jon Baumann, Three Planets Software
+By: Jon Baumann, [Ciofeca Forensics](https://www.ciofecaforensics.com)
 
 ## About
 This script is a parser for Apple Notes data stored on the Cloud as seen on Apple handsets. It was tested with sample data pulled from an iOS 11 device with entries made via iCloud. This script was made in response to the lack of parsing of iCloud Notes in major mobile forensic tools and a misunderstanding that the data was "encrypted". Data that was stored in plaintext in Apple's Notes' database `notes.sqlite` is gzipped before storage in the iCloud Notes database `NoteStore.sqlite`. So while the data is not actually encrypted, it is not as searchable, given its compressed nature.
