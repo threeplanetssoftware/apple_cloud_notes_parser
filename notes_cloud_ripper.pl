@@ -4,7 +4,7 @@ use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
 use Getopt::Long qw(:config no_auto_abbrev);
 
 # Set up initial variables
-my $original_file = 0;
+my $original_file = "NoteStore.sqlite";
 my $leave_dirty = 0;
 my $help = 0;
 
@@ -16,7 +16,7 @@ GetOptions('file=s' => \$original_file,
 # Ensure we have a file to work on
 if($help || !$original_file) {
   print_usage();
-  die();
+  exit();
 }
 
 if(! -f $original_file) {
@@ -149,11 +149,15 @@ sub is_valid_note {
 
 # Function to print the usage
 sub print_usage {
-  print "Apple Cloud Notes Parser: \"perl notes_cloud_ripper.pl --file=<path to NoteStore.sqlite> [--dirty] [--help]\"\n";
+  print "Apple Cloud Notes Parser - Jon Baumann, Ciofeca Forensics\n\n";
+  print "Usage:\n";
+  print "\tperl notes_cloud_ripper.pl [--file=<path to NoteStore.sqlite>] [--dirty] [--help]\n\n";
   print "Options:\n";
   print "\t--file=<path>: Identifies the NoteStore.sqlite file to workon\n";
   print "\t--dirty: If set, will not delete the .gz and .blob files, letting the user play with them\n";
-  print "\t--help: Prints this message\n";
-  print "Example: perl notes_cloud_ripper.pl --file=NoteStore.sqlite\n";
+  print "\t--help: Prints this message\n\n";
+  print "Examples:\n";
+  print "\tperl notes_cloud_ripper.pl\n";
+  print "\tperl notes_cloud_ripper.pl --file=\"C:\\Users\\Test\\Desktop\\NoteStore.sqlite\"\n";
   return 1;
 }
