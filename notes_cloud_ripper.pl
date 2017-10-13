@@ -165,7 +165,10 @@ sub is_valid_note {
 
 # Function to print the usage
 sub print_usage {
-  print "Apple Cloud Notes Parser - Jon Baumann, Ciofeca Forensics\n\n";
+  print "Apple Cloud Notes Parser - Copyright (C) 2017 Jon Baumann, Ciofeca Forensics\n";
+  print "\tThis program comes with ABSOLUTELY NO WARRANTY;\n";
+  print "\tThis is free software, and you are welcome to redistribute it under certain conditions.\n";
+  print "\tSee http://www.gnu.org/licenses/\n";
   print "Usage:\n";
   print "\tperl notes_cloud_ripper.pl [--file=<path to NoteStore.sqlite>] [--dirty] [--help]\n\n";
   print "Options:\n";
