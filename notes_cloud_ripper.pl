@@ -127,17 +127,36 @@ sub get_plaintext {
   my $input_string = @_[0];
   my $plain_text;
 
-  # Find the apparent magic string 08 00 10 00 1a
-  $pointer = index($input_string, "\x08\x00\x10\x00\x1a");
+  # Find the apparent magic string 08 00 10 00 1a and index to the end of it
+  my $magic_string_pointer = index($input_string, "\x08\x00\x10\x00\x1a") + 6;
+  print "\t\tMagic string pointer: $magic_string_pointer\n";
 
   # Find the next byte after 0x12
-  $pointer = index($input_string, "\x12", $pointer + 1) + 1;
+  my $length_pointer = index($input_string, "\x12", $magic_string_pointer);
+  print "\t\tPointer: $length_pointer\n";
+
+  #$length_bytes = $length_pointer - $magic_string_pointer;
+  my $length_bytes = 1;
+  print "\t\tOriginal length bytes: $length_bytes\n";
 
   # Read the next byte as the length of plain text
-  $string_length = ord substr($input_string, $pointer, 1);
+  my $string_length = ord substr($input_string, $length_pointer + 1, $length_bytes);
+
+  print "\t\tString length: $string_length\n";
+
+  # Check for a longer length, if found, shift the current length left and add the next bit
+  if($string_length & 0x80) {
+    $string_length = ($string_length & 0x7f);
+    $string_length = $string_length << 4;
+    my $additional_length = ord substr($input_string, $length_pointer + 2, $length_bytes);
+    $string_length = $string_length | $additional_length;
+    $length_bytes = $length_bytes + 1;
+    print "\t\tString length is now: $string_length\n";
+    print "\t\tLength bytes is now: $length_bytes\n";
+  }
 
   # Fetch the plain text
-  $plain_text = substr($input_string, $pointer + 1, $string_length);
+  $plain_text = substr($input_string, $length_pointer + $length_bytes + 1, $string_length);
   return $plain_text;
 }
 
