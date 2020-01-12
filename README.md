@@ -263,9 +263,8 @@ Programming languages are like human languages, there are many and which you cho
 
 ## Known Bugs
 
-1. Notes that are created by taking a picture need to be handled better. They will appear as if they don't have an account.
-2. Google Protobuf throws errors on Windows with Ruby 2.7, likely the gem isn't updated yet.
-3. Encrypted notes are not yet decrypted (not technically a bug, but worth noting).
+1. Google Protobuf throws errors on Windows with Ruby 2.7, likely the gem isn't updated yet.
+2. Encrypted notes are not yet decrypted (not technically a bug, but worth noting).
 
 ## Acknowledgements
 
