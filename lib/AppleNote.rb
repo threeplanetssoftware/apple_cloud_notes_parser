@@ -5,6 +5,8 @@ require_relative 'AppleNotesEmbeddedObject.rb'
 require_relative 'AppleNotesEmbeddedDrawing.rb'
 require_relative 'AppleNotesEmbeddedGallery.rb'
 require_relative 'AppleNotesEmbeddedPublicJpeg.rb'
+require_relative 'AppleNotesEmbeddedPublicURL.rb'
+require_relative 'AppleNotesEmbeddedPublicVCard.rb'
 require_relative 'AppleNotesEmbeddedTable.rb'
 
 ##
@@ -102,7 +104,6 @@ class AppleNote
     end
   end
 
-
   ##
   # This method takes the +plaintext+ that is stored and the +decompressed_data+ 
   # as an AppleNotesProto protobuf and loops over all the embedded objects. 
@@ -137,6 +138,17 @@ class AppleNote
                                                                        row["ZTYPEUTI"],
                                                                        self,
                                                                        @backup)
+              when "public.vcard"
+                tmp_embedded_object = AppleNotesEmbeddedPublicVCard.new(row["Z_PK"],
+                                                                        row["ZIDENTIFIER"],
+                                                                        row["ZTYPEUTI"],
+                                                                        self,
+                                                                        @backup)
+              when "public.url"
+                tmp_embedded_object = AppleNotesEmbeddedPublicURL.new(row["Z_PK"],
+                                                                      row["ZIDENTIFIER"],
+                                                                      row["ZTYPEUTI"],
+                                                                      self)
               when "com.apple.notes.gallery"
                 tmp_embedded_object = AppleNotesEmbeddedGallery.new(row["Z_PK"],
                                                                     row["ZIDENTIFIER"],
@@ -199,8 +211,8 @@ class AppleNote
   def to_csv
     [@primary_key, 
      @note_id, 
-     get_account_name, 
-     get_folder_name, 
+     @account.name, 
+     @folder.name, 
      @title, 
      @creation_time, 
      @modify_time, 
@@ -247,34 +259,6 @@ class AppleNote
   def get_encrypted_data_hex
     return @encrypted_data if ! @encrypted_data
     @encrypted_data.unpack("H*")
-  end
-
-  ## 
-  # This function returns the AppleNotesAccount.name, if it exists.
-  def get_account_name
-    return "On My iPhone" if !@account
-    @account.name
-  end
-
-  ## 
-  # This function returns the AppleNotesAccount.identifier, if it exists.
-  def get_account_identifier
-    return "LocalAccount" if !@account
-    @account.identifier
-  end
-
-  ## 
-  # This function returns the AppleNotesFolder.name, if it exists.
-  def get_folder_name
-    return "" if !@folder
-    @folder.name
-  end
-
-  ## 
-  # This function returns the AppleNotesFolder.id, if it exists.
-  def get_folder_primary_key
-    return "" if !@folder
-    @folder.primary_key
   end
 
   ## 
@@ -335,8 +319,8 @@ class AppleNote
   # full HTML, just enough for this note's card to be displayed.
   def generate_html
     html = "<a id='note_#{@note_id}'><h1>Note #{@note_id}</h1></a>\n"
-    html += "<b>Account:</b> #{get_account_name} <br />\n"
-    html += "<b>Folder:</b> <a href='#folder_#{get_folder_primary_key}'>#{get_folder_name}</a> <br/>\n"
+    html += "<b>Account:</b> #{@account.name} <br />\n"
+    html += "<b>Folder:</b> <a href='#folder_#{@folder.primary_key}'>#{@folder.name}</a> <br/>\n"
     html += "<b>Title:</b> #{@title} <br/>\n"
     html += "<b>Created:</b> #{@creation_time} <br/>\n"
     html += "<b>Modified:</b> #{@modify_time} <br />\n"
