@@ -44,7 +44,7 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   # This method returns the +filepath+ of this object. 
   # This is computed based on the assumed default storage location.
   def get_media_filepath
-    "Accounts/#{@note.get_account_identifier}/Previews/#{@filename}"
+    "Accounts/#{@note.account.identifier}/Previews/#{@filename}"
   end
 
   ##

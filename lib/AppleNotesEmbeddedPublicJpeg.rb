@@ -85,7 +85,7 @@ class AppleNotesEmbeddedPublicJpeg < AppleNotesEmbeddedObject
   # This method returns the +filepath+ of this object. 
   # This is computed based on the assumed default storage location.
   def get_media_filepath
-    "Accounts/#{@note.get_account_identifier}/Media/#{get_media_uuid}/#{@filename}"
+    "Accounts/#{@note.account.identifier}/Media/#{get_media_uuid}/#{@filename}"
   end
 
   ##
