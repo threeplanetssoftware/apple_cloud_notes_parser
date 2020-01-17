@@ -87,10 +87,10 @@ class AppleNotesEmbeddedGallery < AppleNotesEmbeddedObject
       gunzipped_data = zlib_inflater.inflate(gzipped_data)
 
       # Read the protobuff
-      mergabledata_proto = MergableDataTableProto.decode(gunzipped_data)
-      mergabledata_proto.mergable_data_table.mergeable_data_table_data.mergeable_data_table_object.each do |mergeable_data_table_object|
-        if mergeable_data_table_object.custom_map
-          return mergeable_data_table_object.custom_map.map_entry.first.value.string_value
+      mergabledata_proto = MergableDataProto.decode(gunzipped_data)
+      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
+        if mergeable_data_object_entry.custom_map
+          return mergeable_data_object_entry.custom_map.map_entry.first.value.string_value
         end
       end
 

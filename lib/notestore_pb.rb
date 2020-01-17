@@ -74,29 +74,29 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       required :note_text, :string, 2
       repeated :attribute_run, :message, 5, "AttributeRun"
     end
-    add_message "MergableDataTableProto" do
+    add_message "MergableDataProto" do
       required :unknown_1, :int32, 1
-      required :mergable_data_table, :message, 2, "MergableDataTable"
+      required :mergable_data_object, :message, 2, "MergableDataObject"
     end
-    add_message "MergableDataTable" do
+    add_message "MergableDataObject" do
       required :unknown_1, :int32, 1
       required :version, :int32, 2
-      required :mergeable_data_table_data, :message, 3, "MergeableDataTableData"
+      required :mergeable_data_object_data, :message, 3, "MergeableDataObjectData"
     end
-    add_message "MergeableDataTableData" do
-      repeated :mergeable_data_table_object, :message, 3, "MergeableDataTableObject"
-      repeated :mergeable_data_table_key_item, :string, 4
-      repeated :mergeable_data_table_type_item, :string, 5
-      repeated :mergeable_data_table_uuid_item, :bytes, 6
+    add_message "MergeableDataObjectData" do
+      repeated :mergeable_data_object_entry, :message, 3, "MergeableDataObjectEntry"
+      repeated :mergeable_data_object_key_item, :string, 4
+      repeated :mergeable_data_object_type_item, :string, 5
+      repeated :mergeable_data_object_uuid_item, :bytes, 6
     end
-    add_message "MergeableDataTableObject" do
+    add_message "MergeableDataObjectEntry" do
       required :register_latest, :message, 1, "RegisterLatest"
       optional :dictionary, :message, 6, "Dictionary"
       optional :note, :message, 10, "Note"
-      optional :custom_map, :message, 13, "MergeableDataTableMap"
+      optional :custom_map, :message, 13, "MergeableDataObjectMap"
       optional :ordered_set, :message, 16, "OrderedSet"
     end
-    add_message "MergeableDataTableMap" do
+    add_message "MergeableDataObjectMap" do
       required :type, :int32, 1
       repeated :map_entry, :message, 3, "MapEntry"
     end
@@ -133,11 +133,11 @@ AttributeRun = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("Attribu
 NoteStoreProto = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("NoteStoreProto").msgclass
 Document = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("Document").msgclass
 Note = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("Note").msgclass
-MergableDataTableProto = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("MergableDataTableProto").msgclass
-MergableDataTable = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("MergableDataTable").msgclass
-MergeableDataTableData = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("MergeableDataTableData").msgclass
-MergeableDataTableObject = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("MergeableDataTableObject").msgclass
-MergeableDataTableMap = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("MergeableDataTableMap").msgclass
+MergableDataProto = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("MergableDataProto").msgclass
+MergableDataObject = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("MergableDataObject").msgclass
+MergeableDataObjectData = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("MergeableDataObjectData").msgclass
+MergeableDataObjectEntry = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("MergeableDataObjectEntry").msgclass
+MergeableDataObjectMap = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("MergeableDataObjectMap").msgclass
 OrderedSet = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("OrderedSet").msgclass
 OrderedSetOrdering = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("OrderedSetOrdering").msgclass
 OrderedSetOrderingArray = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("OrderedSetOrderingArray").msgclass

@@ -57,10 +57,10 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
   end
 
   ##
-  # This method takes a MergeableDataTableObject +table_object+ which should have a MergeableDataTableMap inside of it.
-  # It looks at the MergeableDataTableMap to find the UUID pointer, and returns the UUID index.
-  def get_target_uuid_from_table_object(table_object)
-    table_object.custom_map.map_entry.first.value.unsigned_integer_value
+  # This method takes a MergeableDataObjectEntry +object_entry+ which should have a MergeableDataObjectMap inside of it.
+  # It looks at the MergeableDataObjectMap to find the UUID pointer, and returns the UUID index.
+  def get_target_uuid_from_object_entry(object_entry)
+    object_entry.custom_map.map_entry.first.value.unsigned_integer_value
   end
 
   ##
@@ -75,64 +75,64 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
   end
 
   ##
-  # This method takes a MergeableDataTableObject +table_object+ that it expects to include an 
+  # This method takes a MergeableDataObjectEntry +object_entry+ that it expects to include an 
   # OrderedSet with type +crRows+. It loops over each attachment to identify the UUIDs that represent 
   # table rows and puts them in the appropriate order. It then adds indices to +@row_indices+ to 
   # let later code look up where a given row falls in the +@reconstructed_table+.
-  def parse_rows(table_object)
+  def parse_rows(object_entry)
     @total_rows = 0
-    table_object.ordered_set.ordering.array.attachment.each do |attachment|
+    object_entry.ordered_set.ordering.array.attachment.each do |attachment|
       @row_indices[@uuid_items.index(attachment.uuid)] = @total_rows
       @total_rows += 1
     end
 
     # Figure out the translations for where each row points to in the @reconstructed_table
-    table_object.ordered_set.ordering.contents.element.each do |dictionary_element|
-      key_object = get_target_uuid_from_table_object(@table_objects[dictionary_element.key.object_index])
-      value_object = get_target_uuid_from_table_object(@table_objects[dictionary_element.value.object_index])
+    object_entry.ordered_set.ordering.contents.element.each do |dictionary_element|
+      key_object = get_target_uuid_from_object_entry(@table_objects[dictionary_element.key.object_index])
+      value_object = get_target_uuid_from_object_entry(@table_objects[dictionary_element.value.object_index])
       @row_indices[value_object] = @row_indices[key_object]
     end
   end
 
   ##
-  # This method takes a MergeableDataTableObject +table_object+ that it expects to include an 
+  # This method takes a MergeableDataObjectEntry +object_entry+ that it expects to include an 
   # OrderedSet with type +crColumns+. It loops over each attachment to identify the UUIDs that represent 
   # table columns and puts them in the appropriate order. It then adds indices to +@column_indices+ to 
   # let later code look up where a given column falls in the +@reconstructed_table+.
-  def parse_columns(table_object)
+  def parse_columns(object_entry)
     @total_columns = 0
-    table_object.ordered_set.ordering.array.attachment.each do |attachment|
+    object_entry.ordered_set.ordering.array.attachment.each do |attachment|
       @column_indices[@uuid_items.index(attachment.uuid)] = @total_columns
       @total_columns += 1
     end
 
     # Figure out the translations for where each row points to in the @reconstructed_table
-    table_object.ordered_set.ordering.contents.element.each do |dictionary_element|
-      key_object = get_target_uuid_from_table_object(@table_objects[dictionary_element.key.object_index])
-      value_object = get_target_uuid_from_table_object(@table_objects[dictionary_element.value.object_index])
+    object_entry.ordered_set.ordering.contents.element.each do |dictionary_element|
+      key_object = get_target_uuid_from_object_entry(@table_objects[dictionary_element.key.object_index])
+      value_object = get_target_uuid_from_object_entry(@table_objects[dictionary_element.value.object_index])
       @column_indices[value_object] = @column_indices[key_object]
     end
   end
 
   ##
   # This method does the hard work of building the rows and columns with cells in them. It 
-  # expects a MergeableDataTableObject +table_object+ which should have a type of +cellColumns+.
+  # expects a MergeableDataObjectEntry +object_entry+ which should have a type of +cellColumns+.
   # It loops over each of its Dictionary elements, which represent each column. Inside of each Dictionary 
   # element is a key that ends up pointing to a UUID index representing the column and a value 
   # that points to a separate object which is a Dictionary of row UUIDs to cell (Note) objects. 
   # This calls get_target_uuid_from_table_object on the first key to get th column's index and
   # then does that for each of the rows it points to. With this information, it can look up 
   # where in the +@reconstructed_table+ the Note it is pointing to goes.
-  def parse_cell_columns(table_object)
+  def parse_cell_columns(object_entry)
 
     # Loop over each of the dictionary elements in the cellColumns object, these are all column pointers
-    table_object.dictionary.element.each do |column|
-      current_column = get_target_uuid_from_table_object(@table_objects[column.key.object_index])
+    object_entry.dictionary.element.each do |column|
+      current_column = get_target_uuid_from_object_entry(@table_objects[column.key.object_index])
       target_dictionary_object = @table_objects[column.value.object_index]
 
       # Loop over each of the dictionary elements in the Dictionary that was referenced in the prior value, these are rows
       target_dictionary_object.dictionary.element.each do |row|
-        current_row = get_target_uuid_from_table_object(@table_objects[row.key.object_index])
+        current_row = get_target_uuid_from_object_entry(@table_objects[row.key.object_index])
         target_cell = @table_objects[row.value.object_index]
         @reconstructed_table[@row_indices[current_row]][@column_indices[current_column]] = target_cell.note.note_text
       end
@@ -140,17 +140,17 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
   end
 
   ##
-  # This method takes a MergeableDataTableObject +table_object+ that it expects to be of type 
+  # This method takes a MergeableDataObjectEntry +object_entry+ that it expects to be of type 
   # +com.apple.notes.ICTable+, representing the actual table. It looks over each of the MapEntry 
   # objects within to handle each as it needs to be, using the aforecreated fucntions. The +crTableColumnDirection+ 
   # object isn't quite understood yet and is handled elsewhere. As this gets enough information, it initializes 
   # the +reconstructed_table+ and flips the tabl's direction if the order changes. 
-  def parse_table(table_object)
-    if table_object.custom_map and @type_items[table_object.custom_map.type] == "com.apple.notes.ICTable"
-      table_object.custom_map.map_entry.each do |map_entry|
+  def parse_table(object_entry)
+    if object_entry.custom_map and @type_items[object_entry.custom_map.type] == "com.apple.notes.ICTable"
+      object_entry.custom_map.map_entry.each do |map_entry|
         case @key_items[map_entry.key]
         when "crTableColumnDirection"
-          #puts "Column Direction: #{table_objects[map_entry.value.object_index]}"
+          #puts "Column Direction: #{object_entrys[map_entry.value.object_index]}"
         when "crRows"
           parse_rows(@table_objects[map_entry.value.object_index])
         when "crColumns"
@@ -174,7 +174,7 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
 
   ##
   # This method rebuilds the embedded table. It extracts the gzipped data, gunzips it, and builds a 
-  # MergableDataTableProto from the result. It then loops over each of the key, type, and UUID items 
+  # MergableDataProto from the result. It then loops over each of the key, type, and UUID items 
   # in the proto to build an index for reference. Then it loops over all the objects in the proto 
   # to do similar, as well as identifying the table's direction. Finally, it finds the root table 
   # and calls parse_table on it.
@@ -190,43 +190,43 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
       gunzipped_data = zlib_inflater.inflate(gzipped_data)
 
       # Read the protobuff
-      mergabledata_proto = MergableDataTableProto.decode(gunzipped_data)
+      mergabledata_proto = MergableDataProto.decode(gunzipped_data)
 
       # Build list of key items
       @key_items = Array.new
-      mergabledata_proto.mergable_data_table.mergeable_data_table_data.mergeable_data_table_key_item.each do |key_item|
+      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_key_item.each do |key_item|
         @key_items.push(key_item)
       end
 
       # Build list of type items
       @type_items = Array.new
-      mergabledata_proto.mergable_data_table.mergeable_data_table_data.mergeable_data_table_type_item.each do |type_item|
+      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_type_item.each do |type_item|
         @type_items.push(type_item)
       end
 
       # Build list of uuid items
       @uuid_items = Array.new
-      mergabledata_proto.mergable_data_table.mergeable_data_table_data.mergeable_data_table_uuid_item.each do |uuid_item|
+      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_uuid_item.each do |uuid_item|
         @uuid_items.push(uuid_item)
       end
 
       # Build Array of objects
       @table_objects = Array.new
-      mergabledata_proto.mergable_data_table.mergeable_data_table_data.mergeable_data_table_object.each do |mergeable_data_table_object|
-        @table_objects.push(mergeable_data_table_object)
+      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
+        @table_objects.push(mergeable_data_object_entry)
 
         # Best way I've found to set the table direction
-        if mergeable_data_table_object.custom_map
-          if mergeable_data_table_object.custom_map.map_entry.first.key == @key_items.index("crTableColumnDirection") + 1 #Oddly seems to correspond to 'self'
-            @table_direction = mergeable_data_table_object.custom_map.map_entry.first.value.string_value
+        if mergeable_data_object_entry.custom_map
+          if mergeable_data_object_entry.custom_map.map_entry.first.key == @key_items.index("crTableColumnDirection") + 1 #Oddly seems to correspond to 'self'
+            @table_direction = mergeable_data_object_entry.custom_map.map_entry.first.value.string_value
           end
         end
       end
 
       # Find the first ICTable, which shuld be the root, and execute
-      mergabledata_proto.mergable_data_table.mergeable_data_table_data.mergeable_data_table_object.each do |mergeable_data_table_object|
-        if mergeable_data_table_object.custom_map and @type_items[mergeable_data_table_object.custom_map.type] == "com.apple.notes.ICTable"
-          parse_table(mergeable_data_table_object)
+      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
+        if mergeable_data_object_entry.custom_map and @type_items[mergeable_data_object_entry.custom_map.type] == "com.apple.notes.ICTable"
+          parse_table(mergeable_data_object_entry)
         end
       end
     end
