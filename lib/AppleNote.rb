@@ -4,6 +4,7 @@ require_relative 'notestore_pb.rb'
 require_relative 'AppleNotesEmbeddedObject.rb'
 require_relative 'AppleNotesEmbeddedDrawing.rb'
 require_relative 'AppleNotesEmbeddedGallery.rb'
+require_relative 'AppleNotesEmbeddedPDF.rb'
 require_relative 'AppleNotesEmbeddedPublicJpeg.rb'
 require_relative 'AppleNotesEmbeddedPublicURL.rb'
 require_relative 'AppleNotesEmbeddedPublicVCard.rb'
@@ -126,13 +127,7 @@ class AppleNote
                             note_part.attachment_info.attachment_identifier) do |row|
             tmp_embedded_object = nil
             case row["ZTYPEUTI"]
-              when "public.jpeg"
-                tmp_embedded_object = AppleNotesEmbeddedPublicJpeg.new(row["Z_PK"],
-                                                                       row["ZIDENTIFIER"],
-                                                                       row["ZTYPEUTI"],
-                                                                       self,
-                                                                       @backup)
-              when "public.png"
+              when "public.jpeg", "public.png"
                 tmp_embedded_object = AppleNotesEmbeddedPublicJpeg.new(row["Z_PK"],
                                                                        row["ZIDENTIFIER"],
                                                                        row["ZTYPEUTI"],
@@ -144,6 +139,12 @@ class AppleNote
                                                                         row["ZTYPEUTI"],
                                                                         self,
                                                                         @backup)
+              when "com.adobe.pdf"
+                tmp_embedded_object = AppleNotesEmbeddedPDF.new(row["Z_PK"],
+                                                                row["ZIDENTIFIER"],
+                                                                row["ZTYPEUTI"],
+                                                                self,
+                                                                @backup)
               when "public.url"
                 tmp_embedded_object = AppleNotesEmbeddedPublicURL.new(row["Z_PK"],
                                                                       row["ZIDENTIFIER"],
