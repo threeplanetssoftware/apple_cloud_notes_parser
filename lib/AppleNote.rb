@@ -45,7 +45,8 @@ class AppleNote
                 :primary_key,
                 :database,
                 :decompressed_data,
-                :account
+                :account,
+                :backup
 
   ##
   # Creates a new AppleNote. Expects an Integer +z_pk+, an Integer +znote+ representing the ZICNOTEDATA.ZNOTE field, 
