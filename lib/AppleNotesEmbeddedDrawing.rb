@@ -28,30 +28,6 @@ class AppleNotesEmbeddedDrawing < AppleNotesEmbeddedObject
     
     # Copy the file to our output directory if we can
     @reference_location = @backup.back_up_file(@filepath, @filename, @backup_location)
-
-    # Find any thumbnails and add them
-    @thumbnails = Array.new
-    search_and_add_thumbnails
-  end
-
-  ##
-  # This method queries ZICCLOUDSYNCINGOBJECT to find any thumbnails for 
-  # this image. Each one it finds, it adds to the thumbnails Array.
-  def search_and_add_thumbnails
-    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.Z_PK, ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER, " +
-                      "ZICCLOUDSYNCINGOBJECT.ZHEIGHT, ZICCLOUDSYNCINGOBJECT.ZWIDTH " + 
-                      "FROM ZICCLOUDSYNCINGOBJECT " + 
-                      "WHERE ZATTACHMENT=?",
-                      @primary_key) do |row|
-      tmp_thumbnail = AppleNotesEmbeddedThumbnail.new(row["Z_PK"], 
-                                                      row["ZIDENTIFIER"], 
-                                                      '', 
-                                                      @note, 
-                                                      @backup,
-                                                      row["ZHEIGHT"],
-                                                      row["ZWIDTH"])
-      @thumbnails.push(tmp_thumbnail)
-    end
   end
 
   ##

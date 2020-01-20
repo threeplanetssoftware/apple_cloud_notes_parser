@@ -16,11 +16,12 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   # String +uti+ from ZICCLOUDSYNCINGOBJECT.ZTYPEUTI, AppleNote +note+ object representing the parent AppleNote, and 
   # AppleBackup +backup+ from the parent AppleNote. Immediately sets the +filename+ and +filepath+ to point to were the media is stored. 
   # Finally, it attempts to copy the file to the output folder.
-  def initialize(primary_key, uuid, uti, note, backup, height, width)
+  def initialize(primary_key, uuid, uti, note, backup, height, width, parent)
     # Set this folder's variables
     super(primary_key, uuid, uti, note)
     @height = height
     @width = width
+    @parent = parent
     @filename = get_media_filename
     @filepath = get_media_filepath
     @backup = backup
@@ -59,7 +60,7 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   # This method returns the thumbnail's extension. These are either 
   # .jpg (apparently created by com.apple.notes.gallery) or .jpg (rest).
   def get_thumbnail_extension
-    return "png" if (@type != "com.apple.notes.gallery")
+    return "png" if (@parent.type != "com.apple.notes.gallery" and !(@parent.parent and @parent.parent.type == "com.apple.notes.gallery"))
     return "jpg"
   end
 
