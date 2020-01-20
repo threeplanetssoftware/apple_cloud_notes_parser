@@ -214,9 +214,26 @@ class AppleNoteStore
   # CSV object holding all AppleNotesEmbeddedObject instances in its +notes+.
   def get_embedded_object_csv
     to_return = [AppleNotesEmbeddedObject.to_csv_headers]
+
+    # Loop over each AppleNote
     @notes.each do |key, note|
+  
+      # Loop over eac AppleNotesEmbeddedObject
       note.embedded_objects.each do |embedded_object|
-        to_return.push(embedded_object.to_csv)
+
+        # Get the results of AppleNotesEmbeddedObject.to_csv
+        embedded_object_csv = embedded_object.to_csv
+
+        # Check to see if the first element is an Array
+        if embedded_object_csv.first.is_a? Array
+
+          # If it is, loop over each entry to add it to our results
+          embedded_object_csv.each do |embedded_array|
+            to_return.push(embedded_array)
+          end
+        else 
+          to_return.push(embedded_object_csv)
+        end
       end
     end
     to_return
