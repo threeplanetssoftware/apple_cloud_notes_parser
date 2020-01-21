@@ -67,7 +67,7 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   ##
   # This method generates the HTML necessary to display the image inline.
   def generate_html
-    "<img src='../#{@reference_location}' />"
+    "<a href='../#{@parent.reference_location}'><img src='../#{@reference_location}' /></a>"
   end
 
 end
