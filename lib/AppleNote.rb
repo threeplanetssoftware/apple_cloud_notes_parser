@@ -173,6 +173,7 @@ class AppleNote
                                                                    row["ZIDENTIFIER"],
                                                                    row["ZTYPEUTI"],
                                                                    self)
+                puts "#{row["ZTYPEUTI"]} is unrecognized, please submit a bug report to this project's GitHub repo to report this: https://github.com/threeplanetssoftware/apple_cloud_notes_parser/issues"
             end
 
             # Update plaintext to note something else is here
