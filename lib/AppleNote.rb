@@ -9,6 +9,7 @@ require_relative 'AppleNotesEmbeddedPublicJpeg.rb'
 require_relative 'AppleNotesEmbeddedPublicURL.rb'
 require_relative 'AppleNotesEmbeddedPublicVCard.rb'
 require_relative 'AppleNotesEmbeddedTable.rb'
+require_relative 'AppleNoteStore.rb'
 
 ##
 #
@@ -94,6 +95,14 @@ class AppleNote
       extract_plaintext if @decompressed_data
       replace_embedded_objects if @plaintext
     end
+  end
+
+  ##
+  # This method returns the appropriate version for the AppleNote. 
+  # It does this by checking the AppleNoteStore +@notestore+ and returning that.
+  def version
+    return @notestore.version if @notestore
+    return AppleNoteStore::IOS_VERSION_UNKNOWN
   end
 
   ##

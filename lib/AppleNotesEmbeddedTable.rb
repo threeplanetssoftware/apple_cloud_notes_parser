@@ -1,3 +1,5 @@
+require_relative 'AppleNoteStore.rb'
+
 ##
 # This class represents a com.apple.notes.table object embedded
 # in an AppleNote. These tables are simple formatting that don't allow for 
@@ -179,13 +181,19 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
   # to do similar, as well as identifying the table's direction. Finally, it finds the root table 
   # and calls parse_table on it.
   def rebuild_table
-    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZMERGEABLEDATA1 " +
+
+    # Set the appropriate column to find the data in
+    mergeable_column = "ZMERGEABLEDATA1"
+    mergeable_column = "ZMERGEABLEDATA" if @note.version < AppleNoteStore::IOS_VERSION_13
+
+
+    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.#{mergeable_column} " +
                       "FROM ZICCLOUDSYNCINGOBJECT " +
                       "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
                       @uuid) do |row|
 
       # Extract the blob
-      gzipped_data = row["ZMERGEABLEDATA1"]
+      gzipped_data = row[mergeable_column]
       zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
       gunzipped_data = zlib_inflater.inflate(gzipped_data)
 

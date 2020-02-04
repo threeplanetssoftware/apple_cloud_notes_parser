@@ -41,16 +41,22 @@ class AppleNotesEmbeddedGallery < AppleNotesEmbeddedObject
 
   ##
   # Uses database calls to fetch the actual child objects' ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER +uuid+. 
-  # This requires opening the protobuf inside of ZICCLOUDSYNCINGOBJECT.ZMERGEABLEDATA1 
+  # This requires opening the protobuf inside of ZICCLOUDSYNCINGOBJECT.ZMERGEABLEDATA1 or 
+  # ZICCLOUDSYNCINGOBJECT.ZMERGEABLEDATA column (if older than iOS13) 
   # and returning the referenced ZIDENTIFIER in that object.
   def add_gallery_children
-    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZMERGEABLEDATA1 " +
+
+    # Set the appropriate column to find the data in
+    mergeable_column = "ZMERGEABLEDATA1"
+    mergeable_column = "ZMERGEABLEDATA" if @note.version < AppleNoteStore::IOS_VERSION_13
+
+    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.#{mergeable_column} " +
                       "FROM ZICCLOUDSYNCINGOBJECT " +
                       "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
                       @uuid) do |row|
 
       # Extract the blob
-      gzipped_data = row["ZMERGEABLEDATA1"]
+      gzipped_data = row[mergeable_column]
       zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
       gunzipped_data = zlib_inflater.inflate(gzipped_data)
 
