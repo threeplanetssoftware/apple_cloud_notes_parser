@@ -139,6 +139,8 @@ class AppleNoteStore
       to_return = to_return + rip_columns_from_sql(row["sql"]).sort
     end
 
+    @database.close
+
     # Return back an MD5 hash of the Array, sorted and joined
     return to_return
   end
