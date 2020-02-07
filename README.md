@@ -196,7 +196,7 @@ bundle install
    1. Create a folder C:\sqlite
    2. Unzip the source code into C:\sqlite (you should now have C:\sqlite\sqlite3.c and C:\sqlite\sqlite.h, among others)
    3. Unzip the DLL into C:\sqlite (you should now have C:\sqlite\sqlite3.dll, among others)
-5. Download [this Apple Cloud Notes Parser as a zip archive](https://codeload.github.com/threeplanetssoftware/apple_cloud_notes_parser_ruby/zip/master)
+5. Download [this Apple Cloud Notes Parser as a zip archive](https://github.com/threeplanetssoftware/apple_cloud_notes_parser/archive/master.zip)
 6. Unzip the Zip archive
 7. Launch a powershell window and navigate to where you unzipped the archive
 8. Execute the following commands (these set the PATH so SQLite files can be found install SQLite's Gem specifically pointing to them, and then installs the rest of the gems):
