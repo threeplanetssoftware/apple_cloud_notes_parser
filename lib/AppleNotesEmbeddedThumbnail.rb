@@ -58,16 +58,18 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
 
   ##
   # This method returns the thumbnail's extension. These are either 
-  # .jpg (apparently created by com.apple.notes.gallery) or .jpg (rest).
+  # .jpg (apparently created by com.apple.notes.gallery) or .png (rest).
   def get_thumbnail_extension
-    return "png" if (@parent.type != "com.apple.notes.gallery" and !(@parent.parent and @parent.parent.type == "com.apple.notes.gallery"))
-    return "jpg"
+    return "jpg" if (@parent.type == "com.apple.notes.gallery")
+    return "jpg" if (@parent.parent and @parent.parent.type == "com.apple.notes.gallery")
+    return "png"
   end
 
   ##
   # This method generates the HTML necessary to display the image inline.
   def generate_html
-    "<a href='../#{@parent.reference_location}'><img src='../#{@reference_location}' /></a>"
+    return "<a href='../#{@parent.reference_location}'><img src='../#{@reference_location}' /></a>" if @parent.reference_location
+    return "{Image missing due to not having file reference point}"
   end
 
 end

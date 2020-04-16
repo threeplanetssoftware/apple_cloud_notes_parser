@@ -76,7 +76,8 @@ class AppleNotesEmbeddedPDF < AppleNotesEmbeddedObject
   ##
   # This method generates the HTML necessary to display the file download link.
   def generate_html
-    return "<a href='../#{@reference_location}'>PDF #{@filename}</a>"
+    return "<a href='../#{@reference_location}'>PDF #{@filename}</a>" if @reference_location
+    return "{PDF Missing due to not having a file reference location}"
   end
 
 end

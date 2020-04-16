@@ -5,19 +5,20 @@ require_relative 'AppleNotesEmbeddedThumbnail.rb'
 # in an AppleNote. This means you either took a picture or selected one that was taken already.
 class AppleNotesEmbeddedPublicJpeg < AppleNotesEmbeddedObject
 
-  attr_accessor :primary_key,
-                :uuid,
-                :type,
-                :reference_location
+  attr_accessor :reference_location
 
   ## 
   # Creates a new AppleNotesEmbeddedPublicJpeg object. 
   # Expects an Integer +primary_key+ from ZICCLOUDSYNCINGOBJECT.Z_PK, String +uuid+ from ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER, 
-  # String +uti+ from ZICCLOUDSYNCINGOBJECT.ZTYPEUTI, AppleNote +note+ object representing the parent AppleNote, and 
-  # AppleBackup +backup+ from the parent AppleNote. Immediately sets the +filename+ and +filepath+ to point to were the media is stored. 
+  # String +uti+ from ZICCLOUDSYNCINGOBJECT.ZTYPEUTI, AppleNote +note+ object representing the parent AppleNote, 
+  # AppleBackup +backup+ from the parent AppleNote, and AppleEmbeddedObject +parent+ (or nil). 
+  # Immediately sets the +filename+ and +filepath+ to point to were the media is stored. 
   # Finally, it attempts to copy the file to the output folder.
-  def initialize(primary_key, uuid, uti, note, backup)
-    # Set this folder's variables
+  def initialize(primary_key, uuid, uti, note, backup, parent)
+    # Set this object's variables
+
+    @parent = parent # Do this first so thumbnails don't break
+
     super(primary_key, uuid, uti, note)
     @filename = get_media_filename
     @filepath = get_media_filepath

@@ -7,13 +7,6 @@ require_relative 'AppleNotesEmbeddedThumbnail.rb'
 # in an AppleNote. This means you scanned a document in (via taking a picture).
 class AppleNotesEmbeddedGallery < AppleNotesEmbeddedObject
 
-  attr_accessor :primary_key,
-                :uuid,
-                :type,
-                :filepath,
-                :filename,
-                :reference_location
-
   ## 
   # Creates a new AppleNotesEmbeddedGallery object. 
   # Expects an Integer +primary_key+ from ZICCLOUDSYNCINGOBJECT.Z_PK, String +uuid+ from ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER, 
@@ -84,8 +77,8 @@ class AppleNotesEmbeddedGallery < AppleNotesEmbeddedObject
                                                    row["ZIDENTIFIER"],
                                                    row["ZTYPEUTI"],
                                                    @note,
-                                                   @backup)
-      tmp_child.parent = self
+                                                   @backup,
+                                                   self)
       tmp_child.search_and_add_thumbnails # This will cause it to regenerate the thumbnail array knowing that this is the parent
       add_child(tmp_child)
     end

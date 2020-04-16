@@ -22,7 +22,7 @@ class AppleNotesEmbeddedDeletedObject < AppleNotesEmbeddedObject
   # This method just returns a readable String for the object. 
   # Adds to the AppleNotesEmbeddedObject.to_s by pointing to where the media is.
   def to_s
-    return "Deleted embedded #{@type} object which had ZICCLOUDSYNCINGOBJECTS.ZIDENTIFIER: #{uuid}" 
+    return "{Deleted embedded #{@type} object which had ZICCLOUDSYNCINGOBJECTS.ZIDENTIFIER: #{uuid}}" 
   end
 
 end

@@ -77,7 +77,8 @@ class AppleNotesEmbeddedPublicVCard < AppleNotesEmbeddedObject
   ##
   # This method generates the HTML necessary to display the image inline.
   def generate_html
-    return "<a href='../#{@reference_location}'>VCard #{@filename}</a>"
+    return "<a href='../#{@reference_location}'>VCard #{@filename}</a>" if @reference_location
+    "{VCard missing due to not having file reference point}"
   end
 
 end

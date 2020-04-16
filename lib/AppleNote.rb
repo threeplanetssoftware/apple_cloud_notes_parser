@@ -144,7 +144,8 @@ class AppleNote
                                                                        row["ZIDENTIFIER"],
                                                                        row["ZTYPEUTI"],
                                                                        self,
-                                                                       @backup)
+                                                                       @backup,
+                                                                       nil)
               when "public.vcard"
                 tmp_embedded_object = AppleNotesEmbeddedPublicVCard.new(row["Z_PK"],
                                                                         row["ZIDENTIFIER"],
