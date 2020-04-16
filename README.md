@@ -23,7 +23,7 @@ This program will:
 3. ... generating CSV roll-ups of each account, folder, note, and embedded object within them
 4. ... rebuilding the notes as an HTML file to browse and see as they would be displayed on the phone
 5. ... amending the NoteStore.sqlite database to include plaintext and decompressed objects to interact with in other tools
-6. ... from iTunes logical backups, physical backups, or single files
+6. ... from iTunes logical backups, physical backups, single files, and directly from Mac versions
 7. ... displaying tables as actual tables and ripping the embedded images from the backup and putting them into a folder with the other output files for review.
 
 ## Usage
@@ -42,6 +42,7 @@ The options that are currently supported are:
 1. `-i | --itunes-dir DIRECTORY`: Tells the program to look at an iTunes backup folder.
 2. `-f | --file FILE`: Tells the program to look only at a specific file that is identified. 
 3. `-p | --physical DIRECTORY`: Tells the program to look at a physical backup folder.
+4. `-m } --mac DIRECTORY`: Tells the program to look at a folder from a Mac.
 4. `-o | --output-dir DIRECTORY`: Changes the output folder from the default `./output` to the specified one.
 5. `-h | --help`: Prints the usage information.
 
@@ -64,6 +65,12 @@ For example, if you had a physical backup located in `/home/user/phone_rips/ipho
 For single file "backups", this program expects to be given the path of the NoteStore.sqlite file directly, although filename does not matter. If it exists, that file will be copied to the output directory and the copy, not the original, will be opened.
 
 For example, if you had a NoteStore.sqlite file located in `/home/user/phone_rips/iphone/files/NoteStore.sqlite` you would run: `ruby notes_cloud_ripper.rb -f /home/user/phone_rips/iphone/files/NoteStore.sqlite`
+
+### Mac backup (-m option)
+
+For backups created from the Notes app as installed on a Mac. This program expects to be given the group.com.apple.notes folder of that Mac. With that, it will compute the path to the NoteStore.sqlite file. If it exists, that file will be copied to the output directory and the copy, not the original, will be opened.
+
+For example, if you were running this on data from a Mac used by 'Logitech' and had the full file system available, you would run: `ruby notes_cloud_ripper.rb -m /Users/Logitech/Library/Group Containers/group.com.apple.notes/`
 
 ### All Versions
 
@@ -269,5 +276,5 @@ Programming languages are like human languages, there are many and which you cho
 
 ## Acknowledgements
 
-* Jmendeth's [protobuf-inspector](https://github.com/jmendeth/protobuf-inspector) drove most of my analysis into the Notes protobufs.
+* MildSunrise's [protobuf-inspector](https://github.com/mildsunrise/protobuf-inspector) drove most of my analysis into the Notes protobufs.
 * Previous work by [dunhamsteve](https://github.com/dunhamsteve/notesutils/blob/master/notes.md) proved invaluable to finally understanding the embedded table aspects.
