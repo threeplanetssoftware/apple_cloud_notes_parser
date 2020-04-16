@@ -2,6 +2,7 @@ require 'sqlite3'
 require 'zlib'
 require_relative 'notestore_pb.rb'
 require_relative 'AppleNotesEmbeddedObject.rb'
+require_relative 'AppleNotesEmbeddedDeletedObject.rb'
 require_relative 'AppleNotesEmbeddedDrawing.rb'
 require_relative 'AppleNotesEmbeddedGallery.rb'
 require_relative 'AppleNotesEmbeddedPDF.rb'
@@ -129,13 +130,14 @@ class AppleNote
 
         # Check for something embedded
         if note_part.attachment_info
+          tmp_embedded_object = nil
+          # If the note was "deleted", the obects will have been deleted, and this will turn up nothing
           @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.Z_PK, ZICCLOUDSYNCINGOBJECT.ZNOTE, " + 
                             "ZICCLOUDSYNCINGOBJECT.ZCREATIONDATE, ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE, " +
                             "ZICCLOUDSYNCINGOBJECT.ZTYPEUTI, ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER " + 
                             "FROM ZICCLOUDSYNCINGOBJECT " +
                             "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
                             note_part.attachment_info.attachment_identifier) do |row|
-            tmp_embedded_object = nil
             case row["ZTYPEUTI"]
               when "public.jpeg", "public.png"
                 tmp_embedded_object = AppleNotesEmbeddedPublicJpeg.new(row["Z_PK"],
@@ -184,11 +186,18 @@ class AppleNote
                                                                    self)
                 puts "#{row["ZTYPEUTI"]} is unrecognized, please submit a bug report to this project's GitHub repo to report this: https://github.com/threeplanetssoftware/apple_cloud_notes_parser/issues"
             end
-
-            # Update plaintext to note something else is here
-            @plaintext = @plaintext.sub(/\ufffc/, "{#{tmp_embedded_object.to_s}}")
-            @embedded_objects.push(tmp_embedded_object)
           end
+
+          # If we still have't created an embedded object, we likely had somthing that was previously deleted
+          if !tmp_embedded_object
+            tmp_embedded_object = AppleNotesEmbeddedDeletedObject.new(note_part.attachment_info.attachment_identifier,
+                                                                      note_part.attachment_info.type_uti,
+                                                                      self)
+          end
+
+          # Update plaintext to note something else is here
+          @plaintext = @plaintext.sub(/\ufffc/, "{#{tmp_embedded_object.to_s}}")
+          @embedded_objects.push(tmp_embedded_object)
         end
       end
     end
@@ -374,7 +383,11 @@ class AppleNote
       # Check for something embedded, if so, don't put in the characters, replace them with the object
       if note_part.attachment_info
 
-        html += @embedded_objects[embedded_object_index].generate_html + "<br />\n"
+        if @embedded_objects[embedded_object_index]
+          html += @embedded_objects[embedded_object_index].generate_html + "<br />\n"
+        else
+          html += "[Object missing, this is common for deleted notes]"
+        end
         embedded_object_index += 1
         current_index += note_part.length
 
