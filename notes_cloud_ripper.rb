@@ -2,6 +2,9 @@ require 'csv'
 require 'optparse'
 require 'pathname'
 require_relative 'lib/AppleBackup.rb'
+require_relative 'lib/AppleBackupHashed.rb'
+require_relative 'lib/AppleBackupPhysical.rb'
+require_relative 'lib/AppleBackupFile.rb'
 require_relative 'lib/AppleNote.rb'
 require_relative 'lib/AppleNoteStore.rb'
 
@@ -79,8 +82,16 @@ puts "Storing the results in #{output_directory}\n\n"
 # Start dealing with the backup
 #
 
-# Create a new AppleBackup object
-apple_backup = AppleBackup.new(target_directory, backup_type, output_directory)
+# Create a new AppleBackup object, based on the appropriate type
+apple_backup = nil
+case backup_type
+  when AppleBackup::HASHED_BACKUP_TYPE
+    apple_backup = AppleBackupHashed.new(target_directory, output_directory)
+  when AppleBackup::PHYSICAL_BACKUP_TYPE
+    apple_backup = AppleBackupPhysical.new(target_directory, output_directory)
+  when AppleBackup::SINGLE_FILE_BACKUP_TYPE
+    apple_backup = AppleBackupFile.new(target_directory, output_directory)
+end
 
 # Check for a valid AppleBackup, if it is ready, rip the notes and spit out CSVs
 if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid_notes?
