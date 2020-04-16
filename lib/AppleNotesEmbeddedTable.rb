@@ -136,6 +136,9 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
       target_dictionary_object.dictionary.element.each do |row|
         current_row = get_target_uuid_from_object_entry(@table_objects[row.key.object_index])
         target_cell = @table_objects[row.value.object_index]
+        #puts "Current row: #{current_row}, Current column: #{current_column}"
+        #puts "Total rows: #{@total_rows}, Total columns: #{@total_columns}"
+        #puts "#{@row_indices[current_row]}, #{@column_indices[current_column]}"
         @reconstructed_table[@row_indices[current_row]][@column_indices[current_column]] = target_cell.note.note_text
       end
     end
@@ -149,6 +152,9 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
   # the +reconstructed_table+ and flips the tabl's direction if the order changes. 
   def parse_table(object_entry)
     if object_entry.custom_map and @type_items[object_entry.custom_map.type] == "com.apple.notes.ICTable"
+
+      # Variable to make sure we don't try to parse cell columns prior to doing rows or columns
+      need_to_parse_cell_columns = false
       object_entry.custom_map.map_entry.each do |map_entry|
         case @key_items[map_entry.key]
         when "crTableColumnDirection"
@@ -158,8 +164,15 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
         when "crColumns"
           parse_columns(@table_objects[map_entry.value.object_index])
         when "cellColumns"
-          parse_cell_columns(@table_objects[map_entry.value.object_index])
+           # parse_cell_columns(@table_objects[map_entry.value.object_index])
+           need_to_parse_cell_columns = @table_objects[map_entry.value.object_index]
         end
+
+        # Check if we have both rows, and columns, and the cell_columns not yet run
+        if @total_rows > 0 && @total_columns > 0 && need_to_parse_cell_columns
+          parse_cell_columns(need_to_parse_cell_columns)
+          need_to_parse_cell_columns = false
+        end        
 
         # If we know how many rows and columns we have, we can initialize the table
         initialize_table if (@total_columns > 0 and @total_rows > 0 and @reconstructed_table.length < 1)
