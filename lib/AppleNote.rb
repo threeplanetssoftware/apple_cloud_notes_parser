@@ -139,7 +139,7 @@ class AppleNote
                             "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
                             note_part.attachment_info.attachment_identifier) do |row|
             case row["ZTYPEUTI"]
-              when "public.jpeg", "public.png"
+              when "public.jpeg", "public.png", "public.tiff"
                 tmp_embedded_object = AppleNotesEmbeddedPublicJpeg.new(row["Z_PK"],
                                                                        row["ZIDENTIFIER"],
                                                                        row["ZTYPEUTI"],
