@@ -4,6 +4,7 @@ require 'pathname'
 require_relative 'lib/AppleBackup.rb'
 require_relative 'lib/AppleBackupHashed.rb'
 require_relative 'lib/AppleBackupPhysical.rb'
+require_relative 'lib/AppleBackupMac.rb'
 require_relative 'lib/AppleBackupFile.rb'
 require_relative 'lib/AppleNote.rb'
 require_relative 'lib/AppleNoteStore.rb'
@@ -38,6 +39,12 @@ option_parser.on("-p", "--physical DIRECTORY", "Root directory of a physical bac
   backup_type = AppleBackup::PHYSICAL_BACKUP_TYPE
 end
 
+# Support ripping right from a Mac
+option_parser.on("-m", "--mac DIRECTORY", "Root directory of a Mac application (i.e. /Users/{username}/Library/Group Containers/group.com.apple.notes).") do |dir|
+  target_directory = Pathname.new(dir)
+  backup_type = AppleBackup::MAC_BACKUP_TYPE
+end
+
 # Change the output folder from the default value
 option_parser.on("-o", "--output-dir DIRECTORY", "Change the output directory from the default #{output_directory}") do |dir|
   output_directory = Pathname.new(dir)
@@ -48,12 +55,6 @@ option_parser.on("-h", "--help", "Print help information") do
   puts option_parser
   exit
 end
-
-# Not yet supporting this: Support logical backup directories 
-#  option_parser.on("-l", "--logical-directory DIRECTORY", "Root directory of a logical backup folder (i.e. where '/' of the phone is).") do |dir|
-#    target_directory = Pathname.new(dir)
-#    backup_type = AppleBackup::LOGICAL_BACKUP_TYPE
-#  end
 
 # Check to see if we have any arguments, display help if not
 if option_parser.getopts.length < 1
@@ -91,6 +92,8 @@ case backup_type
     apple_backup = AppleBackupPhysical.new(target_directory, output_directory)
   when AppleBackup::SINGLE_FILE_BACKUP_TYPE
     apple_backup = AppleBackupFile.new(target_directory, output_directory)
+  when AppleBackup::MAC_BACKUP_TYPE
+    apple_backup = AppleBackupMac.new(target_directory, output_directory)
 end
 
 # Check for a valid AppleBackup, if it is ready, rip the notes and spit out CSVs

@@ -21,6 +21,8 @@ class AppleBackup
   SINGLE_FILE_BACKUP_TYPE = 3
   # For times you have a physical backup (i.e. /, /private, etc)
   PHYSICAL_BACKUP_TYPE = 4
+  # For times you have a copy of the Mac version of notes (i.e. /Users/{username}/Library/Group Containers/group.com.apple.notes)
+  MAC_BACKUP_TYPE = 5
   
   ##
   # Creates a new AppleBackup. Expects a Pathname +root_folder+ that represents the root 
