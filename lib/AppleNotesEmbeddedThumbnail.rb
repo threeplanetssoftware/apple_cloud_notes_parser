@@ -50,7 +50,7 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
 
   ##
   # As these are created by Notes, it is just the UUID. These are either 
-  # .jpg (apparently created by com.apple.notes.gallery) or .jpg (rest)
+  # .png (apparently created by com.apple.notes.gallery) or .jpg (rest)
   def get_media_filename
     "#{@uuid}.#{get_thumbnail_extension}"
   end
