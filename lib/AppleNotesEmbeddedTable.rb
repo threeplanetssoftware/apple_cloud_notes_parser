@@ -139,15 +139,7 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
         #puts "Current row: #{current_row}, Current column: #{current_column}"
         #puts "Total rows: #{@total_rows}, Total columns: #{@total_columns}"
         #puts "#{@row_indices[current_row]}, #{@column_indices[current_column]}"
-
-        # Check for an edge case where the row indices or column indicies don't actually have the values we are looking for
-        #if(@row_indices[current_row] != nil and @column_indices[current_column] != nil) 
-          @reconstructed_table[@row_indices[current_row]][@column_indices[current_column]] = target_cell.note.note_text
-        #else 
-        #  puts "Warning! Skipping part of the table because @row_indicies[#{current_row}] or column_indicies[#{current_column}] doesn't exist"
-        #  puts "Row Indices: #{@row_indices}";
-        #  puts "Column Indices: #{@column_indices}";
-        #end
+        @reconstructed_table[@row_indices[current_row]][@column_indices[current_column]] = target_cell.note.note_text
       end
     end
   end
