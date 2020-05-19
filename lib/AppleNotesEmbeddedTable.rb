@@ -139,7 +139,15 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
         #puts "Current row: #{current_row}, Current column: #{current_column}"
         #puts "Total rows: #{@total_rows}, Total columns: #{@total_columns}"
         #puts "#{@row_indices[current_row]}, #{@column_indices[current_column]}"
-        @reconstructed_table[@row_indices[current_row]][@column_indices[current_column]] = target_cell.note.note_text
+
+        # Check for an edge case where the row indices or column indicies don't actually have the values we are looking for
+        #if(@row_indices[current_row] != nil and @column_indices[current_column] != nil) 
+          @reconstructed_table[@row_indices[current_row]][@column_indices[current_column]] = target_cell.note.note_text
+        #else 
+        #  puts "Warning! Skipping part of the table because @row_indicies[#{current_row}] or column_indicies[#{current_column}] doesn't exist"
+        #  puts "Row Indices: #{@row_indices}";
+        #  puts "Column Indices: #{@column_indices}";
+        #end
       end
     end
   end
@@ -169,13 +177,14 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
         end
 
         # Check if we have both rows, and columns, and the cell_columns not yet run
-        if @total_rows > 0 && @total_columns > 0 && need_to_parse_cell_columns
+        if @total_rows > 0 and @total_columns > 0 and need_to_parse_cell_columns
+          # If we know how many rows and columns we have, we can initialize the table
+          initialize_table if (@total_columns > 0 and @total_rows > 0 and @reconstructed_table.length < 1)
+
+          # Actually parse through the values
           parse_cell_columns(need_to_parse_cell_columns)
           need_to_parse_cell_columns = false
         end        
-
-        # If we know how many rows and columns we have, we can initialize the table
-        initialize_table if (@total_columns > 0 and @total_rows > 0 and @reconstructed_table.length < 1)
       end
 
       # We need to reverse the table if it is right to left
