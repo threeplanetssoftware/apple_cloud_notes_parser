@@ -6,6 +6,7 @@ require_relative 'AppleNotesEmbeddedDeletedObject.rb'
 require_relative 'AppleNotesEmbeddedDrawing.rb'
 require_relative 'AppleNotesEmbeddedGallery.rb'
 require_relative 'AppleNotesEmbeddedPDF.rb'
+require_relative 'AppleNotesEmbeddedPublicObject.rb'
 require_relative 'AppleNotesEmbeddedPublicJpeg.rb'
 require_relative 'AppleNotesEmbeddedPublicURL.rb'
 require_relative 'AppleNotesEmbeddedPublicVCard.rb'
@@ -180,6 +181,14 @@ class AppleNote
                                                                     row["ZTYPEUTI"],
                                                                     self,
                                                                     @backup)
+              # Catch any other public.* types that likely represent something stored on disk
+              when /public.*/
+                tmp_embedded_object = AppleNotesEmbeddedPublicObject.new(row["Z_PK"],
+                                                                         row["ZIDENTIFIER"],
+                                                                         row["ZTYPEUTI"],
+                                                                         self,
+                                                                         @backup)
+
               else
                 tmp_embedded_object = AppleNotesEmbeddedObject.new(row["Z_PK"],
                                                                    row["ZIDENTIFIER"],
