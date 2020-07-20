@@ -1,4 +1,5 @@
 require 'fileutils'
+require 'logger'
 require 'pathname'
 require_relative 'AppleNote.rb'
 require_relative 'AppleNoteStore.rb'
@@ -11,7 +12,8 @@ class AppleBackup
   attr_accessor :note_stores,
                 :root_folder,
                 :type,
-                :output_folder
+                :output_folder,
+                :logger
 
   # For backups that are created by iTunes and hash the files
   HASHED_BACKUP_TYPE = 1
@@ -34,6 +36,7 @@ class AppleBackup
     @root_folder = root_folder
     @type = type
     @output_folder = output_folder
+    @logger = Logger.new(@output_folder + "debug_log.txt")
     @note_stores = Array.new
     @note_store_modern_location = @output_folder + "NoteStore.sqlite"
     @note_store_legacy_location = @output_folder + "notes.sqlite"
@@ -44,6 +47,7 @@ class AppleBackup
   # No backup on its own is valid, it must be a abckup type that is recognized. In those cases, 
   # instantiate the appropriate child (such as AppleBackupHashed).
   def valid?
+    @logger.error("Returning 'invalid' as no specific type of backup was specified")
     return false
   end
 
@@ -52,6 +56,7 @@ class AppleBackup
   # It expects a String +filename+ to look up. This returns nil by default, and specific types of backups
   # will override this to provide the correct location. 
   def get_real_file_path(filename)
+    @logger.error("Returning nil for get_real_file_path as no specific type of backup was specified")
     return nil
   end
 
@@ -62,7 +67,10 @@ class AppleBackup
   # representing where on this computer the file can be found. Returns a Pathname 
   # representing the relative position of the file in the backup folder.
   def back_up_file(filepath_on_phone, filename_on_phone, filepath_on_disk)
-    return if !filepath_on_disk
+    if !filepath_on_disk
+      @logger.error("Can't call back_up_file with filepath_on_disk that is nil") if @type != SINGLE_FILE_BACKUP_TYPE
+      return
+    end
  
     # Turn the filepath on the phone into a Pathname object for manipulation
     phone_filepath = Pathname.new(filepath_on_phone)
@@ -77,6 +85,7 @@ class AppleBackup
     file_output_directory.mkpath
 
     # Copy the file
+    @logger.debug("Copying #{filepath_on_disk} to #{file_output_directory + filename_on_phone}")
     FileUtils.cp(filepath_on_disk, file_output_directory + filename_on_phone)
 
     # return where we put it 
@@ -98,6 +107,7 @@ class AppleBackup
   # This function kicks off the parsing of notes
   def rip_notes
     @note_stores.each do |note_store|
+      @logger.debug("Apple Backup: Ripping notes from Note Store version #{note_store.version}")
       note_store.rip_all_objects()
     end
   end

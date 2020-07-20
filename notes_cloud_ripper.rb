@@ -1,4 +1,5 @@
 require 'csv'
+require 'logger'
 require 'optparse'
 require 'pathname'
 require_relative 'lib/AppleBackup.rb'
@@ -79,6 +80,9 @@ end
 
 puts "Storing the results in #{output_directory}\n\n"
 
+# Create the Logger
+logger = Logger.new(output_directory + "debug_log.txt")
+
 #
 # Start dealing with the backup
 #
@@ -87,23 +91,29 @@ puts "Storing the results in #{output_directory}\n\n"
 apple_backup = nil
 case backup_type
   when AppleBackup::HASHED_BACKUP_TYPE
+    logger.debug("User asserted this is a HASHED_BACKUP")
     apple_backup = AppleBackupHashed.new(target_directory, output_directory)
   when AppleBackup::PHYSICAL_BACKUP_TYPE
+    logger.debug("User asserted this is a PHYSICAL_BACKUP")
     apple_backup = AppleBackupPhysical.new(target_directory, output_directory)
   when AppleBackup::SINGLE_FILE_BACKUP_TYPE
+    logger.debug("User asserted this is a SINGLE_FILE_BACKUP")
     apple_backup = AppleBackupFile.new(target_directory, output_directory)
   when AppleBackup::MAC_BACKUP_TYPE
+    logger.debug("User asserted this is a MAC_BACKUP")
     apple_backup = AppleBackupMac.new(target_directory, output_directory)
 end
 
 # Check for a valid AppleBackup, if it is ready, rip the notes and spit out CSVs
 if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid_notes?
 
+  logger.debug("Backup is valid, ripping notes")
   #Tell the backup to rip notes
   apple_backup.rip_notes
 
   # Tell the AppleNoteStore to add plaintext to the database
   apple_backup.note_stores.each do |note_store|
+    logger.debug("Adding plaintext to #{note_store}")
     note_store.add_plain_text_to_database
   end
 
@@ -113,21 +123,27 @@ if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid
 
   # Make a separate folder to hold the CSVs for cleanliness
   csv_directory = output_directory + "csv"
+  logger.debug("Creating CSV output folder: #{csv_directory}")
   csv_directory.mkpath
 
   # Make a separate folder to hold the HTML
   html_directory = output_directory + "html"
+  logger.debug("Creating HTML output folder: #{html_directory}")
   html_directory.mkpath
 
   backup_number = 1
   apple_backup.note_stores.each do |note_store|
 
+    logger.debug("Working on output for version #{note_store.version} note store #{note_store}")
+
     # Write out the HTML summary
+    logger.debug("Writing HTML for Note Store")
     File.open(html_directory + "all_notes_#{backup_number}.html", "wb") do |file|
       file.write(note_store.generate_html)
     end
 
     # Create a CSV of the AppleNotesAccount objects
+    logger.debug("Writing CSV for accounts")
     CSV.open(csv_directory + "note_store_accounts_#{backup_number}.csv", "wb", force_quotes: true) do |csv|
       note_store.get_account_csv.each do |csv_line|
         csv << csv_line
@@ -135,6 +151,7 @@ if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid
     end
 
     # Create a CSV of the AppleNotesFolder objects
+    logger.debug("Writing CSV for folders")
     CSV.open(csv_directory + "note_store_folders_#{backup_number}.csv", "wb", force_quotes: true) do |csv|
       note_store.get_folder_csv.each do |csv_line|
         csv << csv_line
@@ -142,6 +159,7 @@ if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid
     end
 
     # Create a CSV of the AppleNote objects
+    logger.debug("Writing CSV for notes")
     CSV.open(csv_directory + "note_store_notes_#{backup_number}.csv", "wb", force_quotes: true) do |csv|
       note_store.get_note_csv.each do |csv_line|
         csv << csv_line
@@ -149,6 +167,7 @@ if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid
     end
 
     # Create a CSV of the AppleNotesEmbeddedObject objects
+    logger.debug("Writing CSV for embedded objects")
     CSV.open(csv_directory + "note_store_embedded_objects_#{backup_number}.csv", "wb", force_quotes: true) do |csv|
       note_store.get_embedded_object_csv.each do |csv_line|
         csv << csv_line
@@ -156,6 +175,7 @@ if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid
     end
 
     # Close the note store for cleanliness  
+    logger.debug("Closing version #{note_store.version} note store #{note_store}")
     note_store.close
 
     # Increment counter to prevent overwriting our stuff
@@ -171,4 +191,5 @@ else
   exit
 end
 
+logger.debug("Finished")
 puts "\nSuccessfully finished at #{DateTime.now.strftime("%c")}"

@@ -36,17 +36,20 @@ class AppleNoteStore
     @file_path = file_path
     @backup = backup
     @database = SQLite3::Database.new(@file_path.to_s, {results_as_hash: true})
+    @logger = @backup.logger
     @version = version
     @notes = Hash.new()
     @folders = Hash.new()
     @accounts = Hash.new()
     puts "Guessed Notes Version: #{@version}"
+    @logger.debug("Guessed Notes Version: #{@version}")
   end
 
   ##
   # This method does a set of database calls to try to guess the version of Apple Notes we are ripping. 
   # It tries to structure the checks to bail out as each specific version is recognized and then assume we are not it.
   # Helpful changelogs: 
+  # 14 (): ??
   # 13 (https://www.apple.com/ios/ios-13/): Added checklists and shared folders, better search, and gallery 
   # 12 (https://web.archive.org/web/20190909033052/https://www.apple.com/ios/ios-12/): Nothing major 
   # 11 (https://web.archive.org/web/20180828212252/https://www.apple.com/ios/ios-11/): Added document scanner, added tables 
@@ -55,6 +58,7 @@ class AppleNoteStore
   # 8 (https://web.archive.org/web/20150905181128/http://www.apple.com/ios/): Added rich text support, and adding images
   def self.guess_ios_version(database_to_check)
     database_tables = get_database_tables(database_to_check)
+
     ziccloudsyncingobject_columns = get_database_table_columns(database_to_check, "ZICCLOUDSYNCINGOBJECT")
     zicnotedata_columns = get_database_table_columns(database_to_check, "ZICNOTEDATA")
 
@@ -301,6 +305,11 @@ class AppleNoteStore
         rip_account(row["Z_PK"])
       end
     end
+
+    @accounts.each_pair do |key, account|
+      @logger.debug("Rip Accounts final array: #{key} corresponds to #{account.name}")
+    end
+
   end
 
   ##
@@ -309,9 +318,13 @@ class AppleNoteStore
   # If encryption information is present, it adds it with AppleNotesAccount.add_crypto_variables.
   def rip_account(account_id)
   
+    @logger.debug("Rip Account: Calling rip_account on Account ID #{account_id}")
+
     # Set the ZSERVERRECORD column to look at
     server_record_column = "ZSERVERRECORD"
     server_record_column = server_record_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+
+    @logger.debug("Rip Account: Using server_record_column of #{server_record_column}")
 
     # Set the query
     query_string = "SELECT ZICCLOUDSYNCINGOBJECT.ZNAME, ZICCLOUDSYNCINGOBJECT.Z_PK, " + 
@@ -328,6 +341,8 @@ class AppleNoteStore
                      "FROM ZACCOUNT " + 
                      "WHERE ZACCOUNT.Z_PK=?"
     end
+
+    @logger.debug("Rip Account: Query is #{query_string}")
 
     # Run the query
     @database.execute(query_string, account_id) do |row|
@@ -346,6 +361,9 @@ class AppleNoteStore
                                          row["ZCRYPTOITERATIONCOUNT"],
                                          row["ZCRYPTOVERIFIER"])
       end
+
+      @logger.debug("Rip Account: Created account #{tmp_account.name}")
+
       @accounts[account_id] = tmp_account
     end 
   end
@@ -368,6 +386,11 @@ class AppleNoteStore
         rip_folder(row["Z_PK"])
       end
     end
+
+    @folders.each_pair do |key, folder|
+      @logger.debug("Rip Folders final array: #{key} corresponds to #{folder.name}")
+    end
+
   end
 
   ##
@@ -375,6 +398,8 @@ class AppleNoteStore
   # object in ZICCLOUDSYNCINGOBJECTS, identified by Integer +folder_id+, and pulls the needed information to create the object. 
   # This used to use ZICCLOUDSYNCINGOBJECT.ZACCOUNT4, but that value also appears to be duplicated in ZOWNER which goes back further.
   def rip_folder(folder_id)
+
+    @logger.debug("Rip Folder: Calling rip_folder on Folder ID #{folder_id}")
   
     query_string = "SELECT ZICCLOUDSYNCINGOBJECT.ZTITLE2, ZICCLOUDSYNCINGOBJECT.ZOWNER, " + 
                    "ZICCLOUDSYNCINGOBJECT.Z_PK " +
@@ -393,6 +418,9 @@ class AppleNoteStore
       tmp_folder = AppleNotesFolder.new(row["Z_PK"],
                                         row["ZTITLE2"],
                                         get_account(row["ZOWNER"]))
+
+      @logger.debug("Rip Folder: Created folder #{tmp_folder.name}")
+
       @folders[folder_id] = tmp_folder
     end 
   end
@@ -421,6 +449,9 @@ class AppleNoteStore
   # and AppleNotesAccount it is part of. If encryption information is present, it adds 
   # it with AppleNotesAccount.add_crypto_variables.
   def rip_note(note_id)
+  
+    @logger.debug("Rip Note: Ripping note from Note ID #{note_id}")
+
     query_string = "SELECT ZICNOTEDATA.Z_PK, ZICNOTEDATA.ZNOTE, " + 
                    "ZICNOTEDATA.ZCRYPTOINITIALIZATIONVECTOR, ZICNOTEDATA.ZCRYPTOTAG, " + 
                    "ZICNOTEDATA.ZDATA, ZICCLOUDSYNCINGOBJECT.ZCRYPTOVERIFIER, " + 
@@ -467,12 +498,22 @@ class AppleNoteStore
       account_field = "ZACCOUNT"
       note_id_field = "Z_PK"
     end
+   
+    @logger.debug("Rip Note: Query string is #{query_string}") 
+    @logger.debug("Rip Note: account field is #{account_field}")
+    @logger.debug("Rip Note: folder field is #{folder_field}")
 
     # Execute the query
     @database.execute(query_string, note_id) do |row|
       # Create our note
-      tmp_account = get_account(row[account_field])
-      tmp_folder = get_folder(row[folder_field])
+      tmp_account_id = row[account_field]
+      tmp_folder_id = row[folder_field]
+      @logger.debug("Rip Note: Looking up account for #{tmp_account_id}")
+      @logger.debug("Rip Note: Looking up folder for #{tmp_folder_id}")
+      tmp_account = get_account(tmp_account_id)
+      tmp_folder = get_folder(tmp_folder_id)
+      @logger.error("Rip Note: Somehow could not find account!") if !tmp_account
+      @logger.error("Rip Note: Somehow could not find folder!") if !tmp_folder
       tmp_note = AppleNote.new(row["Z_PK"], 
                                row[note_id_field],
                                row["ZTITLE1"], 
@@ -495,7 +536,15 @@ class AppleNoteStore
                                             row["ZCRYPTOWRAPPEDKEY"])
         #tmp_note.decrypt_with_password("password")
       end
-      @notes[tmp_note.note_id] = tmp_note
+      
+      # Only add the note if we have both a folder and account for it, otherwise things blow up
+      if tmp_account and tmp_folder
+        @notes[tmp_note.note_id] = tmp_note
+      else
+        @logger.error("Rip Note: Skipping note #{tmp_note.note_id} due to a missing account.") if !tmp_account
+        @logger.error("Rip Note: Skipping note #{tmp_note.note_id} due to a missing folder.") if !tmp_folder
+        puts "Skipping Note ID #{tmp_note.node_id} due to a missing folder or account, check the debug log for more details."
+      end
     end
   end
 
