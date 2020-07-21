@@ -498,10 +498,11 @@ class AppleNoteStore
       account_field = "ZACCOUNT"
       note_id_field = "Z_PK"
     end
-   
-    @logger.debug("Rip Note: Query string is #{query_string}") 
-    @logger.debug("Rip Note: account field is #{account_field}")
-    @logger.debug("Rip Note: folder field is #{folder_field}")
+  
+    # Uncomment these lines if we ever think there is weirdness with using the wrong fields for the right version 
+    #@logger.debug("Rip Note: Query string is #{query_string}") 
+    #@logger.debug("Rip Note: account field is #{account_field}")
+    #@logger.debug("Rip Note: folder field is #{folder_field}")
 
     # Execute the query
     @database.execute(query_string, note_id) do |row|
@@ -553,8 +554,16 @@ class AppleNoteStore
     html += "<html>\n"
     html += "<head>\n"
     html += "<style>\n"
-    html += ".note {\n"
-    html += "\tborder-top: 1px solid black;\n"
+    html += ".note-cards {\n"
+    html += "\tdisplay: grid;\n"
+    html += "\tgrid-template-columns: repeat(1, 1fr);\n"
+    html += "\tgrid-auto-rows: auto;\n"
+    html += "\tgrid-gap: 1rem;\n"
+    html += "}\n"
+    html += ".note-card {\n"
+    html += "\tborder: 2px solid black;\n"
+    html += "\tborder-radius: 3px;\n"
+    html += "\tpadding: .5rem;\n"
     html += "}\n"
     html += ".note-content {\n"
     html += "\twhite-space: pre-wrap;\n"
@@ -583,11 +592,13 @@ class AppleNoteStore
       html += folder.generate_html + "\n"
     end
   
+    html += "<div class='note-cards'>\n"
     @notes.each do |note_id, note|
-      html += "<div class='note'>\n"
+      html += "<div class='note-card'>\n"
       html += note.generate_html
-      html += "</div> <!-- Close the 'note' div -->\n"
+      html += "</div> <!-- Close the 'note-card' div -->\n"
     end
+    html += "</div> <!-- Close the 'note-cards' div -->\n"
 
     html += "</body></html>\n";
 
