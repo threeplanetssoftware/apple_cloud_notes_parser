@@ -355,7 +355,7 @@ class AppleNote
     html += "<b>Title:</b> #{@title} <br/>\n"
     html += "<b>Created:</b> #{@creation_time} <br/>\n"
     html += "<b>Modified:</b> #{@modify_time} <br />\n"
-    html += "<b>Content:</b>\n"
+    #html += "<b>Content:</b>\n"
     html += "<div class='note-content'>\n"
 
     # Handle the text to insert, only if we have plaintext to run
@@ -565,6 +565,9 @@ class AppleNote
     html.gsub!('</i><i>','')
     html.gsub!('</u><u>','')
     html.gsub!(/<h1>\s*<\/h1>/,'') # Remove empty titles
+    html.gsub!(/\n<\/h1>/,'</h1>') # Remove extra line breaks in front of h1
+    html.gsub!(/\n<\/h2>/,'</h2>') # Remove extra line breaks in front of h2
+    html.gsub!(/\n<\/h3>/,'</h3>') # Remove extra line breaks in front of h3
 
     # Return what we've built
     return html
