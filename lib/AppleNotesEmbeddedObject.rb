@@ -24,9 +24,12 @@ class AppleNotesEmbeddedObject
     @note = note
     @backup = @note.backup
     @database = @note.database
+    @logger = @backup.logger
     @filepath = ""
     @filename = ""
     @backup_location = nil
+
+    @logger.debug("Note #{@note.note_id}: Created a new Embedded Object of type #{@type}")
   
     # Create an Array to hold Thumbnails and add them
     @thumbnails = Array.new
@@ -63,6 +66,9 @@ class AppleNotesEmbeddedObject
                                                       self)
       @thumbnails.push(tmp_thumbnail)
     end
+
+    # Sort the thumbnails so the largest overall size is at the end
+    @thumbnails.sort_by!{|thumbnail| thumbnail.height * thumbnail.width}
   end
 
 
