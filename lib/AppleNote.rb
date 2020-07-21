@@ -355,7 +355,8 @@ class AppleNote
     html += "<b>Title:</b> #{@title} <br/>\n"
     html += "<b>Created:</b> #{@creation_time} <br/>\n"
     html += "<b>Modified:</b> #{@modify_time} <br />\n"
-    html += "<b>Content:</b> <br />\n"
+    html += "<b>Content:</b>\n"
+    html += "<div class='note-content'>\n"
 
     # Handle the text to insert, only if we have plaintext to run
     if @plaintext
@@ -364,6 +365,7 @@ class AppleNote
     else
       html += "{Contents not decrypted}" if @encrypted_data
     end
+    html += "</div> <!-- Close the 'note-content' div -->\n"
     return html
   end
 
@@ -394,7 +396,7 @@ class AppleNote
       if note_part.attachment_info
 
         if @embedded_objects[embedded_object_index]
-          html += @embedded_objects[embedded_object_index].generate_html + "<br />\n"
+          html += @embedded_objects[embedded_object_index].generate_html# + "\n"
         else
           html += "[Object missing, this is common for deleted notes]"
         end
@@ -546,7 +548,7 @@ class AppleNote
         end
 
         if slice_to_add[-1] == "\n"
-          html += "<br />\n";
+          #html += "\n";
         end
 
       end
@@ -562,6 +564,7 @@ class AppleNote
     html.gsub!('</b><b>','')
     html.gsub!('</i><i>','')
     html.gsub!('</u><u>','')
+    html.gsub!(/<h1>\s*<\/h1>/,'') # Remove empty titles
 
     # Return what we've built
     return html

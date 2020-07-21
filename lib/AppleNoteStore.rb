@@ -553,6 +553,13 @@ class AppleNoteStore
     html += "<html>\n"
     html += "<head>\n"
     html += "<style>\n"
+    html += ".note {\n"
+    html += "\tborder-top: 1px solid black;\n"
+    html += "}\n"
+    html += ".note-content {\n"
+    html += "\twhite-space: pre-wrap;\n"
+    html += "\toverflow-wrap: break-word;\n"
+    html += "}\n"
     html += ".checklist {\n"
     html += "\tposition: relative;\n"
     html += "\tlist-style: none;\n"
@@ -577,8 +584,9 @@ class AppleNoteStore
     end
   
     @notes.each do |note_id, note|
-      html += "<hr />\n"
+      html += "<div class='note'>\n"
       html += note.generate_html
+      html += "</div> <!-- Close the 'note' div -->\n"
     end
 
     html += "</body></html>\n";
