@@ -543,7 +543,7 @@ class AppleNoteStore
       else
         @logger.error("Rip Note: Skipping note #{tmp_note.note_id} due to a missing account.") if !tmp_account
         @logger.error("Rip Note: Skipping note #{tmp_note.note_id} due to a missing folder.") if !tmp_folder
-        puts "Skipping Note ID #{tmp_note.node_id} due to a missing folder or account, check the debug log for more details."
+        puts "Skipping Note ID #{tmp_note.note_id} due to a missing folder or account, check the debug log for more details."
       end
     end
   end
