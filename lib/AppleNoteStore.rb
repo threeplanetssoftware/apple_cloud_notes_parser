@@ -449,9 +449,8 @@ class AppleNoteStore
   # and AppleNotesAccount it is part of. If encryption information is present, it adds 
   # it with AppleNotesAccount.add_crypto_variables.
   def rip_note(note_id)
-  
-    @logger.debug("Rip Note: Ripping note from Note ID #{note_id}")
 
+    @logger.debug("Rip Note: Ripping note from Note ID #{note_id}")
     query_string = "SELECT ZICNOTEDATA.Z_PK, ZICNOTEDATA.ZNOTE, " + 
                    "ZICNOTEDATA.ZCRYPTOINITIALIZATIONVECTOR, ZICNOTEDATA.ZCRYPTOTAG, " + 
                    "ZICNOTEDATA.ZDATA, ZICCLOUDSYNCINGOBJECT.ZCRYPTOVERIFIER, " + 
@@ -535,7 +534,13 @@ class AppleNoteStore
                                             row["ZCRYPTOITERATIONCOUNT"],
                                             row["ZCRYPTOVERIFIER"],
                                             row["ZCRYPTOWRAPPEDKEY"])
-        #tmp_note.decrypt_with_password("password")
+
+        # Try each password and see if any generate a decrypt.
+        found_password = tmp_note.decrypt
+
+        if !found_password
+          @logger.debug("Apple Note Store: Note #{tmp_note.note_id} could not be decrypted with our passwords.")
+        end
       end
       
       # Only add the note if we have both a folder and account for it, otherwise things blow up

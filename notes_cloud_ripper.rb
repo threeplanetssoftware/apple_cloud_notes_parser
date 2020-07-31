@@ -14,6 +14,7 @@ require_relative 'lib/AppleNoteStore.rb'
 options = {}
 target_directory = nil
 backup_type = nil
+password_file = nil
 output_directory = Pathname.new("./output")
 
 #
@@ -49,6 +50,11 @@ end
 # Change the output folder from the default value
 option_parser.on("-o", "--output-dir DIRECTORY", "Change the output directory from the default #{output_directory}") do |dir|
   output_directory = Pathname.new(dir)
+end
+
+# Add in a password file for encrypted notes
+option_parser.on("-w", "--password-file FILE", "File with plaintext passwords, one per line.") do |file|
+  password_file = Pathname.new(file)
 end
 
 # Help information, only displayed if we haven't hit on other options
@@ -108,7 +114,11 @@ end
 if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid_notes?
 
   logger.debug("Backup is valid, ripping notes")
-  #Tell the backup to rip notes
+
+  # Add the password file
+  apple_backup.decrypter.add_passwords_from_file(password_file)
+
+  # Tell the backup to rip notes
   apple_backup.rip_notes
 
   # Tell the AppleNoteStore to add plaintext to the database

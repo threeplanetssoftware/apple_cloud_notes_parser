@@ -1,6 +1,7 @@
 require 'sqlite3'
 require 'zlib'
 require_relative 'notestore_pb.rb'
+require_relative 'AppleDecrypter.rb'
 require_relative 'AppleNotesEmbeddedObject.rb'
 require_relative 'AppleNotesEmbeddedDeletedObject.rb'
 require_relative 'AppleNotesEmbeddedDrawing.rb'
@@ -49,7 +50,8 @@ class AppleNote
                 :database,
                 :decompressed_data,
                 :account,
-                :backup
+                :backup,
+                :crypto_password
 
   ##
   # Creates a new AppleNote. Expects an Integer +z_pk+, an Integer +znote+ representing the ZICNOTEDATA.ZNOTE field, 
@@ -85,6 +87,7 @@ class AppleNote
     @notestore = notestore
     @database = @notestore.database
     @backup = @notestore.backup
+    @logger = @backup.logger
 
     # Treat legacy stuff different
     if @notestore.version == AppleNoteStore::IOS_LEGACY_VERSION
@@ -139,6 +142,7 @@ class AppleNote
                             "FROM ZICCLOUDSYNCINGOBJECT " +
                             "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
                             note_part.attachment_info.attachment_identifier) do |row|
+            @logger.debug("AppleNote: Note #{@note_id} replacing attachment #{row["ZIDENTIFIER"]}")
             case row["ZTYPEUTI"]
               when "public.jpeg", "public.png", "public.tiff"
                 tmp_embedded_object = AppleNotesEmbeddedPublicJpeg.new(row["Z_PK"],
@@ -182,7 +186,7 @@ class AppleNote
                                                                     self,
                                                                     @backup)
               # Catch any other public.* types that likely represent something stored on disk
-              when /public.*/
+              when /public.*/, "com.apple.macbinary-archive"
                 tmp_embedded_object = AppleNotesEmbeddedPublicObject.new(row["Z_PK"],
                                                                          row["ZIDENTIFIER"],
                                                                          row["ZTYPEUTI"],
@@ -324,6 +328,8 @@ class AppleNote
     if is_gzip(@compressed_data)
       zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
       @decompressed_data = zlib_inflater.inflate(@compressed_data)
+    else
+      @logger.error("AppleNote: Note #{@note_id} somehow tried to decompress something that was not a GZIP")
     end
   end
 
@@ -345,6 +351,37 @@ class AppleNote
   end
 
   ##
+  # This function ensures all cryptographic variables are set.
+  def has_cryptographic_variables?
+    return (@is_password_protected and @encrypted_data and @crypto_iv and @crypto_tag and @crypto_salt and @crypto_iterations and @crypto_key)
+  end
+
+  ##
+  # This function attempts to decrypt the note by providing its cryptographic variables to the AppleDecrypter.
+  def decrypt
+    return false if !has_cryptographic_variables?
+
+    decrypt_result = @backup.decrypter.decrypt(@crypto_salt, 
+                                               @crypto_iterations, 
+                                               @crypto_key, 
+                                               @crypto_iv, 
+                                               @crypto_tag, 
+                                               @encrypted_data, 
+                                               "Apple Note: #{@note_id}")
+
+    # If we made a decrypt, then kick the result into our normal process to extract everything
+    if decrypt_result
+      @crypto_password = decrypt_result[:password]
+      @compressed_data = decrypt_result[:plaintext]
+      decompress_data
+      extract_plaintext if @decompressed_data
+      replace_embedded_objects if @plaintext
+    end
+
+    return (plaintext != false)
+  end
+
+  ##
   # This method generates HTML to represent this Note, its 
   # metadata, and its contents, if applicable. It does not generate 
   # full HTML, just enough for this note's card to be displayed.
@@ -355,6 +392,7 @@ class AppleNote
     html += "<b>Title:</b> #{@title} <br/>\n"
     html += "<b>Created:</b> #{@creation_time} <br/>\n"
     html += "<b>Modified:</b> #{@modify_time} <br />\n"
+    html += "<b>Password:</b> #{@crypto_password} <br />\n" if @crypto_password
     #html += "<b>Content:</b>\n"
     html += "<div class='note-content'>\n"
 

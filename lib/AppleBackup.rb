@@ -13,7 +13,8 @@ class AppleBackup
                 :root_folder,
                 :type,
                 :output_folder,
-                :logger
+                :logger,
+                :decrypter
 
   # For backups that are created by iTunes and hash the files
   HASHED_BACKUP_TYPE = 1
@@ -41,6 +42,7 @@ class AppleBackup
     @note_store_modern_location = @output_folder + "NoteStore.sqlite"
     @note_store_legacy_location = @output_folder + "notes.sqlite"
     @note_store_temporary_location = @output_folder + "test.sqlite"
+    @decrypter = AppleDecrypter.new(self)
   end
 
   ##
@@ -64,9 +66,14 @@ class AppleBackup
   # This method copies a file from the backup into the output directory. It expects 
   # a String +filepath_on_phone+ representing where it came from, a String +filename_on_phone+ 
   # representing the actual filename on the phone, and a Pathname +filepath_on_disk+ 
-  # representing where on this computer the file can be found. Returns a Pathname 
-  # representing the relative position of the file in the backup folder.
-  def back_up_file(filepath_on_phone, filename_on_phone, filepath_on_disk)
+  # representing where on this computer the file can be found. Takes an optional boolean 
+  # +is_password_protected+ and all the cryptographic settings to indicate if the file 
+  # needs to be decrypted. Returns a Pathname  representing the relative position of 
+  # the file in the output folder. If the file was encrypted, reads the original, decrypts 
+  # and writes the decrypted content to the new file name. 
+  def back_up_file(filepath_on_phone, filename_on_phone, filepath_on_disk, 
+    is_password_protected=false, password=nil, salt=nil, iterations=nil, key=nil, 
+    iv=nil, tag=nil, debug_text=nil)
     if !filepath_on_disk
       @logger.error("Can't call back_up_file with filepath_on_disk that is nil") if @type != SINGLE_FILE_BACKUP_TYPE
       return
@@ -79,17 +86,25 @@ class AppleBackup
     file_output_directory = @output_folder + "files" + phone_filepath.parent
 
     # Create a relative link for the file to reference in HTML
-    file_relative_output_path = Pathname.new("files") + filepath_on_phone
+    file_relative_output_path = Pathname.new("files") + phone_filepath.parent + filename_on_phone
 
     # Create the output directory
     file_output_directory.mkpath
 
-    # Copy the file
+    # Decrypt and write a new file, or copy the file depending on if we are password protected
     @logger.debug("Copying #{filepath_on_disk} to #{file_output_directory + filename_on_phone}")
-    FileUtils.cp(filepath_on_disk, file_output_directory + filename_on_phone)
+    if is_password_protected
+      File.open(filepath_on_disk, 'rb') do |file|
+        encrypted_data = file.read
+        decrypt_result = @decrypter.decrypt_with_password(password, salt, iterations, key, iv, tag, encrypted_data, "Apple Backup encrypted file")
+        File.write(file_output_directory + filename_on_phone.sub(/\.encrypted$/,""), decrypt_result[:plaintext])
+      end
+    else
+      FileUtils.cp(filepath_on_disk, file_output_directory + filename_on_phone)
+    end
 
     # return where we put it 
-    return file_relative_output_path
+    return file_relative_output_path.sub(/\.encrypted$/,"")
   end
 
   ##
