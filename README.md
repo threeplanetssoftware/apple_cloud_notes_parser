@@ -12,7 +12,7 @@ This program intends to make the plaintext stored in the note and its embedded a
 This program was implemented in Ruby. 
 The classes underlying this represent all the necessary features to write other programs to interface with an Apple Notes backup, including exporting data to another format, or writing better search functions. 
 In addition, this program and its classes attempts to abstract away the work needed to understand the type of backup and how it stores files. 
-While examiners must understand those backups, this will provide its own internal interfaces for identifying wheremedia files are kept. 
+While examiners must understand those backups, this will provide its own internal interfaces for identifying where media files are kept. 
 For example, if the backup is from iTunes, this program will use the Manifest.db to identify the hashed name of the included file, and copy out/rename the image to the appropriate name, without the examiner having to do that manually.
 
 ## Features
@@ -20,6 +20,7 @@ For example, if the backup is from iTunes, this program will use the Manifest.db
 This program will:
 1. Parse legacy (pre-iOS9) Notes files (but those are already plaintext, so not much to be gained)
 2. Parse iOS 9-13 Cloud Notes files
+3. ... decrypting notes if the password is known
 3. ... generating CSV roll-ups of each account, folder, note, and embedded object within them
 4. ... rebuilding the notes as an HTML file to browse and see as they would be displayed on the phone
 5. ... amending the NoteStore.sqlite database to include plaintext and decompressed objects to interact with in other tools
@@ -39,12 +40,13 @@ The benefit of pointing at full backups is this program can pull files out of th
 ### Options
 
 The options that are currently supported are:
-1. `-i | --itunes-dir DIRECTORY`: Tells the program to look at an iTunes backup folder.
 2. `-f | --file FILE`: Tells the program to look only at a specific file that is identified. 
+1. `-i | --itunes-dir DIRECTORY`: Tells the program to look at an iTunes backup folder.
+4. `-m | --mac DIRECTORY`: Tells the program to look at a folder from a Mac.
+5. `-o | --output-dir DIRECTORY`: Changes the output folder from the default `./output` to the specified one.
 3. `-p | --physical DIRECTORY`: Tells the program to look at a physical backup folder.
-4. `-m } --mac DIRECTORY`: Tells the program to look at a folder from a Mac.
-4. `-o | --output-dir DIRECTORY`: Changes the output folder from the default `./output` to the specified one.
-5. `-h | --help`: Prints the usage information.
+7. `-w | --password-file FILE`: Tells the program which password list to use 
+6. `-h | --help`: Prints the usage information.
 
 ## How It Works
 
@@ -72,6 +74,12 @@ For backups created from the Notes app as installed on a Mac. This program expec
 
 For example, if you were running this on data from a Mac used by 'Logitech' and had the full file system available, you would run: `ruby notes_cloud_ripper.rb -m /Users/Logitech/Library/Group Containers/group.com.apple.notes/`
 
+### Password (-w | --password-file FILE option)
+
+For backups that may have encrypted notes within them, this option tells the program where to find its password list. This list should have one password per row and any passwords that correctly decrypt an encrypted note will be tried before the rest for future encrypted notes. 
+
+For example, if you were running this on data from a Mac used by 'Logitech,' had the full file system available, and wanted to use a file called "passwords.txt"you would run: `ruby notes_cloud_ripper.rb -m /Users/Logitech/Library/Group Containers/group.com.apple.notes/` -w passwords.txt
+
 ### All Versions
 
 Once the NoteStore file is opened, the program will create new AppleNotesAccount, AppleNotesFolder, and AppleNote objects based on the contents of that file. 
@@ -84,10 +92,11 @@ All of the output from this program will go into the output folder (it will be c
 Within that folder, sub-folders will be created based on the current date and time, to the second. 
 For example, if this program was run on December 17, 2019 at 10:24:28 local, the output for that run would be in `[location of this program]/output/2019_12_17-10_24_28/`. 
 If the type of backup used has the original files referenced in attached media, this program will copy the file into the output directory, under `[location of this program]/output/[date of run]/files`, and beneath that following the file path on disk, relative to the Notes application folder. 
+
 This program will produce four CSV files summarizing the information stored in `[location of this program]/output/[date of run]/csv`: `note_store_accounts.csv`, `note_store_embedded_objects.csv`, `note_store_folders.csv`, and `note_store_notes.sqlite`. 
 Finally, it will produce an HTML dump of the notes to reflect the text and table formatting which may be meaningful in `[location of this program]/output/[date of run]/html`.
 
-Because Apple devices often have more than one version of Noes, it is important to note (pun intended) that all of the output is suffixed by a number, starting at 1, to identify which of the backups it corresponds to. 
+Because Apple devices often have more than one version of Notes, it is important to note (pun intended) that all of the output is suffixed by a number, starting at 1, to identify which of the backups it corresponds to. 
 In all cases where more than one is found, care is taken to produce output that assigns the suffix of 1 for the modern version, and the suffix of 2 for the legacy version. 
 
 ## Requirements
@@ -117,6 +126,8 @@ This program requires the following Ruby gems which can be installed by running 
    1. Note: This does not yet work with Ruby 2.7, use any of the 2.6 varients, or lower
 3. sqlite3
 4. zlib
+5. openssl
+6. aes_key_wrap
 
 ## Installation
 
@@ -161,7 +172,7 @@ sudo yum install sqlite sqlite-devel zlib zlib-devel openssl openssl-devel ruby 
 git clone https://github.com/threeplanetssoftware/apple_cloud_notes_parser.git
 cd apple_cloud_notes_parser
 bundle install
-sudo gem pristine sqlite3 zlib
+sudo gem pristine sqlite3 zlib openssl aes_key_wrap
 ```
 
 #### Without Git (If you want to download it every now and then)
@@ -173,7 +184,7 @@ curl https://codeload.github.com/threeplanetssoftware/apple_cloud_notes_parser/z
 unzip apple_cloud_notes_parser.zip
 cd apple_cloud_notes_parser-master
 bundle install
-sudo gem pristine sqlite3 zlib
+sudo gem pristine sqlite3 zlib openssl aes_key_wrap
 ```
 
 ### macOS 
@@ -233,6 +244,7 @@ apple_cloud_notes_parser
   |  |-[folders for each date/time run]
   |     |
   |     |-csv: This folder holds the CSV output
+  |     |-debug_log.txt: A more verbose log to assist with debugging
   |     |-files: This folder holds files copied out of the backup, such as pictures
   |     |-html: This folder holds the generated HTML copy of the Notestore
   |     |-Manifest.db: If run on an iTunes backup, this is a copy of the Manifest.db
@@ -272,7 +284,6 @@ Programming languages are like human languages, there are many and which you cho
 ## Known Bugs
 
 1. Google Protobuf throws errors on Windows with Ruby 2.7, likely the gem isn't updated yet.
-2. Encrypted notes are not yet decrypted (not technically a bug, but worth noting).
 
 ## Acknowledgements
 
