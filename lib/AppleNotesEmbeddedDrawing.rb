@@ -27,7 +27,41 @@ class AppleNotesEmbeddedDrawing < AppleNotesEmbeddedObject
     @backup_location = @backup.get_real_file_path(@filepath)
     
     # Copy the file to our output directory if we can
-    @reference_location = @backup.back_up_file(@filepath, @filename, @backup_location)
+    @reference_location = @backup.back_up_file(@filepath, 
+                                               @filename, 
+                                               @backup_location, 
+                                               @is_password_protected,
+                                               @crypto_password,
+                                               @crypto_salt,
+                                               @crypto_iterations,
+                                               @crypto_key,
+                                               @crypto_fallback_iv,
+                                               @crypto_fallback_tag)
+  end
+
+  ##
+  # This function overrides the default AppleNotesEmbeddedObject add_cryptographic_settings 
+  # to include the fallback image settings from ZFALLBACKIMAGECRYPTOTAG and 
+  # ZFALLBACKIMAGECRYPTOINITIALIZATIONVECTOR for content on disk. 
+  def add_cryptographic_settings
+    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZCRYPTOINITIALIZATIONVECTOR, ZICCLOUDSYNCINGOBJECT.ZCRYPTOTAG, " +
+                      "ZICCLOUDSYNCINGOBJECT.ZCRYPTOSALT, ZICCLOUDSYNCINGOBJECT.ZCRYPTOITERATIONCOUNT, " + 
+                      "ZICCLOUDSYNCINGOBJECT.ZCRYPTOVERIFIER, ZICCLOUDSYNCINGOBJECT.ZCRYPTOWRAPPEDKEY, " + 
+                      "ZICCLOUDSYNCINGOBJECT.ZFALLBACKIMAGECRYPTOTAG, ZICCLOUDSYNCINGOBJECT.ZFALLBACKIMAGECRYPTOINITIALIZATIONVECTOR " + 
+                      "FROM ZICCLOUDSYNCINGOBJECT " + 
+                      "WHERE Z_PK=?",
+                      @primary_key) do |media_row|
+      @crypto_iv = media_row["ZCRYPTOINITIALIZATIONVECTOR"]
+      @crypto_tag = media_row["ZCRYPTOTAG"]
+      @crypto_fallback_iv = media_row["ZFALLBACKIMAGECRYPTOINITIALIZATIONVECTOR"]
+      @crypto_fallback_tag = media_row["ZFALLBACKIMAGECRYPTOTAG"]
+      @crypto_salt = media_row["ZCRYPTOSALT"]
+      @crypto_iterations = media_row["ZCRYPTOITERATIONCOUNT"]
+      @crypto_key = media_row["ZCRYPTOVERIFIER"] if media_row["ZCRYPTOVERIFIER"]
+      @crypto_key = media_row["ZCRYPTOWRAPPEDKEY"] if media_row["ZCRYPTOWRAPPEDKEY"]
+    end
+
+    @crypto_password = @note.crypto_password
   end
 
   ##
@@ -67,6 +101,7 @@ class AppleNotesEmbeddedDrawing < AppleNotesEmbeddedObject
   ##
   # This is created as a JPEG using the UUID as the filename.
   def get_media_filename
+    return "#{@uuid}.jpg.encrypted" if @is_password_protected
     return "#{@uuid}.jpg"
   end
 

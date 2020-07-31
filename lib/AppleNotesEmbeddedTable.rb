@@ -1,3 +1,5 @@
+require 'base64'
+require 'json'
 require_relative 'AppleNoteStore.rb'
 
 ##
@@ -196,60 +198,86 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
   # and calls parse_table on it.
   def rebuild_table
 
-    # Set the appropriate column to find the data in
-    mergeable_column = "ZMERGEABLEDATA1"
-    mergeable_column = "ZMERGEABLEDATA" if @note.version < AppleNoteStore::IOS_VERSION_13
+    gzipped_data = nil
 
-
-    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.#{mergeable_column} " +
-                      "FROM ZICCLOUDSYNCINGOBJECT " +
-                      "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
-                      @uuid) do |row|
-
-      # Extract the blob
-      gzipped_data = row[mergeable_column]
-      zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
-      gunzipped_data = zlib_inflater.inflate(gzipped_data)
-
-      # Read the protobuff
-      mergabledata_proto = MergableDataProto.decode(gunzipped_data)
-
-      # Build list of key items
-      @key_items = Array.new
-      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_key_item.each do |key_item|
-        @key_items.push(key_item)
+    # If this Table is password protected, fetch the mergeable data from the 
+    # ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON column and decrypt it. 
+    if @is_password_protected
+      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON " +
+                        "FROM ZICCLOUDSYNCINGOBJECT " +
+                        "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
+                        @uuid) do |row|
+        decrypt_result = @backup.decrypter.decrypt_with_password(@crypto_password,
+                                                                 @crypto_salt,
+                                                                 @crypto_iterations,
+                                                                 @crypto_key,
+                                                                 @crypto_iv,
+                                                                 @crypto_tag,
+                                                                 row["ZENCRYPTEDVALUESJSON"],
+                                                                 "AppleNotesEncryptedTable #{@uuid}")
+        parsed_json = JSON.parse(decrypt_result[:plaintext])
+        gzipped_data = Base64.decode64(parsed_json["mergeableData"])
       end
 
-      # Build list of type items
-      @type_items = Array.new
-      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_type_item.each do |type_item|
-        @type_items.push(type_item)
+    # Otherwise, pull from the ZICCLOUDSYNCINGOBJECT.ZMERGEABLEDATA column
+    else
+      # Set the appropriate column to find the data in
+      mergeable_column = "ZMERGEABLEDATA1"
+      mergeable_column = "ZMERGEABLEDATA" if @note.version < AppleNoteStore::IOS_VERSION_13
+
+      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.#{mergeable_column} " +
+                        "FROM ZICCLOUDSYNCINGOBJECT " +
+                        "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
+                        @uuid) do |row|
+
+        # Extract the blob
+        gzipped_data = row[mergeable_column]
+
       end
+    end
 
-      # Build list of uuid items
-      @uuid_items = Array.new
-      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_uuid_item.each do |uuid_item|
-        @uuid_items.push(uuid_item)
-      end
+    # Inflate the GZip
+    zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
+    mergeable_data = zlib_inflater.inflate(gzipped_data)
 
-      # Build Array of objects
-      @table_objects = Array.new
-      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
-        @table_objects.push(mergeable_data_object_entry)
+    # Read the protobuff
+    mergabledata_proto = MergableDataProto.decode(mergeable_data)
 
-        # Best way I've found to set the table direction
-        if mergeable_data_object_entry.custom_map
-          if mergeable_data_object_entry.custom_map.map_entry.first.key == @key_items.index("crTableColumnDirection") + 1 #Oddly seems to correspond to 'self'
-            @table_direction = mergeable_data_object_entry.custom_map.map_entry.first.value.string_value
-          end
+    # Build list of key items
+    @key_items = Array.new
+    mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_key_item.each do |key_item|
+      @key_items.push(key_item)
+    end
+
+    # Build list of type items
+    @type_items = Array.new
+    mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_type_item.each do |type_item|
+      @type_items.push(type_item)
+    end
+
+    # Build list of uuid items
+    @uuid_items = Array.new
+    mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_uuid_item.each do |uuid_item|
+      @uuid_items.push(uuid_item)
+    end
+
+    # Build Array of objects
+    @table_objects = Array.new
+    mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
+      @table_objects.push(mergeable_data_object_entry)
+
+      # Best way I've found to set the table direction
+      if mergeable_data_object_entry.custom_map
+        if mergeable_data_object_entry.custom_map.map_entry.first.key == @key_items.index("crTableColumnDirection") + 1 #Oddly seems to correspond to 'self'
+          @table_direction = mergeable_data_object_entry.custom_map.map_entry.first.value.string_value
         end
       end
+    end
 
-      # Find the first ICTable, which shuld be the root, and execute
-      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
-        if mergeable_data_object_entry.custom_map and @type_items[mergeable_data_object_entry.custom_map.type] == "com.apple.notes.ICTable"
-          parse_table(mergeable_data_object_entry)
-        end
+    # Find the first ICTable, which shuld be the root, and execute
+    mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
+      if mergeable_data_object_entry.custom_map and @type_items[mergeable_data_object_entry.custom_map.type] == "com.apple.notes.ICTable"
+        parse_table(mergeable_data_object_entry)
       end
     end
   end

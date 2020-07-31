@@ -17,17 +17,30 @@ class AppleNotesEmbeddedObject
   # Expects an Integer +primary_key+ from ZICCLOUDSYNCINGOBJECT.Z_PK, String +uuid+ from ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER, 
   # String +uti+ from ZICCLOUDSYNCINGOBJECT.ZTYPEUIT, and AppleNote +note+ object representing the parent AppleNote.
   def initialize(primary_key, uuid, uti, note)
-    # Set this folder's variables
+    # Set this object's variables
     @primary_key = primary_key
     @uuid = uuid
     @type = uti
     @note = note
+    @is_password_protected = @note.is_password_protected
     @backup = @note.backup
     @database = @note.database
     @logger = @backup.logger
     @filepath = ""
     @filename = ""
     @backup_location = nil
+
+    # Zero out cryptographic settings
+    @crypto_iv = nil
+    @crypto_tag = nil
+    @crypto_key = nil
+    @crypto_salt = nil
+    @crypto_iterations = nil
+    @crypto_password = nil
+
+    if @is_password_protected
+      add_cryptographic_settings
+    end
 
     @logger.debug("Note #{@note.note_id}: Created a new Embedded Object of type #{@type}")
   
@@ -37,6 +50,32 @@ class AppleNotesEmbeddedObject
 
     # Create an Array to hold child objects, such as for a gallery
     @child_objects = Array.new
+  end
+
+  ##
+  # This function adds cryptographic settings to the AppleNoteEmbeddedObject. 
+  def add_cryptographic_settings
+    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZCRYPTOINITIALIZATIONVECTOR, ZICCLOUDSYNCINGOBJECT.ZCRYPTOTAG, " +
+                      "ZICCLOUDSYNCINGOBJECT.ZCRYPTOSALT, ZICCLOUDSYNCINGOBJECT.ZCRYPTOITERATIONCOUNT, " + 
+                      "ZICCLOUDSYNCINGOBJECT.ZCRYPTOVERIFIER, ZICCLOUDSYNCINGOBJECT.ZCRYPTOWRAPPEDKEY " + 
+                      "FROM ZICCLOUDSYNCINGOBJECT " + 
+                      "WHERE Z_PK=?",
+                      @primary_key) do |row|
+      @crypto_iv = row["ZCRYPTOINITIALIZATIONVECTOR"]
+      @crypto_tag = row["ZCRYPTOTAG"]
+      @crypto_salt = row["ZCRYPTOSALT"]
+      @crypto_iterations = row["ZCRYPTOITERATIONCOUNT"]
+      @crypto_key = row["ZCRYPTOVERIFIER"] if row["ZCRYPTOVERIFIER"]
+      @crypto_key = row["ZCRYPTOWRAPPEDKEY"] if row["ZCRYPTOWRAPPEDKEY"]
+    end
+
+    @crypto_password = @note.crypto_password
+    #@logger.debug("#{self.class} #{@uuid}: Added crypto password #{@crypto_password}")
+    #@logger.debug("#{self.class} #{@uuid}: Added crypto iv #{@crypto_iv.unpack("H*")}")
+    #@logger.debug("#{self.class} #{@uuid}: Added crypto tag #{@crypto_tag.unpack("H*")}")
+    #@logger.debug("#{self.class} #{@uuid}: Added crypto salt #{@crypto_salt.unpack("H*")}")
+    #@logger.debug("#{self.class} #{@uuid}: Added crypto iterations #{@crypto_iterations}")
+    #@logger.debug("#{self.class} #{@uuid}: Added crypto wrapped key #{@crypto_key.unpack("H*")}")
   end
 
   ##

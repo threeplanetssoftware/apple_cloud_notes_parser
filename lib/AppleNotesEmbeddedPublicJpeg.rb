@@ -20,15 +20,61 @@ class AppleNotesEmbeddedPublicJpeg < AppleNotesEmbeddedObject
     @parent = parent # Do this first so thumbnails don't break
 
     super(primary_key, uuid, uti, note)
+
     @filename = get_media_filename
     @filepath = get_media_filepath
 
     # Find where on this computer that file is stored
     @backup_location = @backup.get_real_file_path(@filepath)
-    
+  
     # Copy the file to our output directory if we can
-    @reference_location = @backup.back_up_file(@filepath, @filename, @backup_location)
+    @reference_location = @backup.back_up_file(@filepath, 
+                                               @filename, 
+                                               @backup_location, 
+                                               @is_password_protected,
+                                               @crypto_password,
+                                               @crypto_salt,
+                                               @crypto_iterations,
+                                               @crypto_key,
+                                               @crypto_asset_iv,
+                                               @crypto_asset_tag)
 
+  end
+
+  ##
+  # This function overrides the default AppleNotesEmbeddedObject add_cryptographic_settings 
+  # to use the media's settings. It also adds the ZASSETCRYPTOTAG and ZASSETCRYPTOINITIALIZATIONVECTOR 
+  # fields for the content on disk. 
+  def add_cryptographic_settings
+    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZMEDIA " +
+                      "FROM ZICCLOUDSYNCINGOBJECT " +
+                      "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
+                      @uuid) do |row|
+      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZCRYPTOINITIALIZATIONVECTOR, ZICCLOUDSYNCINGOBJECT.ZCRYPTOTAG, " +
+                        "ZICCLOUDSYNCINGOBJECT.ZCRYPTOSALT, ZICCLOUDSYNCINGOBJECT.ZCRYPTOITERATIONCOUNT, " + 
+                        "ZICCLOUDSYNCINGOBJECT.ZCRYPTOVERIFIER, ZICCLOUDSYNCINGOBJECT.ZCRYPTOWRAPPEDKEY, " + 
+                        "ZICCLOUDSYNCINGOBJECT.ZASSETCRYPTOTAG, ZICCLOUDSYNCINGOBJECT.ZASSETCRYPTOINITIALIZATIONVECTOR " + 
+                        "FROM ZICCLOUDSYNCINGOBJECT " + 
+                        "WHERE Z_PK=?",
+                        row["ZMEDIA"]) do |media_row|
+        @crypto_iv = media_row["ZCRYPTOINITIALIZATIONVECTOR"]
+        @crypto_tag = media_row["ZCRYPTOTAG"]
+        @crypto_asset_iv = media_row["ZASSETCRYPTOINITIALIZATIONVECTOR"]
+        @crypto_asset_tag = media_row["ZASSETCRYPTOTAG"]
+        @crypto_salt = media_row["ZCRYPTOSALT"]
+        @crypto_iterations = media_row["ZCRYPTOITERATIONCOUNT"]
+        @crypto_key = media_row["ZCRYPTOVERIFIER"] if media_row["ZCRYPTOVERIFIER"]
+        @crypto_key = media_row["ZCRYPTOWRAPPEDKEY"] if media_row["ZCRYPTOWRAPPEDKEY"]
+      end
+    end
+
+    @crypto_password = @note.crypto_password
+    #@logger.debug("#{self.class} #{@uuid}: Added crypto password #{@crypto_password}")
+    #@logger.debug("#{self.class} #{@uuid}: Added crypto iv #{@crypto_iv.unpack("H*")}")
+    #@logger.debug("#{self.class} #{@uuid}: Added crypto tag #{@crypto_tag.unpack("H*")}")
+    #@logger.debug("#{self.class} #{@uuid}: Added crypto salt #{@crypto_salt.unpack("H*")}")
+    #@logger.debug("#{self.class} #{@uuid}: Added crypto iterations #{@crypto_iterations}")
+    #@logger.debug("#{self.class} #{@uuid}: Added crypto wrapped key #{@crypto_key.unpack("H*")}")
   end
 
   ##
@@ -62,7 +108,8 @@ class AppleNotesEmbeddedPublicJpeg < AppleNotesEmbeddedObject
   # This method returns the +filepath+ of this object. 
   # This is computed based on the assumed default storage location.
   def get_media_filepath
-    "Accounts/#{@note.account.identifier}/Media/#{get_media_uuid}/#{@filename}"
+    return "Accounts/#{@note.account.identifier}/Media/#{get_media_uuid}/#{get_media_uuid}" if @is_password_protected
+    return "Accounts/#{@note.account.identifier}/Media/#{get_media_uuid}/#{@filename}"
   end
 
   ##
@@ -75,11 +122,43 @@ class AppleNotesEmbeddedPublicJpeg < AppleNotesEmbeddedObject
                       "FROM ZICCLOUDSYNCINGOBJECT " +
                       "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
                       @uuid) do |row|
-      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZFILENAME " +
+      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZFILENAME, " + 
+                        "ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON, " +
+                        "ZICCLOUDSYNCINGOBJECT.ZCRYPTOWRAPPEDKEY, " +
+                        "ZICCLOUDSYNCINGOBJECT.ZCRYPTOINITIALIZATIONVECTOR, " +
+                        "ZICCLOUDSYNCINGOBJECT.ZCRYPTOSALT, " +
+                        "ZICCLOUDSYNCINGOBJECT.ZCRYPTOTAG, " +
+                        "ZICCLOUDSYNCINGOBJECT.ZCRYPTOITERATIONCOUNT " +
                         "FROM ZICCLOUDSYNCINGOBJECT " +
                         "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
                         row["ZMEDIA"]) do |media_row|
-        return media_row["ZFILENAME"]
+
+        # Initialie the return value
+        filename = nil
+
+        if @is_password_protected
+          # Need to snag the values from this row's columns as they are different than the original note
+          encrypted_data = media_row["ZENCRYPTEDVALUESJSON"]
+          crypto_tag = media_row["ZCRYPTOTAG"]
+          crypto_salt = media_row["ZCRYPTOSALT"]
+          crypto_iterations = media_row["ZCRYPTOITERATIONCOUNT"]
+          crypto_key = media_row["ZCRYPTOWRAPPEDKEY"]
+          crypto_iv = media_row["ZCRYPTOINITIALIZATIONVECTOR"]
+          decrypt_result = @backup.decrypter.decrypt_with_password(@crypto_password,
+                                                                   @crypto_salt,
+                                                                   @crypto_iterations,
+                                                                   @crypto_key,
+                                                                   @crypto_iv,
+                                                                   @crypto_tag,
+                                                                   encrypted_data,
+                                                                   "#{self.class} #{@uuid}")
+          parsed_json = JSON.parse(decrypt_result[:plaintext])
+          filename = parsed_json["filename"]
+        else
+          filename = media_row["ZFILENAME"]
+        end
+        @logger.debug("#{self.class} #{@uuid}: Filename is #{filename}")
+        return filename
       end
     end
   end

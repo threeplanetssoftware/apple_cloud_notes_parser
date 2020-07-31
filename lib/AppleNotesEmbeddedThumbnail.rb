@@ -30,7 +30,16 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
     @backup_location = @backup.get_real_file_path(@filepath)
     
     # Copy the file to our output directory if we can
-    @reference_location = @backup.back_up_file(@filepath, @filename, @backup_location)
+    @reference_location = @backup.back_up_file(@filepath, 
+                                               @filename, 
+                                               @backup_location, 
+                                               @is_password_protected,
+                                               @crypto_password,
+                                               @crypto_salt,
+                                               @crypto_iterations,
+                                               @crypto_key,
+                                               @crypto_iv,
+                                               @crypto_tag)
   end
 
   ##
@@ -50,9 +59,11 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
 
   ##
   # As these are created by Notes, it is just the UUID. These are either 
-  # .png (apparently created by com.apple.notes.gallery) or .jpg (rest)
+  # .png (apparently created by com.apple.notes.gallery) or .jpg (rest) 
+  # Encrypted thumbnails just have .encrypted added to the end. 
   def get_media_filename
-    "#{@uuid}.#{get_thumbnail_extension}"
+    return "#{@uuid}.#{get_thumbnail_extension}.encrypted" if @is_password_protected
+    return "#{@uuid}.#{get_thumbnail_extension}"
   end
 
 

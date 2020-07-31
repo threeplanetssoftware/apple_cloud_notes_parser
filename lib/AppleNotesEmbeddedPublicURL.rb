@@ -1,3 +1,5 @@
+require 'json'
+
 ##
 # This class represents a public.url object embedded
 # in an AppleNote. This means you used another application to 'share' something that 
@@ -34,11 +36,35 @@ class AppleNotesEmbeddedPublicURL < AppleNotesEmbeddedObject
   # and reading the ZICCOUDSYNCINGOBJECT.ZURLSTRING of the row identified by that number.
   def get_referenced_url
     referenced_url = nil
-    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZURLSTRING " +
-                      "FROM ZICCLOUDSYNCINGOBJECT " +
-                      "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
-                      @uuid) do |row|
-      referenced_url = row["ZURLSTRING"]
+
+    
+    # If this URL is password protected, fetch the URL from the 
+    # ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON column and decrypt it. 
+    if @is_password_protected
+      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON " +
+                        "FROM ZICCLOUDSYNCINGOBJECT " +
+                        "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
+                        @uuid) do |row|
+        decrypt_result = @backup.decrypter.decrypt_with_password(@crypto_password,
+                                                                 @crypto_salt,
+                                                                 @crypto_iterations,
+                                                                 @crypto_key,
+                                                                 @crypto_iv,
+                                                                 @crypto_tag,
+                                                                 row["ZENCRYPTEDVALUESJSON"],
+                                                                 "#{self.class} #{@uuid}")
+        parsed_json = JSON.parse(decrypt_result[:plaintext])
+        referenced_url = parsed_json["urlString"]
+      end
+    else
+
+      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZURLSTRING " +
+                        "FROM ZICCLOUDSYNCINGOBJECT " +
+                        "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
+                        @uuid) do |row|
+        referenced_url = row["ZURLSTRING"]
+      end
+
     end
     return referenced_url
   end
