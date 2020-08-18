@@ -107,23 +107,24 @@ This program has been tested with the following versions of Ruby:
 
 |Ruby Version| OS | Status |
 |------------|----|--------|
-|2.3.0|Debian-based Linux|:heavy_check_mark:|
-|2.3.1|Debian-based Linux|:heavy_check_mark:|
-|2.4.3|Debian-based Linux|:heavy_check_mark:|
-|2.5.1|Debian-based Linux|:heavy_check_mark:|
-|2.6.5|Debian-based Linux|:heavy_check_mark:|
+|2.3.0|Linux|:heavy_check_mark:|
+|2.3.1|Linux|:heavy_check_mark:|
+|2.4.3|Linux|:heavy_check_mark:|
+|2.5.1|Linux|:heavy_check_mark:|
+|2.6.5|Linux|:heavy_check_mark:|
+|2.7.1|Linux|:heavy_check_mark:|
 |2.4.3|macOS 10.13|:heavy_check_mark:|
 |2.5.1|macOS 10.13|:heavy_check_mark:|
 |2.6.5|Windows 8|:heavy_check_mark:|
 |2.6.5|Windows 10 Enterprise|:heavy_check_mark:|
-|2.7.0|Any|:x:|
 
 ### Gems
 
 This program requires the following Ruby gems which can be installed by running `bundle install` or `gem install [gemname]`:
 1. fileutils
 2. google-protobuf
-   1. Note: This does not yet work with Ruby 2.7, use any of the 2.6 varients, or lower
+   1. Note: If you use Ruby 2.7, you must have version 3.12 of this gem, or newer
+   2. Note: If you use Ruby 2.3 or 2.4, you must not have any version later than 3.11.4
 3. sqlite3
 4. zlib
 5. openssl
@@ -133,7 +134,7 @@ This program requires the following Ruby gems which can be installed by running 
 
 Below are instructions, generally preferring the command line, for each of Linux, Mac, and Windows. The user can choose to use Git if they want to be able to keep up with changes, or just download the tool once, you do not need to do both. On each OS, you will want to:
 
-1. Install Ruby (at least version 2.3.0), its development headers, and bundler if not already installed.
+1. Install Ruby (at least version 2.3.0, preferably 2.5 or later), its development headers, and bundler if not already installed.
 2. Install development headers for SQLite3 if not already installed.
 3. Get this code
    1. Clone this repository with Git or
@@ -271,19 +272,12 @@ Apple changed the format of its Notes database in different versions of iOS. Whi
 * The results of `SELECT name,sql FROM sqlite_master WHERE type="table"` when the database is open in sqlitebrowser (or your editor of choice). This can be in any columned format (Excel, CSV, SQL, etc)
 * If possible, the database file directly (I can receive it through other means if it needs to stay confidential). If this is possible, the above results are not needed.
 
-#### Why do I get a Load Error from google-protobuf immediately upon execution?
-
-Example: `cannot load such file -- google/2.7/protobuf_c (LoadError)`
-
-The current version of the google-protobuf gem (3.11.2) was released days before Ruby 2.7. Once the next version of the gem is released, it will hopefully go away. In the meantime, feel free to use Ruby 2.6.5 or previous verious while you wait.
-
 #### Why Ruby instead of Python or Perl?
 
 Programming languages are like human languages, there are many and which you choose (for those with multiple) can largely be a personal preference, assuming mutual intelligibility. I chose Ruby as the previous Perl code was a nice little script, but I wanted a bit more substance behind with with solid object oriented programming principals. For those new to Ruby, hopefully these classes will give you an idea of what Ruby has to offer and spark an interest in trying a new language.
 
 ## Known Bugs
 
-1. Google Protobuf throws errors on Windows with Ruby 2.7, likely the gem isn't updated yet.
 
 ## Acknowledgements
 

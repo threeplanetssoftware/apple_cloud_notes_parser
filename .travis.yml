@@ -10,6 +10,7 @@ rvm:
   - "2.4.3"
   - "2.5.1"
   - "2.6.5"
+  - "2.7.1"
 
 jobs:
   exclude:
@@ -17,5 +18,3 @@ jobs:
       rvm: 2.3.0
     - os: osx
       rvm: 2.3.1
-    - os: osx
-      rvm: 2.6.5 # Not yet on travis, apparently
