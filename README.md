@@ -115,6 +115,8 @@ This program has been tested with the following versions of Ruby:
 |2.7.1|Linux|:heavy_check_mark:|
 |2.4.3|macOS 10.13|:heavy_check_mark:|
 |2.5.1|macOS 10.13|:heavy_check_mark:|
+|2.6.5|macOS 10.13|:heavy_check_mark:|
+|2.7.1|macOS 10.13|:heavy_check_mark:|
 |2.6.5|Windows 8|:heavy_check_mark:|
 |2.6.5|Windows 10 Enterprise|:heavy_check_mark:|
 
