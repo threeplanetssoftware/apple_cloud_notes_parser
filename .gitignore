@@ -26,6 +26,9 @@
 *-shm
 *-wal
 
+## Stuff I shouldn't index
+passwords.txt
+
 ## Documentation cache and generated files:
 /.yardoc/
 /_yardoc/
