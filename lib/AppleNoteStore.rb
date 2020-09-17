@@ -17,6 +17,7 @@ class AppleNoteStore
                 :backup,
                 :database
 
+  IOS_VERSION_14 = 14
   IOS_VERSION_13 = 13
   IOS_VERSION_12 = 12
   IOS_VERSION_11 = 11
@@ -65,6 +66,11 @@ class AppleNoteStore
     # If ZICNOTEDATA has no columns, this is a legacy copy
     if zicnotedata_columns.length == 0
       return IOS_LEGACY_VERSION
+    end
+
+    # It appears ZLASTOPENEDDATE showed up in iOS 14's updates
+    if ziccloudsyncingobject_columns.include?("ZLASTOPENEDDATE TIMESTAMP")
+      return IOS_VERSION_14
     end
 
     # It appears ZACCOUNT4 showed up in iOS 13's updates, as it is tied to shared folders
