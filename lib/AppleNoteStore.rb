@@ -69,7 +69,7 @@ class AppleNoteStore
     end
 
     # It appears ZLASTOPENEDDATE showed up in iOS 14's updates
-    if ziccloudsyncingobject_columns.include?("ZLASTOPENEDDATE TIMESTAMP")
+    if ziccloudsyncingobject_columns.include?("ZLASTOPENEDDATE: TIMESTAMP")
       return IOS_VERSION_14
     end
 
