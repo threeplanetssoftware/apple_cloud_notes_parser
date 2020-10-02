@@ -1,3 +1,4 @@
+require 'keyed_archive'
 require 'sqlite3'
 require 'zlib'
 require_relative 'notestore_pb.rb'
@@ -51,7 +52,9 @@ class AppleNote
                 :decompressed_data,
                 :account,
                 :backup,
-                :crypto_password
+                :crypto_password,
+                :cloudkit_creator_record_id,
+                :cloudkit_modify_device
 
   ##
   # Creates a new AppleNote. Expects an Integer +z_pk+, an Integer +znote+ representing the ZICNOTEDATA.ZNOTE field, 
@@ -218,12 +221,24 @@ class AppleNote
   end
 
   ##
+  # This method adds CloudKit data to the AppleNote. It expects a binary String of +cloudkit_data+ 
+  # to be parsed by the KeyedArchiver.
+  def add_cloudkit_data(cloudkit_data)
+    keyed_archive = KeyedArchive.new(:data => cloudkit_data)
+    unpacked_top = keyed_archive.unpacked_top
+    self.cloudkit_modify_device = unpacked_top["ModifiedByDevice"]
+    self.cloudkit_creator_record_id = unpacked_top["CreatorUserRecordID"]["RecordName"]
+  end
+
+  ##
   # This class method returns an Array representing the headers needed for an AppleNote CSV export.
   def self.to_csv_headers
     ["Note Primary Key", 
      "Note ID", 
      "Owning Account Name", 
-     "Owning Folder Name", 
+     "Owning Folder Name",
+     "Modify By Device", 
+     "Cloudkit Creator Record ID", 
      "Title", 
      "Creation Time", 
      "Modify Time", 
@@ -248,6 +263,8 @@ class AppleNote
      @note_id, 
      @account.name, 
      @folder.name, 
+     @cloudkit_modify_device, 
+     @cloudkit_creator_record_id, 
      @title, 
      @creation_time, 
      @modify_time, 
