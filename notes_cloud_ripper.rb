@@ -184,6 +184,14 @@ if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid
       end
     end
 
+    # Create a CSV of the AppleCloudKitShareParticipant objects
+    logger.debug("Writing CSV for cloud kit participants")
+    CSV.open(csv_directory + "note_store_cloudkit_participants_#{backup_number}.csv", "wb", force_quotes: true) do |csv|
+      note_store.get_cloudkit_participants_csv.each do |csv_line|
+        csv << csv_line
+      end
+    end
+
     # Close the note store for cleanliness  
     logger.debug("Closing version #{note_store.version} note store #{note_store}")
     note_store.close
