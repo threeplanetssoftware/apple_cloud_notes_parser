@@ -1,5 +1,6 @@
 require 'digest'
 require 'sqlite3'
+require_relative 'AppleCloudKitShareParticipant'
 require_relative 'AppleNote.rb'
 require_relative 'AppleNotesAccount.rb'
 require_relative 'AppleNotesFolder.rb'
@@ -15,7 +16,8 @@ class AppleNoteStore
                 :notes,
                 :version,
                 :backup,
-                :database
+                :database,
+                :cloud_kit_participants
 
   IOS_VERSION_14 = 14
   IOS_VERSION_13 = 13
@@ -42,6 +44,7 @@ class AppleNoteStore
     @notes = Hash.new()
     @folders = Hash.new()
     @accounts = Hash.new()
+    @cloud_kit_participants = Hash.new()
     puts "Guessed Notes Version: #{@version}"
     @logger.debug("Guessed Notes Version: #{@version}")
   end
@@ -263,6 +266,17 @@ class AppleNoteStore
   end
 
   ##
+  # This method returns an Array of rows to build the +cloudkit_participants+ 
+  # CSV object.
+  def get_cloudkit_participants_csv
+    to_return = [AppleCloudKitShareParticipant.to_csv_headers]
+    @cloud_kit_participants.each do |key, participant|
+      to_return.push(participant.to_csv)
+    end
+    to_return
+  end
+
+  ##
   # This method returns an Array of rows to build the +notes+ 
   # CSV object.
   def get_note_csv
@@ -408,7 +422,7 @@ class AppleNoteStore
     @logger.debug("Rip Folder: Calling rip_folder on Folder ID #{folder_id}")
   
     query_string = "SELECT ZICCLOUDSYNCINGOBJECT.ZTITLE2, ZICCLOUDSYNCINGOBJECT.ZOWNER, " + 
-                   "ZICCLOUDSYNCINGOBJECT.Z_PK " +
+                   "ZICCLOUDSYNCINGOBJECT.Z_PK, ZICCLOUDSYNCINGOBJECT.ZSERVERSHAREDATA " +
                    "FROM ZICCLOUDSYNCINGOBJECT " + 
                    "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?"
 
@@ -424,6 +438,14 @@ class AppleNoteStore
       tmp_folder = AppleNotesFolder.new(row["Z_PK"],
                                         row["ZTITLE2"],
                                         get_account(row["ZOWNER"]))
+      if(row["ZSERVERSHAREDATA"]) 
+        tmp_folder.add_cloudkit_data(row["ZSERVERSHAREDATA"])
+
+        # Add any share participants to our overall list
+        tmp_folder.share_participants.each do |participant|
+          @cloud_kit_participants[participant.record_id] = participant
+        end
+      end
 
       @logger.debug("Rip Folder: Created folder #{tmp_folder.name}")
 
@@ -464,7 +486,8 @@ class AppleNoteStore
                    "ZICCLOUDSYNCINGOBJECT.ZCRYPTOWRAPPEDKEY, ZICCLOUDSYNCINGOBJECT.ZISPASSWORDPROTECTED, " +
                    "ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1, ZICCLOUDSYNCINGOBJECT.ZCREATIONDATE1, " +
                    "ZICCLOUDSYNCINGOBJECT.ZTITLE1, ZICCLOUDSYNCINGOBJECT.ZACCOUNT3, " +
-                   "ZICCLOUDSYNCINGOBJECT.ZACCOUNT2, ZICCLOUDSYNCINGOBJECT.ZFOLDER " + 
+                   "ZICCLOUDSYNCINGOBJECT.ZACCOUNT2, ZICCLOUDSYNCINGOBJECT.ZFOLDER, " + 
+                   "ZICCLOUDSYNCINGOBJECT.ZSERVERRECORDDATA " + 
                    "FROM ZICNOTEDATA, ZICCLOUDSYNCINGOBJECT " + 
                    "WHERE ZICNOTEDATA.ZNOTE=? AND ZICCLOUDSYNCINGOBJECT.Z_PK=ZICNOTEDATA.ZNOTE"
     folder_field = "ZFOLDER"
@@ -531,6 +554,11 @@ class AppleNoteStore
                                self)
       tmp_account.add_note(tmp_note) if tmp_account
       tmp_folder.add_note(tmp_note) if tmp_folder
+
+      # Add in CloudKit data if we have it
+      if(row["ZSERVERRECORDDATA"]) 
+        tmp_note.add_cloudkit_data(row["ZSERVERRECORDDATA"])
+      end
 
       # If this is protected, add the cryptographic variables
       if row["ZISPASSWORDPROTECTED"] == 1
