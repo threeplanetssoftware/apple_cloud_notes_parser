@@ -7,6 +7,12 @@ class AppleCloudKitShareParticipant
   attr_accessor :email,
                 :first_name,
                 :last_name,
+                :middle_name,
+                :nickname,
+                :name_prefix,
+                :name_suffix,
+                :name_phonetic,
+                :phone,
                 :record_id
   ##
   # Creates a new AppleCloudKitShareParticipant. 
@@ -14,6 +20,12 @@ class AppleCloudKitShareParticipant
     @email = nil
     @first_name = nil
     @last_name = nil
+    @middle_name = nil
+    @nickname = nil
+    @name_prefix = nil
+    @name_suffix = nil
+    @name_phonetic = nil
+    @phone = nil
     @record_id = nil
   end
 
@@ -26,13 +38,13 @@ class AppleCloudKitShareParticipant
   ##
   # This class method spits out an Array containing the CSV headers needed to describe all of these objects
   def self.to_csv_headers
-      ["Account Record ID", "Account Email", "First Name", "Last Name"]
+      ["Account Record ID", "Account Email", "Account Phone", "Prefix", "First Name", "Middle Name", "Last Name", "Suffix", "Phonetic"]
   end
 
   ##
   # This method generates an Array containing the information necessary to build a CSV
   def to_csv
-    [@record_id, @email, @first_name, @last_name]
+    [@record_id, @email, @phone, @name_prefix, @first_name, @middle_name, @last_name, @name_suffix, @name_phonetic]
   end
 
 end
