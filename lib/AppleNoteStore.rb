@@ -9,7 +9,7 @@ require_relative 'AppleNotesFolder.rb'
 # This class represents an Apple NoteStore file. It tries to handle the hard work of taking 
 # any Apple Notes database, determining the proper version of it, and tailoring queries to 
 # that version.
-class AppleNoteStore
+class AppleNoteStore 
 
   attr_accessor :folders,
                 :accounts,
@@ -373,7 +373,7 @@ class AppleNoteStore
                                           row["ZIDENTIFIER"])
 
       # Add server-side data, if relevant
-      tmp_account.add_server_record_data(row[server_record_column]) if row[server_record_column]
+      tmp_account.add_cloudkit_server_record_data(row[server_record_column]) if row[server_record_column]
 
       # Add cryptographic variables, if relevant
       if row["ZCRYPTOVERIFIER"]
@@ -420,8 +420,13 @@ class AppleNoteStore
   def rip_folder(folder_id)
 
     @logger.debug("Rip Folder: Calling rip_folder on Folder ID #{folder_id}")
+
+    # Set the ZSERVERRECORD column to look at
+    server_record_column = "ZSERVERRECORD"
+    server_record_column = server_record_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
   
     query_string = "SELECT ZICCLOUDSYNCINGOBJECT.ZTITLE2, ZICCLOUDSYNCINGOBJECT.ZOWNER, " + 
+                   "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, " +
                    "ZICCLOUDSYNCINGOBJECT.Z_PK, ZICCLOUDSYNCINGOBJECT.ZSERVERSHAREDATA " +
                    "FROM ZICCLOUDSYNCINGOBJECT " + 
                    "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?"
@@ -438,8 +443,12 @@ class AppleNoteStore
       tmp_folder = AppleNotesFolder.new(row["Z_PK"],
                                         row["ZTITLE2"],
                                         get_account(row["ZOWNER"]))
+
+      # Add server-side data, if relevant
+      tmp_folder.add_cloudkit_server_record_data(row[server_record_column]) if row[server_record_column]
+
       if(row["ZSERVERSHAREDATA"]) 
-        tmp_folder.add_cloudkit_data(row["ZSERVERSHAREDATA"])
+        tmp_folder.add_cloudkit_sharing_data(row["ZSERVERSHAREDATA"])
 
         # Add any share participants to our overall list
         tmp_folder.share_participants.each do |participant|
@@ -479,6 +488,11 @@ class AppleNoteStore
   def rip_note(note_id)
 
     @logger.debug("Rip Note: Ripping note from Note ID #{note_id}")
+
+    # Set the ZSERVERRECORD column to look at
+    server_record_column = "ZSERVERRECORD"
+    server_record_column = server_record_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+
     query_string = "SELECT ZICNOTEDATA.Z_PK, ZICNOTEDATA.ZNOTE, " + 
                    "ZICNOTEDATA.ZCRYPTOINITIALIZATIONVECTOR, ZICNOTEDATA.ZCRYPTOTAG, " + 
                    "ZICNOTEDATA.ZDATA, ZICCLOUDSYNCINGOBJECT.ZCRYPTOVERIFIER, " + 
@@ -487,7 +501,7 @@ class AppleNoteStore
                    "ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1, ZICCLOUDSYNCINGOBJECT.ZCREATIONDATE1, " +
                    "ZICCLOUDSYNCINGOBJECT.ZTITLE1, ZICCLOUDSYNCINGOBJECT.ZACCOUNT3, " +
                    "ZICCLOUDSYNCINGOBJECT.ZACCOUNT2, ZICCLOUDSYNCINGOBJECT.ZFOLDER, " + 
-                   "ZICCLOUDSYNCINGOBJECT.ZSERVERRECORDDATA " + 
+                   "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD " + 
                    "FROM ZICNOTEDATA, ZICCLOUDSYNCINGOBJECT " + 
                    "WHERE ZICNOTEDATA.ZNOTE=? AND ZICCLOUDSYNCINGOBJECT.Z_PK=ZICNOTEDATA.ZNOTE"
     folder_field = "ZFOLDER"
@@ -508,7 +522,8 @@ class AppleNoteStore
                      "ZICCLOUDSYNCINGOBJECT.ZCRYPTOWRAPPEDKEY, ZICCLOUDSYNCINGOBJECT.ZISPASSWORDPROTECTED, " +
                      "ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1, ZICCLOUDSYNCINGOBJECT.ZCREATIONDATE1, " +
                      "ZICCLOUDSYNCINGOBJECT.ZTITLE1, ZICCLOUDSYNCINGOBJECT.ZACCOUNT2, " +
-                     "Z_11NOTES.Z_11FOLDERS " + 
+                     "Z_11NOTES.Z_11FOLDERS, ZICCLOUDSYNCINGOBJECT.#{server_record_column}, " + 
+                     "ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD " + 
                      "FROM ZICNOTEDATA, ZICCLOUDSYNCINGOBJECT, Z_11NOTES " + 
                      "WHERE ZICNOTEDATA.ZNOTE=? AND ZICCLOUDSYNCINGOBJECT.Z_PK=ZICNOTEDATA.ZNOTE AND Z_11NOTES.Z_8NOTES=ZICNOTEDATA.ZNOTE"
       folder_field = "Z_11FOLDERS"
@@ -555,19 +570,45 @@ class AppleNoteStore
       tmp_account.add_note(tmp_note) if tmp_account
       tmp_folder.add_note(tmp_note) if tmp_folder
 
+      # Add server-side data, if relevant
+      tmp_note.add_cloudkit_server_record_data(row[server_record_column]) if row[server_record_column]
+
       # Add in CloudKit data if we have it
       if(row["ZSERVERRECORDDATA"]) 
-        tmp_note.add_cloudkit_data(row["ZSERVERRECORDDATA"])
+        tmp_note.add_cloudkit_server_record_data(row["ZSERVERRECORDDATA"])
       end
 
       # If this is protected, add the cryptographic variables
       if row["ZISPASSWORDPROTECTED"] == 1
-        tmp_note.add_cryptographic_settings(row["ZCRYPTOINITIALIZATIONVECTOR"], 
-                                            row["ZCRYPTOTAG"], 
-                                            row["ZCRYPTOSALT"],
-                                            row["ZCRYPTOITERATIONCOUNT"],
-                                            row["ZCRYPTOVERIFIER"],
-                                            row["ZCRYPTOWRAPPEDKEY"])
+
+        # Set values initially from the expected columns
+        crypto_iv = row["ZCRYPTOINITIALIZATIONVECTOR"]
+        crypto_tag = row["ZCRYPTOTAG"]
+        crypto_salt = row["ZCRYPTOSALT"]
+        crypto_iterations = row["ZCRYPTOITERATIONCOUNT"]
+        crypto_verifier = row["ZCRYPTOVERIFIER"]
+        crypto_wrapped_key = row["ZCRYPTOWRAPPEDKEY"]
+
+        # If they aren't there, we need to use the ZUNAPPLIEDENCRYPTEDRECORD
+
+        if row["ZUNAPPLIEDENCRYPTEDRECORD"]
+          keyed_archive = KeyedArchive.new(:data => row["ZUNAPPLIEDENCRYPTEDRECORD"])
+          unpacked_top = keyed_archive.unpacked_top()
+          ns_keys = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.keys"]
+          ns_values = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.objects"]
+          crypto_iv = ns_values[ns_keys.index("CryptoInitializationVector")]
+          crypto_tag = ns_values[ns_keys.index("CryptoTag")]
+          crypto_salt = ns_values[ns_keys.index("CryptoSalt")]
+          crypto_iterations = ns_values[ns_keys.index("CryptoIterationCount")]
+          crypto_key = ns_values[ns_keys.index("CryptoWrappedKey")]
+        end
+
+        tmp_note.add_cryptographic_settings(crypto_iv, 
+                                            crypto_tag, 
+                                            crypto_salt,
+                                            crypto_iterations,
+                                            crypto_verifier,
+                                            crypto_wrapped_key)
 
         # Try each password and see if any generate a decrypt.
         found_password = tmp_note.decrypt
