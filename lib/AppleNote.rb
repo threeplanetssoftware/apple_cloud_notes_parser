@@ -2,6 +2,7 @@ require 'keyed_archive'
 require 'sqlite3'
 require 'zlib'
 require_relative 'notestore_pb.rb'
+require_relative 'AppleCloudKitRecord'
 require_relative 'AppleDecrypter.rb'
 require_relative 'AppleNotesEmbeddedObject.rb'
 require_relative 'AppleNotesEmbeddedDeletedObject.rb'
@@ -19,7 +20,7 @@ require_relative 'AppleNoteStore.rb'
 #
 # This class represents an Apple Note.
 # It should support both classic Apple Notes and the iCloud version
-class AppleNote
+class AppleNote < AppleCloudKitRecord
 
   # Constants to reflect the types of styling in an AppleNote
   STYLE_TYPE_DEFAULT = -1
@@ -65,6 +66,7 @@ class AppleNote
   # and an AppleNoteStore +notestore+ representing the actual NoteStore
   # representing the full backup.
   def initialize(z_pk, znote, ztitle, zdata, creation_time, modify_time, account, folder, notestore)
+    super()
     # Initialize some other variables while we're here
     @plaintext = nil
     @decompressed_data = nil
@@ -221,16 +223,6 @@ class AppleNote
   end
 
   ##
-  # This method adds CloudKit data to the AppleNote. It expects a binary String of +cloudkit_data+ 
-  # to be parsed by the KeyedArchiver.
-  def add_cloudkit_data(cloudkit_data)
-    keyed_archive = KeyedArchive.new(:data => cloudkit_data)
-    unpacked_top = keyed_archive.unpacked_top
-    self.cloudkit_modify_device = unpacked_top["ModifiedByDevice"]
-    self.cloudkit_creator_record_id = unpacked_top["CreatorUserRecordID"]["RecordName"]
-  end
-
-  ##
   # This class method returns an Array representing the headers needed for an AppleNote CSV export.
   def self.to_csv_headers
     ["Note Primary Key", 
@@ -263,7 +255,7 @@ class AppleNote
      @note_id, 
      @account.name, 
      @folder.name, 
-     @cloudkit_modify_device, 
+     @cloudkit_last_modified_device, 
      @cloudkit_creator_record_id, 
      @title, 
      @creation_time, 
