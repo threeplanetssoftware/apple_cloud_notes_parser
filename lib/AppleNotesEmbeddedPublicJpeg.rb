@@ -128,29 +128,44 @@ class AppleNotesEmbeddedPublicJpeg < AppleNotesEmbeddedObject
                         "ZICCLOUDSYNCINGOBJECT.ZCRYPTOINITIALIZATIONVECTOR, " +
                         "ZICCLOUDSYNCINGOBJECT.ZCRYPTOSALT, " +
                         "ZICCLOUDSYNCINGOBJECT.ZCRYPTOTAG, " +
-                        "ZICCLOUDSYNCINGOBJECT.ZCRYPTOITERATIONCOUNT " +
+                        "ZICCLOUDSYNCINGOBJECT.ZCRYPTOITERATIONCOUNT, " +
+                        "ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD " +
                         "FROM ZICCLOUDSYNCINGOBJECT " +
                         "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
                         row["ZMEDIA"]) do |media_row|
 
-        # Initialie the return value
+        # Initialize the return value
         filename = nil
 
         if @is_password_protected
           # Need to snag the values from this row's columns as they are different than the original note
-          encrypted_data = media_row["ZENCRYPTEDVALUESJSON"]
+          encrypted_values = media_row["ZENCRYPTEDVALUESJSON"]
           crypto_tag = media_row["ZCRYPTOTAG"]
           crypto_salt = media_row["ZCRYPTOSALT"]
           crypto_iterations = media_row["ZCRYPTOITERATIONCOUNT"]
           crypto_key = media_row["ZCRYPTOWRAPPEDKEY"]
           crypto_iv = media_row["ZCRYPTOINITIALIZATIONVECTOR"]
+
+          if media_row["ZUNAPPLIEDENCRYPTEDRECORD"]
+            keyed_archive = KeyedArchive.new(:data => media_row["ZUNAPPLIEDENCRYPTEDRECORD"])
+            unpacked_top = keyed_archive.unpacked_top()
+            ns_keys = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.keys"]
+            ns_values = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.objects"]
+            encrypted_values = ns_values[ns_keys.index("EncryptedValues")]
+            crypto_iv = ns_values[ns_keys.index("CryptoInitializationVector")]
+            crypto_tag = ns_values[ns_keys.index("CryptoTag")]
+            crypto_salt = ns_values[ns_keys.index("CryptoSalt")]
+            crypto_iterations = ns_values[ns_keys.index("CryptoIterationCount")]
+            crypto_key = ns_values[ns_keys.index("CryptoWrappedKey")]
+          end
+
           decrypt_result = @backup.decrypter.decrypt_with_password(@crypto_password,
-                                                                   @crypto_salt,
-                                                                   @crypto_iterations,
-                                                                   @crypto_key,
-                                                                   @crypto_iv,
-                                                                   @crypto_tag,
-                                                                   encrypted_data,
+                                                                   crypto_salt,
+                                                                   crypto_iterations,
+                                                                   crypto_key,
+                                                                   crypto_iv,
+                                                                   crypto_tag,
+                                                                   encrypted_values,
                                                                    "#{self.class} #{@uuid}")
           parsed_json = JSON.parse(decrypt_result[:plaintext])
           filename = parsed_json["filename"]

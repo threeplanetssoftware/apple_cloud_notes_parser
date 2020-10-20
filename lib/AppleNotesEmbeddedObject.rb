@@ -1,8 +1,10 @@
+require 'keyed_archive'
 require 'sqlite3'
+require_relative 'AppleCloudKitRecord'
 
 ##
 # This class represents an object embedded in an AppleNote.
-class AppleNotesEmbeddedObject
+class AppleNotesEmbeddedObject < AppleCloudKitRecord
 
   attr_accessor :primary_key,
                 :uuid,
@@ -57,16 +59,31 @@ class AppleNotesEmbeddedObject
   def add_cryptographic_settings
     @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZCRYPTOINITIALIZATIONVECTOR, ZICCLOUDSYNCINGOBJECT.ZCRYPTOTAG, " +
                       "ZICCLOUDSYNCINGOBJECT.ZCRYPTOSALT, ZICCLOUDSYNCINGOBJECT.ZCRYPTOITERATIONCOUNT, " + 
-                      "ZICCLOUDSYNCINGOBJECT.ZCRYPTOVERIFIER, ZICCLOUDSYNCINGOBJECT.ZCRYPTOWRAPPEDKEY " + 
+                      "ZICCLOUDSYNCINGOBJECT.ZCRYPTOVERIFIER, ZICCLOUDSYNCINGOBJECT.ZCRYPTOWRAPPEDKEY, " + 
+                      "ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD " + 
                       "FROM ZICCLOUDSYNCINGOBJECT " + 
                       "WHERE Z_PK=?",
                       @primary_key) do |row|
-      @crypto_iv = row["ZCRYPTOINITIALIZATIONVECTOR"]
-      @crypto_tag = row["ZCRYPTOTAG"]
-      @crypto_salt = row["ZCRYPTOSALT"]
-      @crypto_iterations = row["ZCRYPTOITERATIONCOUNT"]
-      @crypto_key = row["ZCRYPTOVERIFIER"] if row["ZCRYPTOVERIFIER"]
-      @crypto_key = row["ZCRYPTOWRAPPEDKEY"] if row["ZCRYPTOWRAPPEDKEY"]
+
+      # If there is a blob in ZUNAPPLIEDENCRYPTEDRECORD, we need to use it instead of the database values
+      if row["ZUNAPPLIEDENCRYPTEDRECORD"]
+        keyed_archive = KeyedArchive.new(:data => row["ZUNAPPLIEDENCRYPTEDRECORD"])
+        unpacked_top = keyed_archive.unpacked_top()
+        ns_keys = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.keys"]
+        ns_values = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.objects"]
+        @crypto_iv = ns_values[ns_keys.index("CryptoInitializationVector")]
+        @crypto_tag = ns_values[ns_keys.index("CryptoTag")]
+        @crypto_salt = ns_values[ns_keys.index("CryptoSalt")]
+        @crypto_iterations = ns_values[ns_keys.index("CryptoIterationCount")]
+        @crypto_key = ns_values[ns_keys.index("CryptoWrappedKey")]
+      else 
+        @crypto_iv = row["ZCRYPTOINITIALIZATIONVECTOR"]
+        @crypto_tag = row["ZCRYPTOTAG"]
+        @crypto_salt = row["ZCRYPTOSALT"]
+        @crypto_iterations = row["ZCRYPTOITERATIONCOUNT"]
+        @crypto_key = row["ZCRYPTOVERIFIER"] if row["ZCRYPTOVERIFIER"]
+        @crypto_key = row["ZCRYPTOWRAPPEDKEY"] if row["ZCRYPTOWRAPPEDKEY"]
+      end
     end
 
     @crypto_password = @note.crypto_password

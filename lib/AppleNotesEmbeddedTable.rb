@@ -1,5 +1,6 @@
 require 'base64'
 require 'json'
+require 'keyed_archive'
 require_relative 'AppleNoteStore.rb'
 
 ##
@@ -203,18 +204,29 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
     # If this Table is password protected, fetch the mergeable data from the 
     # ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON column and decrypt it. 
     if @is_password_protected
-      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON " +
+      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON, ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD " +
                         "FROM ZICCLOUDSYNCINGOBJECT " +
                         "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
                         @uuid) do |row|
+
+        encrypted_values = row["ZENCRYPTEDVALUESJSON"]
+
+        if row["ZUNAPPLIEDENCRYPTEDRECORD"]
+          keyed_archive = KeyedArchive.new(:data => row["ZUNAPPLIEDENCRYPTEDRECORD"])
+          unpacked_top = keyed_archive.unpacked_top()
+          ns_keys = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.keys"]
+          ns_values = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.objects"]
+          encrypted_values = ns_values[ns_keys.index("EncryptedValues")]
+        end
+
         decrypt_result = @backup.decrypter.decrypt_with_password(@crypto_password,
                                                                  @crypto_salt,
                                                                  @crypto_iterations,
                                                                  @crypto_key,
                                                                  @crypto_iv,
                                                                  @crypto_tag,
-                                                                 row["ZENCRYPTEDVALUESJSON"],
-                                                                 "AppleNotesEncryptedTable #{@uuid}")
+                                                                 encrypted_values,
+                                                                 "AppleNotesEmbeddedTable #{@uuid}")
         parsed_json = JSON.parse(decrypt_result[:plaintext])
         gzipped_data = Base64.decode64(parsed_json["mergeableData"])
       end

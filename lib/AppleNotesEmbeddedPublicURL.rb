@@ -1,4 +1,5 @@
 require 'json'
+require 'keyed_archive'
 
 ##
 # This class represents a public.url object embedded
@@ -41,17 +42,28 @@ class AppleNotesEmbeddedPublicURL < AppleNotesEmbeddedObject
     # If this URL is password protected, fetch the URL from the 
     # ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON column and decrypt it. 
     if @is_password_protected
-      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON " +
+      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON, ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD " +
                         "FROM ZICCLOUDSYNCINGOBJECT " +
                         "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
                         @uuid) do |row|
+
+        encrypted_values = row["ZENCRYPTEDVALUESJSON"]
+
+        if row["ZUNAPPLIEDENCRYPTEDRECORD"]
+          keyed_archive = KeyedArchive.new(:data => row["ZUNAPPLIEDENCRYPTEDRECORD"])
+          unpacked_top = keyed_archive.unpacked_top()
+          ns_keys = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.keys"]
+          ns_values = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.objects"]
+          encrypted_values = ns_values[ns_keys.index("EncryptedValues")]
+        end
+
         decrypt_result = @backup.decrypter.decrypt_with_password(@crypto_password,
                                                                  @crypto_salt,
                                                                  @crypto_iterations,
                                                                  @crypto_key,
                                                                  @crypto_iv,
                                                                  @crypto_tag,
-                                                                 row["ZENCRYPTEDVALUESJSON"],
+                                                                 encrypted_values,
                                                                  "#{self.class} #{@uuid}")
         parsed_json = JSON.parse(decrypt_result[:plaintext])
         referenced_url = parsed_json["urlString"]

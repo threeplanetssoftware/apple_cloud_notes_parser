@@ -39,26 +39,64 @@ class AppleNotesEmbeddedGallery < AppleNotesEmbeddedObject
   # and returning the referenced ZIDENTIFIER in that object.
   def add_gallery_children
 
-    # Set the appropriate column to find the data in
-    mergeable_column = "ZMERGEABLEDATA1"
-    mergeable_column = "ZMERGEABLEDATA" if @note.version < AppleNoteStore::IOS_VERSION_13
+    gzipped_data = nil
 
-    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.#{mergeable_column} " +
-                      "FROM ZICCLOUDSYNCINGOBJECT " +
-                      "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
-                      @uuid) do |row|
+    # If this Gallery is password protected, fetch the mergeable data from the 
+    # ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON column and decrypt it. 
+    if @is_password_protected
+      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON, ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD " +
+                        "FROM ZICCLOUDSYNCINGOBJECT " +
+                        "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
+                        @uuid) do |row|
 
-      # Extract the blob
-      gzipped_data = row[mergeable_column]
-      zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
-      gunzipped_data = zlib_inflater.inflate(gzipped_data)
+        encrypted_values = row["ZENCRYPTEDVALUESJSON"]
 
-      # Read the protobuff
-      mergabledata_proto = MergableDataProto.decode(gunzipped_data)
-      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
-        if mergeable_data_object_entry.custom_map
-          create_child_from_uuid(mergeable_data_object_entry.custom_map.map_entry.first.value.string_value)
+        if row["ZUNAPPLIEDENCRYPTEDRECORD"]
+          keyed_archive = KeyedArchive.new(:data => row["ZUNAPPLIEDENCRYPTEDRECORD"])
+          unpacked_top = keyed_archive.unpacked_top()
+          ns_keys = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.keys"]
+          ns_values = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.objects"]
+          encrypted_values = ns_values[ns_keys.index("EncryptedValues")]
         end
+
+        decrypt_result = @backup.decrypter.decrypt_with_password(@crypto_password,
+                                                                 @crypto_salt,
+                                                                 @crypto_iterations,
+                                                                 @crypto_key,
+                                                                 @crypto_iv,
+                                                                 @crypto_tag,
+                                                                 encrypted_values,
+                                                                 "AppleNotesEmbeddedGallery #{@uuid}")
+        parsed_json = JSON.parse(decrypt_result[:plaintext])
+        gzipped_data = Base64.decode64(parsed_json["mergeableData"])
+      end
+
+    # Otherwise, pull from the ZICCLOUDSYNCINGOBJECT.ZMERGEABLEDATA column
+    else
+      # Set the appropriate column to find the data in
+      mergeable_column = "ZMERGEABLEDATA1"
+      mergeable_column = "ZMERGEABLEDATA" if @note.version < AppleNoteStore::IOS_VERSION_13
+
+      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.#{mergeable_column} " +
+                        "FROM ZICCLOUDSYNCINGOBJECT " +
+                        "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
+                        @uuid) do |row|
+
+        # Extract the blob
+        gzipped_data = row[mergeable_column]
+
+      end
+    end
+
+    # Inflate the GZip
+    zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
+    gunzipped_data = zlib_inflater.inflate(gzipped_data)
+
+    # Read the protobuff
+    mergabledata_proto = MergableDataProto.decode(gunzipped_data)
+    mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
+      if mergeable_data_object_entry.custom_map
+        create_child_from_uuid(mergeable_data_object_entry.custom_map.map_entry.first.value.string_value)
       end
 
     end

@@ -28,7 +28,16 @@ class AppleNotesEmbeddedPublicObject < AppleNotesEmbeddedObject
     @backup_location = @backup.get_real_file_path(@filepath)
     
     # Copy the file to our output directory if we can
-    @reference_location = @backup.back_up_file(@filepath, @filename, @backup_location)
+    @reference_location = @backup.back_up_file(@filepath, 
+                                               @filename, 
+                                               @backup_location, 
+                                               @is_password_protected,
+                                               @crypto_password,
+                                               @crypto_salt,
+                                               @crypto_iterations,
+                                               @crypto_key,
+                                               @crypto_asset_iv,
+                                               @crypto_asset_tag)
   end
 
   ##
