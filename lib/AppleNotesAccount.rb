@@ -1,9 +1,11 @@
+require_relative 'AppleCloudKitRecord'
+
 ##
 # This class represents an Apple Notes Account. 
 # Generally this is just a local and an iCloud account. 
 # This class has an Array of the AppleNote objects that 
 # belong to this account.
-class AppleNotesAccount
+class AppleNotesAccount < AppleCloudKitRecord
 
   attr_accessor :primary_key,
                 :name,
@@ -52,14 +54,6 @@ class AppleNotesAccount
   end
 
   ##
-  # This method takes a the binary String +server_record_data+ which is stored 
-  # in ZSERVERRECORDDATA. Eventually it needs to parse it out. Does nothing right now.
-  def add_server_record_data(server_record_data)
-    # Eventually this should just parse the bplist directly: CFPropertyList gem
-    @server_record_data = server_record_data
-  end
-
-  ##
   # This method requies an AppleNote object as +note+ and adds it to the folder's Array.
   def add_note(note)
     @notes.push(note)
@@ -71,6 +65,7 @@ class AppleNotesAccount
     ["Account Primary Key", 
      "Account Name", 
      "Account Identifier",
+     "Last Modified Device",
      "Number of Notes",
      "Crypto Salt (hex)",
      "Crypto Iteration Count (hex)",
@@ -83,6 +78,7 @@ class AppleNotesAccount
     [@primary_key, 
      @name, 
      @identifier,
+     @cloudkit_last_modified_device,
      @notes.length,
      get_crypto_salt_hex,
      @crypto_iterations,
