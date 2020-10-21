@@ -25,7 +25,8 @@ This program will:
 4. ... rebuilding the notes as an HTML file to browse and see as they would be displayed on the phone
 5. ... amending the NoteStore.sqlite database to include plaintext and decompressed objects to interact with in other tools
 6. ... from iTunes logical backups, physical backups, single files, and directly from Mac versions
-7. ... displaying tables as actual tables and ripping the embedded images from the backup and putting them into a folder with the other output files for review.
+7. ... displaying tables as actual tables and ripping the embedded images from the backup and putting them into a folder with the other output files for review
+8. ... identifying the CloudKit participants involved in any shared items.
 
 ## Usage
 
@@ -131,6 +132,7 @@ This program requires the following Ruby gems which can be installed by running 
 4. zlib
 5. openssl
 6. aes_key_wrap
+7. keyed_archive
 
 ## Installation
 
@@ -175,7 +177,7 @@ sudo yum install sqlite sqlite-devel zlib zlib-devel openssl openssl-devel ruby 
 git clone https://github.com/threeplanetssoftware/apple_cloud_notes_parser.git
 cd apple_cloud_notes_parser
 bundle install
-sudo gem pristine sqlite3 zlib openssl aes_key_wrap
+sudo gem pristine sqlite3 zlib openssl aes_key_wrap keyed_archive
 ```
 
 #### Without Git (If you want to download it every now and then)
@@ -187,7 +189,7 @@ curl https://codeload.github.com/threeplanetssoftware/apple_cloud_notes_parser/z
 unzip apple_cloud_notes_parser.zip
 cd apple_cloud_notes_parser-master
 bundle install
-sudo gem pristine sqlite3 zlib openssl aes_key_wrap
+sudo gem pristine sqlite3 zlib openssl aes_key_wrap keyed_archive
 ```
 
 ### macOS 
