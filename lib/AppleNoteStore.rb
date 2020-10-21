@@ -596,7 +596,7 @@ class AppleNoteStore
       tmp_note.add_cloudkit_server_record_data(row[server_record_column]) if row[server_record_column]
 
       if(row[server_share_column]) 
-        tmp_note.add_cloudkit_sharing_data(row[server_share_data])
+        tmp_note.add_cloudkit_sharing_data(row[server_share_column])
 
         # Add any share participants to our overall list
         tmp_note.share_participants.each do |participant|
