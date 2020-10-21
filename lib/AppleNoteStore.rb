@@ -344,13 +344,17 @@ class AppleNoteStore
     server_record_column = "ZSERVERRECORD"
     server_record_column = server_record_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
+    # Set the ZSERVERSHARE column to look at
+    server_share_column = "ZSERVERSHARE"
+    server_share_column = server_share_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+
     @logger.debug("Rip Account: Using server_record_column of #{server_record_column}")
 
     # Set the query
     query_string = "SELECT ZICCLOUDSYNCINGOBJECT.ZNAME, ZICCLOUDSYNCINGOBJECT.Z_PK, " + 
                    "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.ZCRYPTOITERATIONCOUNT, " + 
                    "ZICCLOUDSYNCINGOBJECT.ZCRYPTOVERIFIER, ZICCLOUDSYNCINGOBJECT.ZCRYPTOSALT, " + 
-                   "ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER " +
+                   "ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER, ZICCLOUDSYNCINGOBJECT.#{server_share_column} " +
                    "FROM ZICCLOUDSYNCINGOBJECT " + 
                    "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?"
     
@@ -374,6 +378,15 @@ class AppleNoteStore
 
       # Add server-side data, if relevant
       tmp_account.add_cloudkit_server_record_data(row[server_record_column]) if row[server_record_column]
+
+      if(row[server_share_column]) 
+        tmp_account.add_cloudkit_sharing_data(row[server_share_column])
+
+        # Add any share participants to our overall list
+        tmp_account.share_participants.each do |participant|
+          @cloud_kit_participants[participant.record_id] = participant
+        end
+      end
 
       # Add cryptographic variables, if relevant
       if row["ZCRYPTOVERIFIER"]
@@ -424,10 +437,14 @@ class AppleNoteStore
     # Set the ZSERVERRECORD column to look at
     server_record_column = "ZSERVERRECORD"
     server_record_column = server_record_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+
+    # Set the ZSERVERSHARE column to look at
+    server_share_column = "ZSERVERSHARE"
+    server_share_column = server_share_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
   
     query_string = "SELECT ZICCLOUDSYNCINGOBJECT.ZTITLE2, ZICCLOUDSYNCINGOBJECT.ZOWNER, " + 
-                   "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, " +
-                   "ZICCLOUDSYNCINGOBJECT.Z_PK, ZICCLOUDSYNCINGOBJECT.ZSERVERSHAREDATA " +
+                   "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.#{server_share_column}, " +
+                   "ZICCLOUDSYNCINGOBJECT.Z_PK " +
                    "FROM ZICCLOUDSYNCINGOBJECT " + 
                    "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?"
 
@@ -447,8 +464,8 @@ class AppleNoteStore
       # Add server-side data, if relevant
       tmp_folder.add_cloudkit_server_record_data(row[server_record_column]) if row[server_record_column]
 
-      if(row["ZSERVERSHAREDATA"]) 
-        tmp_folder.add_cloudkit_sharing_data(row["ZSERVERSHAREDATA"])
+      if(row[server_share_column]) 
+        tmp_folder.add_cloudkit_sharing_data(row[server_share_column])
 
         # Add any share participants to our overall list
         tmp_folder.share_participants.each do |participant|
@@ -493,6 +510,10 @@ class AppleNoteStore
     server_record_column = "ZSERVERRECORD"
     server_record_column = server_record_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
+    # Set the ZSERVERSHARE column to look at
+    server_share_column = "ZSERVERSHARE"
+    server_share_column = server_share_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+
     query_string = "SELECT ZICNOTEDATA.Z_PK, ZICNOTEDATA.ZNOTE, " + 
                    "ZICNOTEDATA.ZCRYPTOINITIALIZATIONVECTOR, ZICNOTEDATA.ZCRYPTOTAG, " + 
                    "ZICNOTEDATA.ZDATA, ZICCLOUDSYNCINGOBJECT.ZCRYPTOVERIFIER, " + 
@@ -501,7 +522,8 @@ class AppleNoteStore
                    "ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1, ZICCLOUDSYNCINGOBJECT.ZCREATIONDATE1, " +
                    "ZICCLOUDSYNCINGOBJECT.ZTITLE1, ZICCLOUDSYNCINGOBJECT.ZACCOUNT3, " +
                    "ZICCLOUDSYNCINGOBJECT.ZACCOUNT2, ZICCLOUDSYNCINGOBJECT.ZFOLDER, " + 
-                   "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD " + 
+                   "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD, " + 
+                   "ZICCLOUDSYNCINGOBJECT.#{server_share_column} " + 
                    "FROM ZICNOTEDATA, ZICCLOUDSYNCINGOBJECT " + 
                    "WHERE ZICNOTEDATA.ZNOTE=? AND ZICCLOUDSYNCINGOBJECT.Z_PK=ZICNOTEDATA.ZNOTE"
     folder_field = "ZFOLDER"
@@ -523,7 +545,7 @@ class AppleNoteStore
                      "ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1, ZICCLOUDSYNCINGOBJECT.ZCREATIONDATE1, " +
                      "ZICCLOUDSYNCINGOBJECT.ZTITLE1, ZICCLOUDSYNCINGOBJECT.ZACCOUNT2, " +
                      "Z_11NOTES.Z_11FOLDERS, ZICCLOUDSYNCINGOBJECT.#{server_record_column}, " + 
-                     "ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD " + 
+                     "ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD, ZICCLOUDSYNCINGOBJECT.#{server_share_column} " + 
                      "FROM ZICNOTEDATA, ZICCLOUDSYNCINGOBJECT, Z_11NOTES " + 
                      "WHERE ZICNOTEDATA.ZNOTE=? AND ZICCLOUDSYNCINGOBJECT.Z_PK=ZICNOTEDATA.ZNOTE AND Z_11NOTES.Z_8NOTES=ZICNOTEDATA.ZNOTE"
       folder_field = "Z_11FOLDERS"
@@ -572,6 +594,15 @@ class AppleNoteStore
 
       # Add server-side data, if relevant
       tmp_note.add_cloudkit_server_record_data(row[server_record_column]) if row[server_record_column]
+
+      if(row[server_share_column]) 
+        tmp_note.add_cloudkit_sharing_data(row[server_share_data])
+
+        # Add any share participants to our overall list
+        tmp_note.share_participants.each do |participant|
+          @cloud_kit_participants[participant.record_id] = participant
+        end
+      end
 
       # If this is protected, add the cryptographic variables
       if row["ZISPASSWORDPROTECTED"] == 1
