@@ -18,6 +18,7 @@ class AppleCloudKitRecord
     @server_record_data = nil
     @cloudkit_last_modified_device = nil
     @cloudkit_creator_record_id = nil
+    @cloudkit_modifier_record_id = nil
   end
 
   ##
@@ -67,6 +68,7 @@ class AppleCloudKitRecord
     if unpacked_top
       @cloudkit_last_modified_device = unpacked_top["ModifiedByDevice"]
       @cloudkit_creator_record_id = unpacked_top["CreatorUserRecordID"]["RecordName"]
+      @cloudkit_modifier_record_id = unpacked_top["LastModifiedUserRecordID"]["RecordName"]
     end
   end
 
