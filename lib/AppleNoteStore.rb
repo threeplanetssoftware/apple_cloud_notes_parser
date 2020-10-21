@@ -573,11 +573,6 @@ class AppleNoteStore
       # Add server-side data, if relevant
       tmp_note.add_cloudkit_server_record_data(row[server_record_column]) if row[server_record_column]
 
-      # Add in CloudKit data if we have it
-      if(row["ZSERVERRECORDDATA"]) 
-        tmp_note.add_cloudkit_server_record_data(row["ZSERVERRECORDDATA"])
-      end
-
       # If this is protected, add the cryptographic variables
       if row["ZISPASSWORDPROTECTED"] == 1
 
