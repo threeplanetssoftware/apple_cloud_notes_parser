@@ -402,6 +402,9 @@ class AppleNote < AppleCloudKitRecord
     html += "<b>Created:</b> #{@creation_time} <br/>\n"
     html += "<b>Modified:</b> #{@modify_time} <br />\n"
     html += "<b>Password:</b> #{@crypto_password} <br />\n" if @crypto_password
+    html += "<b>CloudKit Creator:</b> #{@notestore.cloud_kit_participants[@cloudkit_creator_record_id].email} <br />\n" if @cloudkit_creator_record_id
+    html += "<b>CloudKit Last Modified User:</b> #{@notestore.cloud_kit_participants[@cloudkit_modifier_record_id].email} <br />\n" if @cloudkit_modifier_record_id
+    html += "<b>CloudKit Last Modified Device:</b> #{@cloudkit_last_modified_device} <br />\n" if @cloudkit_last_modified_device
     #html += "<b>Content:</b>\n"
     html += "<div class='note-content'>\n"
 
