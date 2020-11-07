@@ -74,7 +74,7 @@ class AppleBackup
   def back_up_file(filepath_on_phone, filename_on_phone, filepath_on_disk, 
     is_password_protected=false, password=nil, salt=nil, iterations=nil, key=nil, 
     iv=nil, tag=nil, debug_text=nil)
-    if !filepath_on_disk
+    if !filepath_on_disk or !File.exist?(filepath_on_disk)
       @logger.error("Can't call back_up_file with filepath_on_disk that is nil") if @type != SINGLE_FILE_BACKUP_TYPE
       return
     end
