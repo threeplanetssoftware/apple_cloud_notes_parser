@@ -120,8 +120,13 @@ class AppleNote < AppleCloudKitRecord
   # assigned the plaintext from that protobuf into the +plaintext+ variable.
   def extract_plaintext
     if @decompressed_data
-      tmp_note_store_proto = NoteStoreProto.decode(@decompressed_data)
-      @plaintext = tmp_note_store_proto.document.note.note_text
+      begin
+        tmp_note_store_proto = NoteStoreProto.decode(@decompressed_data)
+        @plaintext = tmp_note_store_proto.document.note.note_text
+      rescue Exception
+        puts "Error parsing the protobuf for Note #{@note_id}, have to skip it"
+        @logger.error("Error parsing the protobuf for Note #{@note_id}, have to skip it")
+      end
     end
   end
 
@@ -431,8 +436,14 @@ class AppleNote < AppleCloudKitRecord
     current_style = -1
 
     # Decode the proto
-    tmp_note_store_proto = NoteStoreProto.decode(@decompressed_data)
+    begin
+      tmp_note_store_proto = NoteStoreProto.decode(@decompressed_data)
+    rescue Exception
+    end
 
+    # Bail out if we don't have anything to decode
+    return html if !tmp_note_store_proto
+    
     # Create a copy of the text, which is frozen
     note_text = tmp_note_store_proto.document.note.note_text.dup
 
