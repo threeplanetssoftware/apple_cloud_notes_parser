@@ -213,19 +213,20 @@ bundle install
 
 ### Windows
 
-1. Download the 2.6.5 64-bit [RubyInstaller with DevKit](https://github.com/oneclick/rubyinstaller2/releases/download/RubyInstaller-2.6.5-1/rubyinstaller-devkit-2.6.5-1-x64.exe) (Google Protobuf isn't yet working on 2.7)
+1. Download the 2.7.2 64-bit [RubyInstaller with DevKit](https://github.com/oneclick/rubyinstaller2/releases/download/RubyInstaller-2.7.2-1/rubyinstaller-2.7.2-1-x64.exe)
 2. Run RubyInstaller using default settings.
-3. Download the latest [SQLite amalgamation souce code](https://sqlite.org/2019/sqlite-amalgamation-3300100.zip) and [64-bit SQLite Precompiled DLL](https://sqlite.org/2019/sqlite-dll-win64-x64-3300100.zip)
+3. Download the latest [SQLite amalgamation souce code](https://sqlite.org/2021/sqlite-amalgamation-3350200.zip) and [64-bit SQLite Precompiled DLL](https://sqlite.org/2021/sqlite-dll-win64-x64-3350200.zip)
 4. Install SQLite
    1. Create a folder C:\sqlite
    2. Unzip the source code into C:\sqlite (you should now have C:\sqlite\sqlite3.c and C:\sqlite\sqlite.h, among others)
    3. Unzip the DLL into C:\sqlite (you should now have C:\sqlite\sqlite3.dll, among others)
 5. Download [this Apple Cloud Notes Parser as a zip archive](https://github.com/threeplanetssoftware/apple_cloud_notes_parser/archive/master.zip)
 6. Unzip the Zip archive
-7. Launch a powershell window and navigate to where you unzipped the archive
-8. Execute the following commands (these set the PATH so SQLite files can be found install SQLite's Gem specifically pointing to them, and then installs the rest of the gems):
+7. Launch a command prompt window with "Start a command prompt wqith ruby" from the Start menu and navigate to where you unzipped the archive
+9. Execute the following commands (these set the PATH so SQLite files can be found install SQLite's Gem specifically pointing to them, and then installs the rest of the gems):
 
 ```powershell
+powershell
 $env:Path += ";C:\sqlite"
 [Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\sqlite", "User")
 gem install sqlite3 --platform=ruby -- --with-sqlite-3-dir=C:/sqlite --with-sqlite-3-include=C:/sqlite
