@@ -650,6 +650,12 @@ class AppleNoteStore
       else
         @logger.error("Rip Note: Skipping note #{tmp_note.note_id} due to a missing account.") if !tmp_account
         @logger.error("Rip Note: Skipping note #{tmp_note.note_id} due to a missing folder.") if !tmp_folder
+        
+        if !tmp_account or !tmp_folder
+          @logger.error("Consider running these sqlite queries to take a look yourself, make sure ZDATA is NULL: ")
+          @logger.error("\tSELECT Z_PK, #{account_field}, #{folder_field} FROM ZICCLOUDSYNCINGOBJECT WHERE Z_PK=#{tmp_note.primary_key}")
+          @logger.error("\tSELECT #{note_id_field}, ZDATA FROM ZICNOTEDATA WHERE #{note_id_field}=#{tmp_note.note_id}")
+        end
         puts "Skipping Note ID #{tmp_note.note_id} due to a missing folder or account, check the debug log for more details."
       end
     end
