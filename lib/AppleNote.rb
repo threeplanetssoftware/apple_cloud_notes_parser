@@ -124,8 +124,10 @@ class AppleNote < AppleCloudKitRecord
         tmp_note_store_proto = NoteStoreProto.decode(@decompressed_data)
         @plaintext = tmp_note_store_proto.document.note.note_text
       rescue Exception
-        puts "Error parsing the protobuf for Note #{@note_id}, have to skip it"
+        puts "Error parsing the protobuf for Note #{@note_id}, have to skip it, see the debug log for more details"
         @logger.error("Error parsing the protobuf for Note #{@note_id}, have to skip it")
+        @logger.error("Run the following sqlite query to find the appropriate note data, export the ZDATA column as #{@note_id}.blob.gz, gunzip it, and the resulting #{@note_id}.blob contains your protobuf to check with protoc.")
+        @logger.error("\tSELECT ZDATA FROM ZICNOTEDATA WHERE ZNOTE=#{@note_id}")
       end
     end
   end
