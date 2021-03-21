@@ -9,6 +9,8 @@ require 'openssl'
 # This class plays a supporting role in decrypting data Apple encrypts at rest.
 class AppleDecrypter
 
+  attr_accessor :successful_passwords
+
   ##
   # Creates a new AppleDecrypter. Expects an AppleBackup +backup+ to make use of the logger.
   # Immediately initalizes +@passwords+ and +@successful_passwords+ as Arrays to keep track of loaded 
@@ -30,7 +32,7 @@ class AppleDecrypter
 
       # Read in each line and add them to our list
       File.readlines(password_file).each do |password|
-        @logger.debug("Apple Decrypter: Adding password #{password} to our list")
+        #@logger.debug("Apple Decrypter: Adding password number #{passwords.length} to our list")
         @passwords.push(password.chomp)
       end
 
@@ -150,7 +152,7 @@ class AppleDecrypter
 
 
     # Create the key with our password
-    @logger.debug("Apple Decrypter: #{debug_text} Attempting decryption with password #{password}")
+    @logger.debug("Apple Decrypter: #{debug_text} Attempting decryption.")
 
     # Create variables to track our generated and unwrapped keys between blocks
     decrypt_result = false
@@ -167,7 +169,7 @@ class AppleDecrypter
 
     if plaintext
       decrypt_result = { plaintext: plaintext, password: password }
-      @logger.debug("Apple Decrypter: #{debug_text} generated a decrypt using password #{password}")
+      @logger.debug("Apple Decrypter: #{debug_text} generated a decrypt")
     end
 
     return decrypt_result
