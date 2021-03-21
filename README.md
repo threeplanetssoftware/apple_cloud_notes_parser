@@ -47,7 +47,8 @@ The options that are currently supported are:
 5. `-o | --output-dir DIRECTORY`: Changes the output folder from the default `./output` to the specified one.
 3. `-p | --physical DIRECTORY`: Tells the program to look at a physical backup folder.
 7. `-w | --password-file FILE`: Tells the program which password list to use 
-6. `-h | --help`: Prints the usage information.
+8. `--show-password-successes`: Tells the program to display to the console which passwords generated decrypts at the end.
+9. `-h | --help`: Prints the usage information.
 
 ## How It Works
 
@@ -80,6 +81,8 @@ For example, if you were running this on data from a Mac used by 'Logitech' and 
 For backups that may have encrypted notes within them, this option tells the program where to find its password list. This list should have one password per row and any passwords that correctly decrypt an encrypted note will be tried before the rest for future encrypted notes. 
 
 For example, if you were running this on data from a Mac used by 'Logitech,' had the full file system available, and wanted to use a file called "passwords.txt"you would run: `ruby notes_cloud_ripper.rb -m /Users/Logitech/Library/Group Containers/group.com.apple.notes/` -w passwords.txt
+
+Note: As of March 2021, all logging of passwords to the local debug_log.txt file and HTML output has been removed. If you need to see which passwords generated decrypted notes, use the `--show-password-successes` switch and read the console output after the run.
 
 ### All Versions
 
