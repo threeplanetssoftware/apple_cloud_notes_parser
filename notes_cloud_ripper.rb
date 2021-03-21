@@ -16,6 +16,7 @@ target_directory = nil
 backup_type = nil
 password_file = nil
 output_directory = Pathname.new("./output")
+password_success_display = false
 
 #
 # Options Parser setup
@@ -55,6 +56,11 @@ end
 # Add in a password file for encrypted notes
 option_parser.on("-w", "--password-file FILE", "File with plaintext passwords, one per line.") do |file|
   password_file = Pathname.new(file)
+end
+
+# Add in a password file for encrypted notes
+option_parser.on("--show-password-successes", "Toggle the display of password success ON.") do |file|
+  password_success_display = true
 end
 
 # Help information, only displayed if we haven't hit on other options
@@ -125,6 +131,17 @@ if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid
   apple_backup.note_stores.each do |note_store|
     logger.debug("Adding plaintext to #{note_store}")
     note_store.add_plain_text_to_database
+  end
+
+  #
+  # If appropriate, display the passwords we used
+  #
+
+  if password_success_display and apple_backup.decrypter.successful_passwords.length > 0
+    puts "------------------------------"
+    puts "Successfully decrypted notes using passwords: #{apple_backup.decrypter.successful_passwords.sort.join(", ")}"
+    puts "These are NOT logged, note it down now if you need it."
+    puts "------------------------------"
   end
 
   #
