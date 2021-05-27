@@ -130,7 +130,13 @@ if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid
   # Tell the AppleNoteStore to add plaintext to the database
   apple_backup.note_stores.each do |note_store|
     logger.debug("Adding plaintext to #{note_store}")
-    note_store.add_plain_text_to_database
+    begin
+      note_store.add_plain_text_to_database
+    rescue SQLite3::CorruptException
+      logger.error("Error writing plaintext into the database, it seems to be corrupt, so you'll need to rely on the other output.")
+    rescue SQLite3::SQLException
+      logger.error("Error adding columns to database, this likely was already done.")
+    end
   end
 
   #
