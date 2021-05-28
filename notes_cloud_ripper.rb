@@ -134,6 +134,9 @@ if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid
       note_store.add_plain_text_to_database
     rescue SQLite3::CorruptException
       logger.error("Error writing plaintext into the database, it seems to be corrupt, so you'll need to rely on the other output.")
+      puts "------------------------------"
+      puts "SQLite3::CorruptException encountered while trying to write plaintext to database, this may be a result of a Notes migration, try opening the application and saving it again."
+      puts "------------------------------"
     rescue SQLite3::SQLException
       logger.error("Error adding columns to database, this likely was already done.")
     end
