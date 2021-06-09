@@ -28,11 +28,11 @@ class AppleBackupPhysical < AppleBackup
       @physical_backup_app_folder = (@root_folder + "private" + "var" + "mobile" + "Containers" + "Shared" + "AppGroup" + @physical_backup_app_uuid)
 
       # Copy the modern NoteStore to our output directory
-      FileUtils.cp(@physical_backup_app_folder + "NoteStore.sqlite", @note_store_modern_location)
+      copy_notes_database(@physical_backup_app_folder + "NoteStore.sqlite", @note_store_modern_location)
       modern_note_version = AppleNoteStore.guess_ios_version(@note_store_modern_location)
 
       # Copy the legacy notes.sqlite to our output directory
-      FileUtils.cp(@root_folder + "private" + "var" + "mobile" + "Library" + "Notes" + "notes.sqlite", @note_store_legacy_location)
+      copy_notes_database(@root_folder + "private" + "var" + "mobile" + "Library" + "Notes" + "notes.sqlite", @note_store_legacy_location)
       legacy_note_version = AppleNoteStore.guess_ios_version(@note_store_legacy_location)
 
       # Create the AppleNoteStore objects
