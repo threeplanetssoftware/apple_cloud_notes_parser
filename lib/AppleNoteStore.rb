@@ -626,7 +626,7 @@ class AppleNoteStore
           crypto_tag = ns_values[ns_keys.index("CryptoTag")]
           crypto_salt = ns_values[ns_keys.index("CryptoSalt")]
           crypto_iterations = ns_values[ns_keys.index("CryptoIterationCount")]
-          crypto_key = ns_values[ns_keys.index("CryptoWrappedKey")]
+          crypto_wrapped_key = ns_values[ns_keys.index("CryptoWrappedKey")]
         end
 
         tmp_note.add_cryptographic_settings(crypto_iv, 
