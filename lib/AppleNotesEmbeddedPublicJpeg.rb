@@ -146,7 +146,7 @@ class AppleNotesEmbeddedPublicJpeg < AppleNotesEmbeddedObject
           crypto_key = media_row["ZCRYPTOWRAPPEDKEY"]
           crypto_iv = media_row["ZCRYPTOINITIALIZATIONVECTOR"]
 
-          if media_row["ZUNAPPLIEDENCRYPTEDRECORD"]
+          if media_row["ZUNAPPLIEDENCRYPTEDRECORD"] and (!crypto_tag or !crypto_salt or !crypto_iterations or !crypto_key or !crypto_iv)
             keyed_archive = KeyedArchive.new(:data => media_row["ZUNAPPLIEDENCRYPTEDRECORD"])
             unpacked_top = keyed_archive.unpacked_top()
             ns_keys = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.keys"]

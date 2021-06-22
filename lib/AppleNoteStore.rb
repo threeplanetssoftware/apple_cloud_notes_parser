@@ -617,7 +617,7 @@ class AppleNoteStore
 
         # If they aren't there, we need to use the ZUNAPPLIEDENCRYPTEDRECORD
 
-        if row["ZUNAPPLIEDENCRYPTEDRECORD"] and false
+        if row["ZUNAPPLIEDENCRYPTEDRECORD"] and (!crypto_tag or !crypto_salt or !crypto_iterations or !crypto_wrapped_key or !crypto_iv)
           keyed_archive = KeyedArchive.new(:data => row["ZUNAPPLIEDENCRYPTEDRECORD"])
           unpacked_top = keyed_archive.unpacked_top()
           ns_keys = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.keys"]

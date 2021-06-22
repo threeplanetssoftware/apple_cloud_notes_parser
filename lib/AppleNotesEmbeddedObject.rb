@@ -65,8 +65,15 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                       "WHERE Z_PK=?",
                       @primary_key) do |row|
 
+      @crypto_iv = row["ZCRYPTOINITIALIZATIONVECTOR"]
+      @crypto_tag = row["ZCRYPTOTAG"]
+      @crypto_salt = row["ZCRYPTOSALT"]
+      @crypto_iterations = row["ZCRYPTOITERATIONCOUNT"]
+      @crypto_key = row["ZCRYPTOVERIFIER"] if row["ZCRYPTOVERIFIER"]
+      @crypto_key = row["ZCRYPTOWRAPPEDKEY"] if row["ZCRYPTOWRAPPEDKEY"]
+
       # If there is a blob in ZUNAPPLIEDENCRYPTEDRECORD, we need to use it instead of the database values
-      if row["ZUNAPPLIEDENCRYPTEDRECORD"]
+      if row["ZUNAPPLIEDENCRYPTEDRECORD"] and (!@crypto_iv or !@crypto_tag or !@crypto_salt or !@crypto_iterations or !@crypto_key)
         keyed_archive = KeyedArchive.new(:data => row["ZUNAPPLIEDENCRYPTEDRECORD"])
         unpacked_top = keyed_archive.unpacked_top()
         ns_keys = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.keys"]
@@ -76,13 +83,6 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
         @crypto_salt = ns_values[ns_keys.index("CryptoSalt")]
         @crypto_iterations = ns_values[ns_keys.index("CryptoIterationCount")]
         @crypto_key = ns_values[ns_keys.index("CryptoWrappedKey")]
-      else 
-        @crypto_iv = row["ZCRYPTOINITIALIZATIONVECTOR"]
-        @crypto_tag = row["ZCRYPTOTAG"]
-        @crypto_salt = row["ZCRYPTOSALT"]
-        @crypto_iterations = row["ZCRYPTOITERATIONCOUNT"]
-        @crypto_key = row["ZCRYPTOVERIFIER"] if row["ZCRYPTOVERIFIER"]
-        @crypto_key = row["ZCRYPTOWRAPPEDKEY"] if row["ZCRYPTOWRAPPEDKEY"]
       end
     end
 
