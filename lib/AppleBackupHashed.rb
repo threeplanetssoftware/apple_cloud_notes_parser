@@ -9,11 +9,6 @@ require_relative 'AppleNoteStore.rb'
 # This class will abstract away figuring out how to get the right media files to embed back into an AppleNote.
 class AppleBackupHashed < AppleBackup
 
-#  attr_accessor :note_stores,
-#                :root_folder,
-#                :type,
-#                :output_folder
-
   ##
   # Creates a new AppleBackupHashed. Expects a Pathname +root_folder+ that represents the root 
   # of the backup and a Pathname +output_folder+ which will hold the results of this run. 
@@ -75,11 +70,23 @@ class AppleBackupHashed < AppleBackup
   # It expects a String +filename+ to look up. For hashed backups, that involves checking Manifest.db 
   # to get the appropriate hash value.
   def get_real_file_path(filename)
+
     @hashed_backup_manifest_database.execute("SELECT fileID FROM Files WHERE relativePath=?", filename) do |row|
       tmp_filename = row["fileID"]
       tmp_filefolder = tmp_filename[0,2]
       return @root_folder + tmp_filefolder + tmp_filename
     end
+
+    # If we didn't find the file the first time, it might be bug #24 (https://github.com/threeplanetssoftware/apple_cloud_notes_parser/issues/24).
+    # Let's check without the Account in front, if it exists, being slightly more careful with the domain
+    filename.gsub!(/^Accounts\/.{36}\//,"")
+    @hashed_backup_manifest_database.execute("SELECT fileID FROM Files WHERE relativePath=? AND domain='AppDomainGroup-group.com.apple.notes'", filename) do |row|
+      tmp_filename = row["fileID"]
+      tmp_filefolder = tmp_filename[0,2]
+      @logger.debug("Found a filepath that lacked the account portion: #{tmp_filename}")
+      return @root_folder + tmp_filefolder + tmp_filename
+    end
+
   end
 
 end
