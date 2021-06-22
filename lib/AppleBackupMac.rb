@@ -6,7 +6,7 @@ require_relative 'AppleNoteStore.rb'
 
 ##
 # This class represents running Cloud Notes Parser on a logical backup of an Apple computer's Notes application, not the mobile version.  
-# This class expects to be pointed at the root of the Notes folder, generall /Users/{username}/Library/Group Containers/group.com.apple.notes/. 
+# This class expects to be pointed at the root of the Notes folder, generally /Users/{username}/Library/Group Containers/group.com.apple.notes/. 
 # This class will abstract away figuring out how to get the right media files to embed back into an AppleNote.
 class AppleBackupMac < AppleBackup
 
@@ -23,7 +23,7 @@ class AppleBackupMac < AppleBackup
       puts "Created a new AppleBackup from Mac backup: #{@root_folder}"
 
       # Copy the modern NoteStore to our output directory
-      FileUtils.cp(@root_folder + "NoteStore.sqlite", @note_store_modern_location)
+      copy_notes_database(@root_folder + "NoteStore.sqlite", @note_store_modern_location)
       modern_note_version = AppleNoteStore.guess_ios_version(@note_store_modern_location)
 
       # Create the AppleNoteStore objects

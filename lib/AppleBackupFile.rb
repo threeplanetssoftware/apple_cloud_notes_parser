@@ -22,7 +22,7 @@ class AppleBackupFile < AppleBackup
       puts "Created a new AppleBackup from single file: #{@root_folder}"
 
       # Copy the database to a temporary spot to fingerprint
-      FileUtils.cp(@root_folder, @note_store_temporary_location)
+      copy_notes_database(@root_folder, @note_store_temporary_location)
 
       # Fingerprint it
       note_version = AppleNoteStore.guess_ios_version(@note_store_temporary_location)
@@ -30,10 +30,6 @@ class AppleBackupFile < AppleBackup
       # Move that to the right name, based on the version
       note_store_new_location = @note_store_modern_location if note_version >= AppleNoteStore::IOS_VERSION_9
       note_store_new_location = @note_store_legacy_location if note_version == AppleNoteStore::IOS_LEGACY_VERSION
-      
-      # Clean up any temporary files that were created
-      FileUtils.rm(@note_store_temporary_location.to_s + "-shm", :force => true)
-      FileUtils.rm(@note_store_temporary_location.to_s + "-wal", :force => true)
 
       # Rename the file to be the right database
       FileUtils.mv(@note_store_temporary_location, note_store_new_location)

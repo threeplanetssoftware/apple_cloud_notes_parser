@@ -54,6 +54,31 @@ class AppleBackup
   end
 
   ##
+  # This method copies a notes database and checks for any journals that also need to be copied. 
+  # It expects a Pathname +filepath+ that represents the location of a notes database
+  # file and a Pathname +destination+ that represents the name the database file should end up as. 
+  # It copies the database to our expected output location. It also checks for WAL and SHM files for 
+  # inclusion. Note: the AppleBackupHashed class does *not* use this because the filenames aren't 
+  # computed the same. 
+  def copy_notes_database(filepath, destination)
+
+    # Copy the actual NoteStore.sqlite file
+    FileUtils.cp(filepath, destination)
+
+    # Compute the paths to the WAL and SHM files
+    tmp_path, tmp_name = filepath.split
+    wal_filename = tmp_name.to_s + "-wal"
+    shm_filename = tmp_name.to_s + "-shm"
+    wal_filepath = tmp_path + wal_filename
+    shm_filepath = tmp_path + shm_filename
+
+    # Copy the WAL and SHM files if they exist
+    FileUtils.cp(wal_filepath, @output_folder) if wal_filepath.exist?
+    FileUtils.cp(shm_filepath, @output_folder) if shm_filepath.exist?
+
+  end
+
+  ##
   # This method returns a Pathname that represents the location on this disk of the requested file or nil.
   # It expects a String +filename+ to look up. This returns nil by default, and specific types of backups
   # will override this to provide the correct location. 
@@ -74,8 +99,16 @@ class AppleBackup
   def back_up_file(filepath_on_phone, filename_on_phone, filepath_on_disk, 
     is_password_protected=false, password=nil, salt=nil, iterations=nil, key=nil, 
     iv=nil, tag=nil, debug_text=nil)
-    if !filepath_on_disk or !File.exist?(filepath_on_disk)
+
+    # Fail out if we do not have a filepath to copy and log appropriately
+    if !filepath_on_disk
       @logger.error("Can't call back_up_file with filepath_on_disk that is nil") if @type != SINGLE_FILE_BACKUP_TYPE
+      return
+    end
+
+    # Fail out if the file simply can't be found and log appropriately
+    if !File.exist?(filepath_on_disk)
+      @logger.error("Can't call back_up_file with filepath_on_disk that does not exist: #{filepath_on_disk}") if @type != SINGLE_FILE_BACKUP_TYPE
       return
     end
  
