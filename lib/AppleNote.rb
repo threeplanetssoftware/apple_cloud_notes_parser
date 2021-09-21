@@ -156,7 +156,7 @@ class AppleNote < AppleCloudKitRecord
                             note_part.attachment_info.attachment_identifier) do |row|
             @logger.debug("AppleNote: Note #{@note_id} replacing attachment #{row["ZIDENTIFIER"]}")
             case row["ZTYPEUTI"]
-              when "public.jpeg", "public.png", "public.tiff"
+              when "public.jpeg", "public.png", "public.tiff", "com.compuserve.gif"
                 tmp_embedded_object = AppleNotesEmbeddedPublicJpeg.new(row["Z_PK"],
                                                                        row["ZIDENTIFIER"],
                                                                        row["ZTYPEUTI"],
