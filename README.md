@@ -19,7 +19,7 @@ For example, if the backup is from iTunes, this program will use the Manifest.db
 
 This program will:
 1. Parse legacy (pre-iOS9) Notes files (but those are already plaintext, so not much to be gained)
-2. Parse iOS 9-14 Cloud Notes files
+2. Parse iOS 9-15 Cloud Notes files
 3. ... decrypting notes if the password is known
 3. ... generating CSV roll-ups of each account, folder, note, and embedded object within them
 4. ... rebuilding the notes as an HTML file to browse and see as they would be displayed on the phone
