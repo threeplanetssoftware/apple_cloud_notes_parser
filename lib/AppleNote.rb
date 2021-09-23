@@ -4,6 +4,7 @@ require 'zlib'
 require_relative 'notestore_pb.rb'
 require_relative 'AppleCloudKitRecord'
 require_relative 'AppleDecrypter.rb'
+require_relative 'AppleNotesEmbeddedInlineAttachment.rb'
 require_relative 'AppleNotesEmbeddedObject.rb'
 require_relative 'AppleNotesEmbeddedDeletedObject.rb'
 require_relative 'AppleNotesEmbeddedDrawing.rb'
@@ -148,7 +149,7 @@ class AppleNote < AppleCloudKitRecord
         if note_part.attachment_info
           tmp_embedded_object = nil
 
-          z_type_uti = "ZICCLOUDSYNCINGOBJECT.ZTYPEUTI, ZICCLOUDSYNCINGOBJECT.ZTYPEUTI1"
+          z_type_uti = "ZICCLOUDSYNCINGOBJECT.ZTYPEUTI, ZICCLOUDSYNCINGOBJECT.ZTYPEUTI1, ZICCLOUDSYNCINGOBJECT.ZALTTEXT, ZICCLOUDSYNCINGOBJECT.ZTOKENCONTENTIDENTIFIER"
 
           # For versions older than iOS 15
           if @notestore.version < AppleNoteStore::IOS_VERSION_15
@@ -166,23 +167,22 @@ class AppleNote < AppleCloudKitRecord
             @logger.debug("AppleNote: Note #{@note_id} replacing attachment #{row["ZIDENTIFIER"]}")
             if row["ZTYPEUTI1"]
               case row["ZTYPEUTI1"]
-                when "com.apple.notes.inlinetextattachment.hashtag"
-                  tmp_embedded_object = AppleNotesEmbeddedObject.new(row["Z_PK"],
-                                                                     row["ZIDENTIFIER"],
-                                                                     row["ZTYPEUTI1"],
-                                                                     self)
-                when "com.apple.notes.inlinetextattachment.mention"
-                  tmp_embedded_object = AppleNotesEmbeddedObject.new(row["Z_PK"],
-                                                                     row["ZIDENTIFIER"],
-                                                                     row["ZTYPEUTI1"],
-                                                                     self)
+                when "com.apple.notes.inlinetextattachment.hashtag", "com.apple.notes.inlinetextattachment.mention"
+                  tmp_embedded_object = AppleNotesEmbeddedInlineAttachment.new(row["Z_PK"],
+                                                                               row["ZIDENTIFIER"],
+                                                                               row["ZTYPEUTI1"],
+                                                                               self,
+                                                                               row["ZALTTEXT"],
+                                                                               row["ZTOKENCONTENTIDENTIFIER"])
                 else
                   puts "#{row["ZTYPEUTI1"]} is unrecognized ZTYPEUTI1, please submit a bug report to this project's GitHub repo to report this: https://github.com/threeplanetssoftware/apple_cloud_notes_parser/issues"
                   @logger.debug("#{row["ZTYPEUTI1"]} is unrecognized ZTYPEUTI1, check ZICCLOUDSYNCINGOBJECT Z_PK: #{row["Z_PK"]}")
-                  tmp_embedded_object = AppleNotesEmbeddedObject.new(row["Z_PK"],
-                                                                     row["ZIDENTIFIER"],
-                                                                     row["ZTYPEUTI"],
-                                                                     self)
+                  tmp_embedded_object = AppleNotesEmbeddedInlineAttachment.new(row["Z_PK"],
+                                                                               row["ZIDENTIFIER"],
+                                                                               row["ZTYPEUTI1"],
+                                                                               self,
+                                                                               row["ZALTTEXT"],
+                                                                               row["ZTOKENCONTENTIDENTIFIER"])
 
               end
             else
