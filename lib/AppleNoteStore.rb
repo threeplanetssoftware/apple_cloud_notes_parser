@@ -19,6 +19,7 @@ class AppleNoteStore
                 :database,
                 :cloud_kit_participants
 
+  IOS_VERSION_15 = 15
   IOS_VERSION_14 = 14
   IOS_VERSION_13 = 13
   IOS_VERSION_12 = 12
@@ -69,6 +70,11 @@ class AppleNoteStore
     # If ZICNOTEDATA has no columns, this is a legacy copy
     if zicnotedata_columns.length == 0
       return IOS_LEGACY_VERSION
+    end
+
+    # It appears ZACCOUNT5 showed up in iOS 15's updates
+    if ziccloudsyncingobject_columns.include?("ZACCOUNT5: INTEGER")
+      return IOS_VERSION_15
     end
 
     # It appears ZLASTOPENEDDATE showed up in iOS 14's updates
@@ -514,21 +520,33 @@ class AppleNoteStore
     server_share_column = "ZSERVERSHARE"
     server_share_column = server_share_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
+    folder_field = "ZFOLDER"
+    account_field = "ZACCOUNT4"
+    note_id_field = "ZNOTE"
+    creation_date_field = "ZCREATIONDATE1"
+ 
+    # In version 13 and 14, what is now in ZACCOUNT4 as of iOS 15 (the account ID) was in ZACCOUNT3
+    if @version == IOS_VERSION_13 or @version == IOS_VERSION_14
+      account_field = "ZACCOUNT3"
+    end
+
+    # In iOS 15 it appears ZCREATIONDATE1 moved to ZCREATIONDATE3 for notes
+    if @version > IOS_VERSION_14
+      creation_date_field = "ZCREATIONDATE3"
+    end
+
     query_string = "SELECT ZICNOTEDATA.Z_PK, ZICNOTEDATA.ZNOTE, " + 
                    "ZICNOTEDATA.ZCRYPTOINITIALIZATIONVECTOR, ZICNOTEDATA.ZCRYPTOTAG, " + 
                    "ZICNOTEDATA.ZDATA, ZICCLOUDSYNCINGOBJECT.ZCRYPTOVERIFIER, " + 
                    "ZICCLOUDSYNCINGOBJECT.ZCRYPTOSALT, ZICCLOUDSYNCINGOBJECT.ZCRYPTOITERATIONCOUNT, " + 
                    "ZICCLOUDSYNCINGOBJECT.ZCRYPTOWRAPPEDKEY, ZICCLOUDSYNCINGOBJECT.ZISPASSWORDPROTECTED, " +
-                   "ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1, ZICCLOUDSYNCINGOBJECT.ZCREATIONDATE1, " +
-                   "ZICCLOUDSYNCINGOBJECT.ZTITLE1, ZICCLOUDSYNCINGOBJECT.ZACCOUNT3, " +
-                   "ZICCLOUDSYNCINGOBJECT.ZACCOUNT2, ZICCLOUDSYNCINGOBJECT.ZFOLDER, " + 
+                   "ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1, ZICCLOUDSYNCINGOBJECT.#{creation_date_field}, " +
+                   "ZICCLOUDSYNCINGOBJECT.ZTITLE1, ZICCLOUDSYNCINGOBJECT.#{account_field}, " +
+                   "ZICCLOUDSYNCINGOBJECT.ZACCOUNT2, ZICCLOUDSYNCINGOBJECT.#{folder_field}, " + 
                    "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD, " + 
                    "ZICCLOUDSYNCINGOBJECT.#{server_share_column} " + 
                    "FROM ZICNOTEDATA, ZICCLOUDSYNCINGOBJECT " + 
                    "WHERE ZICNOTEDATA.ZNOTE=? AND ZICCLOUDSYNCINGOBJECT.Z_PK=ZICNOTEDATA.ZNOTE"
-    folder_field = "ZFOLDER"
-    account_field = "ZACCOUNT3"
-    note_id_field = "ZNOTE"
 
     # In version 12, what is now in ZACCOUNT3 (the account ID) was in ZACCOUNT2
     if @version == IOS_VERSION_12
@@ -568,6 +586,7 @@ class AppleNoteStore
     #@logger.debug("Rip Note: Query string is #{query_string}") 
     #@logger.debug("Rip Note: account field is #{account_field}")
     #@logger.debug("Rip Note: folder field is #{folder_field}")
+    #@logger.debug("Rip Note: Note ID is #{note_id}")
 
     # Execute the query
     @database.execute(query_string, note_id) do |row|
@@ -584,7 +603,7 @@ class AppleNoteStore
                                row[note_id_field],
                                row["ZTITLE1"], 
                                row["ZDATA"], 
-                               row["ZCREATIONDATE1"], 
+                               row[creation_date_field], 
                                row["ZMODIFICATIONDATE1"],
                                tmp_account,
                                tmp_folder,
