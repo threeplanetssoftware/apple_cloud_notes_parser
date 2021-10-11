@@ -5,6 +5,8 @@ require_relative 'notestore_pb.rb'
 require_relative 'AppleCloudKitRecord'
 require_relative 'AppleDecrypter.rb'
 require_relative 'AppleNotesEmbeddedInlineAttachment.rb'
+require_relative 'AppleNotesEmbeddedInlineHashtag.rb'
+require_relative 'AppleNotesEmbeddedInlineMention.rb'
 require_relative 'AppleNotesEmbeddedObject.rb'
 require_relative 'AppleNotesEmbeddedDeletedObject.rb'
 require_relative 'AppleNotesEmbeddedDrawing.rb'
@@ -56,7 +58,8 @@ class AppleNote < AppleCloudKitRecord
                 :backup,
                 :crypto_password,
                 :cloudkit_creator_record_id,
-                :cloudkit_modify_device
+                :cloudkit_modify_device,
+                :notestore
 
   ##
   # Creates a new AppleNote. Expects an Integer +z_pk+, an Integer +znote+ representing the ZICNOTEDATA.ZNOTE field, 
@@ -167,8 +170,15 @@ class AppleNote < AppleCloudKitRecord
             @logger.debug("AppleNote: Note #{@note_id} replacing attachment #{row["ZIDENTIFIER"]}")
             if row["ZTYPEUTI1"]
               case row["ZTYPEUTI1"]
-                when "com.apple.notes.inlinetextattachment.hashtag", "com.apple.notes.inlinetextattachment.mention"
-                  tmp_embedded_object = AppleNotesEmbeddedInlineAttachment.new(row["Z_PK"],
+                when "com.apple.notes.inlinetextattachment.hashtag"
+                  tmp_embedded_object = AppleNotesEmbeddedInlineHashtag.new(row["Z_PK"],
+                                                                               row["ZIDENTIFIER"],
+                                                                               row["ZTYPEUTI1"],
+                                                                               self,
+                                                                               row["ZALTTEXT"],
+                                                                               row["ZTOKENCONTENTIDENTIFIER"])
+                when "com.apple.notes.inlinetextattachment.mention"
+                  tmp_embedded_object = AppleNotesEmbeddedInlineMention.new(row["Z_PK"],
                                                                                row["ZIDENTIFIER"],
                                                                                row["ZTYPEUTI1"],
                                                                                self,
@@ -430,6 +440,27 @@ class AppleNote < AppleCloudKitRecord
     return (plaintext != false)
   end
 
+  ## 
+  # This method returns true if the AppleNote has any tags on it.
+  def has_tags
+    @embedded_objects.each do |embedded_object|
+      return true if embedded_object.is_a? AppleNotesEmbeddedInlineHashtag
+    end
+
+    return false
+  end
+
+  ## 
+  # This method returns an Array of each AppleNotesEmbeddedInlineHashtag on the AppleNote.
+  def get_all_tags
+    to_return = []
+    @embedded_objects.each do |embedded_object|
+      to_return.push(embedded_object) if embedded_object.is_a? AppleNotesEmbeddedInlineHashtag
+    end
+
+    return to_return
+  end
+
   ##
   # This method generates HTML to represent this Note, its 
   # metadata, and its contents, if applicable. It does not generate 
@@ -445,6 +476,7 @@ class AppleNote < AppleCloudKitRecord
     html += "<b>CloudKit Creator:</b> #{@notestore.cloud_kit_participants[@cloudkit_creator_record_id].email} <br />\n" if @cloudkit_creator_record_id and @notestore.cloud_kit_participants[@cloudkit_creator_record_id]
     html += "<b>CloudKit Last Modified User:</b> #{@notestore.cloud_kit_participants[@cloudkit_modifier_record_id].email} <br />\n" if @cloudkit_modifier_record_id and @notestore.cloud_kit_participants[@cloudkit_modifier_record_id]
     html += "<b>CloudKit Last Modified Device:</b> #{@cloudkit_last_modified_device} <br />\n" if @cloudkit_last_modified_device
+    html += "<b>Tags:</b> #{self.get_all_tags.join(", ")}<br />\n" if self.has_tags
     #html += "<b>Content:</b>\n"
     html += "<div class='note-content'>\n"
 

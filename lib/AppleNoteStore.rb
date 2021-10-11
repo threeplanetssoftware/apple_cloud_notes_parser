@@ -301,6 +301,17 @@ class AppleNoteStore
   end
 
   ##
+  # This method looks up an AppleNotesAccount based on the given +user_record_name+. 
+  # User record nameshould be a String that represents the ZICCLOUDSYNCINGOBJECT.ZUSERRECORDNAME of the account.
+  def get_account_by_user_record_name(user_record_name)
+    @accounts.each_pair do |account_id, account|
+      return account if (account.user_record_name == user_record_name)
+    end
+
+    return nil
+  end
+
+  ##
   # This method looks up an AppleNotesFolder based on the given +folder_id+. 
   # ID should be an Integer that represents the ZICCLOUDSYNCINGOBJECT.Z_PK of the folder.
   def get_folder(folder_id)
@@ -360,7 +371,8 @@ class AppleNoteStore
     query_string = "SELECT ZICCLOUDSYNCINGOBJECT.ZNAME, ZICCLOUDSYNCINGOBJECT.Z_PK, " + 
                    "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.ZCRYPTOITERATIONCOUNT, " + 
                    "ZICCLOUDSYNCINGOBJECT.ZCRYPTOVERIFIER, ZICCLOUDSYNCINGOBJECT.ZCRYPTOSALT, " + 
-                   "ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER, ZICCLOUDSYNCINGOBJECT.#{server_share_column} " +
+                   "ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER, ZICCLOUDSYNCINGOBJECT.#{server_share_column}, " +
+                   "ZICCLOUDSYNCINGOBJECT.ZUSERRECORDNAME " +
                    "FROM ZICCLOUDSYNCINGOBJECT " + 
                    "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?"
     
@@ -383,6 +395,7 @@ class AppleNoteStore
                                           row["ZIDENTIFIER"])
 
       # Add server-side data, if relevant
+      tmp_account.user_record_name = row["ZUSERRECORDNAME"] if row["ZUSERRECORDNAME"]
       tmp_account.add_cloudkit_server_record_data(row[server_record_column]) if row[server_record_column]
 
       if(row[server_share_column]) 
@@ -526,7 +539,7 @@ class AppleNoteStore
     creation_date_field = "ZCREATIONDATE1"
  
     # In version 13 and 14, what is now in ZACCOUNT4 as of iOS 15 (the account ID) was in ZACCOUNT3
-    if @version == IOS_VERSION_13 or @version == IOS_VERSION_14
+    if @version < IOS_VERSION_15
       account_field = "ZACCOUNT3"
     end
 

@@ -10,7 +10,8 @@ class AppleNotesAccount < AppleCloudKitRecord
   attr_accessor :primary_key,
                 :name,
                 :notes,
-                :identifier
+                :identifier,
+                :user_record_name
 
   ##
   # This creates a new AppleNotesAccount. 
@@ -31,6 +32,7 @@ class AppleNotesAccount < AppleCloudKitRecord
     @primary_key = primary_key
     @name = name
     @identifier = identifier
+    @user_record_name = ""
     # Uncomment the below line if you want to see the account names during creation
     # puts "Account #{@primary_key} is called #{@name}"
   end
@@ -64,6 +66,7 @@ class AppleNotesAccount < AppleCloudKitRecord
   def self.to_csv_headers
     ["Account Primary Key", 
      "Account Name", 
+     "Account Cloudkit Identifier",
      "Account Identifier",
      "Last Modified Device",
      "Number of Notes",
@@ -77,6 +80,7 @@ class AppleNotesAccount < AppleCloudKitRecord
   def to_csv
     [@primary_key, 
      @name, 
+     @user_record_name,
      @identifier,
      @cloudkit_last_modified_device,
      @notes.length,
