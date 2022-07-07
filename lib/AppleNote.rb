@@ -12,10 +12,12 @@ require_relative 'AppleNotesEmbeddedDeletedObject.rb'
 require_relative 'AppleNotesEmbeddedDrawing.rb'
 require_relative 'AppleNotesEmbeddedGallery.rb'
 require_relative 'AppleNotesEmbeddedPDF.rb'
+require_relative 'AppleNotesEmbeddedPublicAudio.rb'
 require_relative 'AppleNotesEmbeddedPublicObject.rb'
 require_relative 'AppleNotesEmbeddedPublicJpeg.rb'
 require_relative 'AppleNotesEmbeddedPublicURL.rb'
 require_relative 'AppleNotesEmbeddedPublicVCard.rb'
+require_relative 'AppleNotesEmbeddedPublicVideo.rb'
 require_relative 'AppleNotesEmbeddedTable.rb'
 require_relative 'AppleNoteStore.rb'
 require_relative 'AppleUniformTypeIdentifier.rb'
@@ -211,6 +213,20 @@ class AppleNote < AppleCloudKitRecord
                                                                      self,
                                                                      @backup,
                                                                      nil)
+            elsif tmp_uti.conforms_to_audiovisual 
+              tmp_embedded_object = AppleNotesEmbeddedPublicVideo.new(row["Z_PK"],
+                                                                      row["ZIDENTIFIER"],
+                                                                      row["ZTYPEUTI"],
+                                                                      self,
+                                                                      @backup,
+                                                                      nil)
+            elsif tmp_uti.conforms_to_audio
+              tmp_embedded_object = AppleNotesEmbeddedPublicAudio.new(row["Z_PK"],
+                                                                      row["ZIDENTIFIER"],
+                                                                      row["ZTYPEUTI"],
+                                                                      self,
+                                                                      @backup,
+                                                                      nil)
             elsif tmp_uti.uti == "public.vcard"
               tmp_embedded_object = AppleNotesEmbeddedPublicVCard.new(row["Z_PK"],
                                                                       row["ZIDENTIFIER"],

@@ -33,6 +33,7 @@ class AppleUniformTypeIdentifier
   ##
   # This method returns true if the UTI conforms to public.audio
   def conforms_to_audio
+    return true if @uti == "com.apple.m4a-audio"
     return true if @uti == "com.microsoft.waveform-audio"
     return true if @uti == "public.aiff-audio"
     return true if @uti == "public.midi-audio"
