@@ -3,7 +3,9 @@ require 'sqlite3'
 
 ##
 # This class represents a uniform type identifier which Apple uses
-# to identify the type of materials being described.
+# to identify the type of materials being described. Apple documents 
+# its UTIs here: 
+# https://developer.apple.com/documentation/uniformtypeidentifiers/system_declared_uniform_type_identifiers
 class AppleUniformTypeIdentifier
 
     attr_accessor :uti
@@ -29,28 +31,56 @@ class AppleUniformTypeIdentifier
   end
 
   ##
+  # This method returns true if the UTI conforms to public.audio
+  def conforms_to_audio
+    return true if @uti == "com.microsoft.waveform-audio"
+    return true if @uti == "public.aiff-audio"
+    return true if @uti == "public.midi-audio"
+    return true if @uti == "public.mp3"
+    return false
+  end
+
+  ##
+  # This method returns true if the UTI conforms to public.video 
+  # or public.movie. 
+  def conforms_to_audiovisual
+    return true if @uti == "com.apple.protected-mpeg-4-video"
+    return true if @uti == "com.apple.protected-mpeg-4-audio"
+    return true if @uti == "com.apple.quicktime-movie"
+    return true if @uti == "public.avi"
+    return true if @uti == "public.mpeg"
+    return true if @uti == "public.mpeg-2-video"
+    return true if @uti == "public.mpeg-2-transport-stream"
+    return true if @uti == "public.mpeg-4"
+    return true if @uti == "public.mpeg-4-audio"
+    return false
+  end
+
+  ##
   # This method returns true if the UTI conforms to public.image
   def conforms_to_image
     return true if @uti == "com.adobe.photoshop-image"
     return true if @uti == "com.adobe.illustrator.ai-image"
+    return true if @uti == "com.apple.icns"
+    return true if @uti == "com.apple.macpaint-image"
+    return true if @uti == "com.apple.pict"
+    return true if @uti == "com.apple.quicktime-image"
     return true if @uti == "com.compuserve.gif"
-    return true if @uti == "com.microsoft.bmp"
-    return true if @uti == "com.microsoft.ico"
-    return true if @uti == "com.truevision.tga-image"
-    return true if @uti == "com.sgi.sgi-image"
     return true if @uti == "com.ilm.openexr-image"
     return true if @uti == "com.kodak.flashpix.image"
+    return true if @uti == "com.microsoft.bmp"
+    return true if @uti == "com.microsoft.ico"
+    return true if @uti == "com.sgi.sgi-image"
+    return true if @uti == "com.truevision.tga-image"
+    return true if @uti == "public.camera-raw-image"
     return true if @uti == "public.fax"
     return true if @uti == "public.jpeg"
     return true if @uti == "public.jpeg-2000"
-    return true if @uti == "public.tiff"
-    return true if @uti == "public.camera-raw-image"
-    return true if @uti == "com.apple.pict"
-    return true if @uti == "com.apple.macpaint-image"
     return true if @uti == "public.png"
+    return true if @uti == "public.svg-image"
+    return true if @uti == "public.tiff"
     return true if @uti == "public.xbitmap-image"
-    return true if @uti == "com.apple.quicktime-image"
-    return true if @uti == "com.apple.icns"
+    return true if @uti == "org.webmproject.webp"
     return false
   end
 
