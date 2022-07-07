@@ -31,28 +31,40 @@ class AppleCloudKitRecord
       unpacked_top["Participants"]["NS.objects"].each do |participant|
 
         # Pull out the relevant values
-        participant_email = participant["UserIdentity"]["LookupInfo"]["EmailAddress"]
-        participant_phone = participant["UserIdentity"]["LookupInfo"]["PhoneNumber"]
-        participant_record = participant["UserIdentity"]["UserRecordID"]["RecordName"]
-        participant_name_components = participant["UserIdentity"]["NameComponents"]["NS.nameComponentsPrivate"]
+        if participant["UserIdentity"]
+          participant_user_identity = participant["UserIdentity"]
 
-        # Initialize a new AppleCloudKitShareParticipant
-        tmp_participant = AppleCloudKitShareParticipant.new()
-        tmp_participant.record_id = participant_record
-        tmp_participant.email = participant_email
-        tmp_participant.phone = participant_phone
+          # Initialize a new AppleCloudKitShareParticipant
+          tmp_participant = AppleCloudKitShareParticipant.new()
 
-        # Read in name components
-        tmp_participant.name_prefix = participant_name_components["NS.namePrefix"]
-        tmp_participant.first_name = participant_name_components["NS.givenName"]
-        tmp_participant.middle_name = participant_name_components["NS.middleName"]
-        tmp_participant.last_name = participant_name_components["NS.familyName"]
-        tmp_participant.name_suffix = participant_name_components["NS.nameSuffix"]
-        tmp_participant.nickname = participant_name_components["NS.nickname"]
-        tmp_participant.name_phonetic = participant_name_components["NS.phoneticRepresentation"]
+          # Read in the user's contact information
+          if participant_user_identity["LookupInfo"]
+            tmp_participant.email = participant_user_identity["LookupInfo"]["EmailAddress"]
+            tmp_participant.phone = participant_user_identity["LookupInfo"]["PhoneNumber"]
+          end
 
-        # Add them to this object
-        @share_participants.push(tmp_participant)
+          # Read in user's record id
+          if participant_user_identity["UserRecordID"]
+            tmp_participant.record_id = participant_user_identity["UserRecordID"]["RecordName"]
+          end
+
+          # Read in name components
+          if participant_user_identity["NameComponents"]
+            participant_name_components = participant["UserIdentity"]["NameComponents"]["NS.nameComponentsPrivate"]
+
+            # Split the name up into its components
+            tmp_participant.name_prefix = participant_name_components["NS.namePrefix"]
+            tmp_participant.first_name = participant_name_components["NS.givenName"]
+            tmp_participant.middle_name = participant_name_components["NS.middleName"]
+            tmp_participant.last_name = participant_name_components["NS.familyName"]
+            tmp_participant.name_suffix = participant_name_components["NS.nameSuffix"]
+            tmp_participant.nickname = participant_name_components["NS.nickname"]
+            tmp_participant.name_phonetic = participant_name_components["NS.phoneticRepresentation"]
+          end
+
+          # Add them to this object
+          @share_participants.push(tmp_participant)
+        end
       end
     end
   end
