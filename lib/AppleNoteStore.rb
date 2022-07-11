@@ -503,7 +503,7 @@ class AppleNoteStore
   # objects in ZICNOTEDATA and calls +rip_note+ on each.
   def rip_notes()
     if @version >= IOS_VERSION_9
-      @database.execute("SELECT ZICNOTEDATA.ZNOTE FROM ZICNOTEDATA") do |row|
+      @database.execute("SELECT ZICNOTEDATA.ZNOTE FROM ZICNOTEDATA WHERE ZICNOTEDATA.ZDATA NOT NULL") do |row|
         self.rip_note(row["ZNOTE"])
       end
     end
