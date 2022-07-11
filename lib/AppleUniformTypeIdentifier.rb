@@ -58,6 +58,17 @@ class AppleUniformTypeIdentifier
   end
 
   ##
+  # This method returns true if the UTI conforms to public.data objets that are likely documents
+  def conforms_to_document
+    return true if @uti == "com.microsoft.word.doc"
+    return true if @uti == "com.microsoft.excel.xls"
+    return true if @uti == "com.microsoft.powerpoint.ppt"
+    return true if @uti == "org.oasis-open.opendocument.text"
+    return true if @uti == "org.openxmlformats.wordprocessingml.document"
+    return false
+  end
+
+  ##
   # This method returns true if the UTI conforms to public.image
   def conforms_to_image
     return true if @uti == "com.adobe.photoshop-image"
