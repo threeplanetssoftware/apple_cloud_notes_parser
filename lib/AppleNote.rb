@@ -9,6 +9,7 @@ require_relative 'AppleNotesEmbeddedInlineHashtag.rb'
 require_relative 'AppleNotesEmbeddedInlineMention.rb'
 require_relative 'AppleNotesEmbeddedObject.rb'
 require_relative 'AppleNotesEmbeddedDeletedObject.rb'
+require_relative 'AppleNotesEmbeddedDocument.rb'
 require_relative 'AppleNotesEmbeddedDrawing.rb'
 require_relative 'AppleNotesEmbeddedGallery.rb'
 require_relative 'AppleNotesEmbeddedPDF.rb'
@@ -233,7 +234,19 @@ class AppleNote < AppleCloudKitRecord
                                                                       row["ZTYPEUTI"],
                                                                       self,
                                                                       @backup)
+            elsif tmp_uti.conforms_to_document
+              tmp_embedded_object = AppleNotesEmbeddedDocument.new(row["Z_PK"],
+                                                                   row["ZIDENTIFIER"],
+                                                                   row["ZTYPEUTI"],
+                                                                   self,
+                                                                   @backup)
             elsif tmp_uti.uti == "com.adobe.pdf"
+              tmp_embedded_object = AppleNotesEmbeddedPDF.new(row["Z_PK"],
+                                                              row["ZIDENTIFIER"],
+                                                              row["ZTYPEUTI"],
+                                                              self,
+                                                              @backup)
+            elsif tmp_uti.conforms_to_document
               tmp_embedded_object = AppleNotesEmbeddedPDF.new(row["Z_PK"],
                                                               row["ZIDENTIFIER"],
                                                               row["ZTYPEUTI"],
