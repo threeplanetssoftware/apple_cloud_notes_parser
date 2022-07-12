@@ -108,8 +108,7 @@ class AppleNotesEmbeddedDrawing < AppleNotesEmbeddedObject
   ##
   # This method generates the HTML necessary to display the image inline.
   def generate_html
-    return @thumbnails.first.generate_html if @thumbnails.length > 0
-    return "<img src='../#{@reference_location}' />"
+    generate_html_with_images
   end
 
 end

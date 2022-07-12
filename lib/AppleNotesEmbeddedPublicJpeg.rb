@@ -91,25 +91,14 @@ class AppleNotesEmbeddedPublicJpeg < AppleNotesEmbeddedObject
   # and reading the ZICCOUDSYNCINGOBJECT.ZIDENTIFIER of the row identified by that number 
   # in the ZICCLOUDSYNCINGOBJECT.Z_PK field.
   def get_media_uuid
-    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZMEDIA " +
-                      "FROM ZICCLOUDSYNCINGOBJECT " +
-                      "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
-                      @uuid) do |row|
-      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER " +
-                        "FROM ZICCLOUDSYNCINGOBJECT " +
-                        "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
-                        row["ZMEDIA"]) do |media_row|
-        return media_row["ZIDENTIFIER"]
-      end
-    end
+    get_media_uuid_from_zidentifier
   end
 
   ##
   # This method returns the +filepath+ of this object. 
   # This is computed based on the assumed default storage location.
   def get_media_filepath
-    return "Accounts/#{@note.account.identifier}/Media/#{get_media_uuid}/#{get_media_uuid}" if @is_password_protected
-    return "Accounts/#{@note.account.identifier}/Media/#{get_media_uuid}/#{@filename}"
+    get_media_filepath_with_uuid_and_filename
   end
 
   ##
@@ -181,8 +170,7 @@ class AppleNotesEmbeddedPublicJpeg < AppleNotesEmbeddedObject
   ##
   # This method generates the HTML necessary to display the image inline.
   def generate_html
-    return @thumbnails.first.generate_html if @thumbnails.length > 0
-    return "<img src='../#{@reference_location}' />"
+    generate_html_with_images
   end
 
 end

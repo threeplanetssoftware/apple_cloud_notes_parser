@@ -144,6 +144,22 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
   end
 
   ##
+  # Handily pulls the UUID of media from ZIDENTIFIER of the ZMEDIA row
+  def get_media_uuid_from_zidentifier
+    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZMEDIA " +
+                      "FROM ZICCLOUDSYNCINGOBJECT " +
+                      "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
+                      @uuid) do |row|
+      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER " +
+                        "FROM ZICCLOUDSYNCINGOBJECT " +
+                        "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
+                        row["ZMEDIA"]) do |media_row|
+        return media_row["ZIDENTIFIER"]
+      end
+    end
+  end
+
+  ##
   # By default this returns its own +filepath+. 
   # Subclasses will override this if they have other pointers to media objects.
   def get_media_filepath
@@ -151,10 +167,33 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
   end
 
   ##
+  # This handles a striaght forward mapping of UUID and filename
+  def get_media_filepath_with_uuid_and_filename
+    return "Accounts/#{@note.account.identifier}/Media/#{get_media_uuid}/#{get_media_uuid}" if @is_password_protected
+    "Accounts/#{@note.account.identifier}/Media/#{get_media_uuid}/#{@filename}"
+  end
+
+  ##
   # By default this returns its own +filename+. 
   # Subclasses will override this if they have other pointers to media objects.
   def get_media_filename
     @filename
+  end
+
+  ##
+  # This handles how the media filename is pulled for most "data" objects
+  def get_media_filename_from_zfilename
+    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZMEDIA " +
+                      "FROM ZICCLOUDSYNCINGOBJECT " +
+                      "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
+                      @uuid) do |row|
+      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZFILENAME " +
+                        "FROM ZICCLOUDSYNCINGOBJECT " +
+                        "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
+                        row["ZMEDIA"]) do |media_row|
+        return media_row["ZFILENAME"]
+      end
+    end 
   end
 
   ##
@@ -210,6 +249,20 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
   # This method generates the HTML to be embedded into an AppleNote's HTML.
   def generate_html
     return self.to_s
+  end
+
+  ##
+  # This method generates the HTML to be embedded into an AppleNote's HTML for objects that use thumbnails.
+  def generate_html_with_images
+    return @thumbnails.first.generate_html if @thumbnails.length > 0
+    return "<img src='../#{@reference_location}' />"
+  end
+
+  ##
+  # This method generates the HTML to be embedded into an AppleNote's HTML for objects that are just downloadable.
+  def generate_html_with_link(type="Media")
+    return "<a href='../#{@reference_location}'>#{type} #{@filename}</a>" if @reference_location
+    return "{#{type} missing due to not having a file reference location}"
   end
 
 end

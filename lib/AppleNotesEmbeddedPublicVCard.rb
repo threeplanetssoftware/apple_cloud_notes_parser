@@ -47,21 +47,18 @@ class AppleNotesEmbeddedPublicVCard < AppleNotesEmbeddedObject
     return super + " with vcard saved in #{@backup_location}" if @backup_location
     return super + " with vcard saved in #{@filepath}"
   end
+
+  ##
+  # This method returns the +uuid+ of the media.
+  def get_media_uuid
+    get_media_uuid_from_zidentifier
+  end
+
   ##
   # This method returns the +filepath+ of this object. 
   # This is computed based on the assumed default storage location.
   def get_media_filepath
-    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZMEDIA " +
-                      "FROM ZICCLOUDSYNCINGOBJECT " +
-                      "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
-                      @uuid) do |row|
-      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZFILENAME, ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER " +
-                        "FROM ZICCLOUDSYNCINGOBJECT " +
-                        "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
-                        row["ZMEDIA"]) do |media_row|
-        return "Accounts/#{@note.account.identifier}/Media/#{media_row["ZIDENTIFIER"]}/#{media_row["ZFILENAME"]}"
-      end
-    end
+    get_media_filepath_with_uuid_and_filename
   end
 
   ##
@@ -70,24 +67,13 @@ class AppleNotesEmbeddedPublicVCard < AppleNotesEmbeddedObject
   # identified by +uuid+. After that, the ZICCLOUDSYNCINGOBJECT.ZFILENAME 
   # field holds the answer.
   def get_media_filename
-    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZMEDIA " +
-                      "FROM ZICCLOUDSYNCINGOBJECT " +
-                      "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
-                      @uuid) do |row|
-      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZFILENAME " +
-                        "FROM ZICCLOUDSYNCINGOBJECT " +
-                        "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
-                        row["ZMEDIA"]) do |media_row|
-        return media_row["ZFILENAME"]
-      end
-    end
+    get_media_filename_from_zfilename
   end
 
   ##
   # This method generates the HTML necessary to display the image inline.
   def generate_html
-    return "<a href='../#{@reference_location}'>VCard #{@filename}</a>" if @reference_location
-    "{VCard missing due to not having file reference point}"
+    generate_html_with_link("VCard")
   end
 
 end
