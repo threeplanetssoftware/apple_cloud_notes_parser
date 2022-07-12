@@ -81,8 +81,7 @@ class AppleNotesEmbeddedPublicJpeg < AppleNotesEmbeddedObject
   # This method just returns a readable String for the object. 
   # Adds to the AppleNotesEmbeddedObject.to_s by pointing to where the media is.
   def to_s
-    return super + " with media in #{@backup_location}" if @backup_location
-    return super + " with media in #{@filepath}"
+    to_s_with_data("image")
   end
 
   ##

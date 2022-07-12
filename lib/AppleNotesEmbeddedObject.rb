@@ -127,13 +127,20 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     @thumbnails.sort_by!{|thumbnail| thumbnail.height * thumbnail.width}
   end
 
-
   ##
   # This method just returns a readable String for the object.
   # By default it just lists the +type+ and +uuid+. Subclasses 
   # should override this.
   def to_s
     "Embedded Object #{@type}: #{@uuid}"
+  end
+
+  ##
+  # This method provides the +to_s+ method used by most 
+  # objects with actual data.
+  def to_s_with_data(data_type="media")
+    return "Embedded Object #{@type}: #{@uuid} with #{data_type} in #{@backup_location}" if @backup_location
+    "Embedded Object #{@type}: #{@uuid} with #{data_type} in #{@filepath}"
   end
 
   ##

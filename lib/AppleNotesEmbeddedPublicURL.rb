@@ -84,7 +84,7 @@ class AppleNotesEmbeddedPublicURL < AppleNotesEmbeddedObject
   ##
   # This method generates the HTML necessary to display the image inline.
   def generate_html
-    return "<img src='../#{@thumbnails.first.reference_location}'/><a href='#{@url}'>#{@url}</a>" if @thumbnails.length > 0
+    return "<img src='../#{@thumbnails.first.reference_location}'/><a href='#{@url}'>#{@url}</a>" if (@thumbnails.length > 0 and @thumbnails.first.reference_location)
     return "<a href='#{@url}'>#{@url}</a>"
   end
 

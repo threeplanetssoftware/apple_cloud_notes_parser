@@ -34,8 +34,7 @@ class AppleNotesEmbeddedDocument < AppleNotesEmbeddedObject
   # This method just returns a readable String for the object. 
   # Adds to the AppleNotesEmbeddedObject.to_s by pointing to where the media is.
   def to_s
-    return super + " with document saved in #{@backup_location}" if @backup_location
-    return super + " with document saved in #{@filepath}"
+    to_s_with_data("document")
   end
 
   ##
