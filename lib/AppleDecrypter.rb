@@ -169,7 +169,7 @@ class AppleDecrypter
 
     if plaintext
       decrypt_result = { plaintext: plaintext, password: password }
-      @logger.debug("Apple Decrypter: #{debug_text} generated a decrypt")
+      @logger.debug("Apple Decrypter: #{debug_text} decrypted")
     end
 
     return decrypt_result
