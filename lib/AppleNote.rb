@@ -559,7 +559,28 @@ class AppleNote < AppleCloudKitRecord
     current_checkbox = nil
 
     # Iterate over the attribute runs to display stuffs
-    tmp_note_store_proto.document.note.attribute_run.each do |note_part|
+    tmp_note_store_proto.document.note.attribute_run.each_with_index do |note_part, attribute_run_index|
+
+      # Clean up open style tags
+      stale_style = (!note_part.paragraph_style or (note_part.paragraph_style.style_type != current_style))
+      if stale_style
+        case current_style
+        when STYLE_TYPE_TITLE
+          html += "</h1>"
+        when STYLE_TYPE_HEADING
+          html += "</h2>"
+        when STYLE_TYPE_SUBHEADING
+          html += "</h3>"
+        when STYLE_TYPE_MONOSPACED
+          html += "</code>"
+        when STYLE_TYPE_NUMBERED_LIST
+          html += "</li></ol>"
+        when STYLE_TYPE_DOTTED_LIST
+          html += "</li></ul>"
+        when STYLE_TYPE_DASHED_LIST
+          html += "</li></ul>"
+        end
+      end
 
       # Check for something embedded, if so, don't put in the characters, replace them with the object
       if note_part.attachment_info
@@ -571,16 +592,18 @@ class AppleNote < AppleCloudKitRecord
         end
         embedded_object_index += 1
         current_index += note_part.length
+        current_style = -1
 
       else # We must have text to parse
 
         # Deal with styling
         if note_part.paragraph_style
 
-          # Because similar checkboxe carry over past a line break, 
+          # Because similar checkboxes carry over past a line break, 
           # need to close it when we hit a different type
           if current_checkbox and note_part.paragraph_style.style_type != STYLE_TYPE_CHECKBOX
             html += "</li></ul>\n"
+            current_checkbox = nil
           end
 
           # Add in indents, this doesn't work so well
@@ -591,41 +614,46 @@ class AppleNote < AppleCloudKitRecord
           end
 
           # Add new style
-          case note_part.paragraph_style.style_type
-          when STYLE_TYPE_TITLE
-            html += "<h1>"
-          when STYLE_TYPE_HEADING
-            html += "<h2>"
-          when STYLE_TYPE_SUBHEADING
-            html += "<h3>"
-          when STYLE_TYPE_MONOSPACED
-            html += "<code>"
-          when STYLE_TYPE_NUMBERED_LIST
-            html += "<ol><li>"
-          when STYLE_TYPE_DOTTED_LIST
-            html += "<ul><li>"
-          when STYLE_TYPE_DASHED_LIST
-            html += "<ul><li>"
-          when STYLE_TYPE_CHECKBOX
+          needs_new_style = (attribute_run_index == 0 or (note_part.paragraph_style.style_type != current_style) or current_style == STYLE_TYPE_CHECKBOX)
+          if needs_new_style
+            case note_part.paragraph_style.style_type
+            when STYLE_TYPE_TITLE
+              html += "<h1>"
+            when STYLE_TYPE_HEADING
+              html += "<h2>"
+            when STYLE_TYPE_SUBHEADING
+              html += "<h3>"
+            when STYLE_TYPE_MONOSPACED
+              html += "<code>"
+            when STYLE_TYPE_NUMBERED_LIST
+              html += "<ol><li>"
+            when STYLE_TYPE_DOTTED_LIST
+              html += "<ul><li>"
+            when STYLE_TYPE_DASHED_LIST
+              html += "<ul><li>"
+            when STYLE_TYPE_CHECKBOX
 
-            # Set the style to apply to the list item
-            style = "unchecked"
-            style = "checked" if note_part.paragraph_style.checklist.done == 1
+              # Set the style to apply to the list item
+              style = "unchecked"
+              style = "checked" if note_part.paragraph_style.checklist.done == 1
 
-            # Open a list if we don't have a current one going
-            if !current_checkbox
-              html += "<ul class='checklist'><li class='#{style}'>"
+              # Open a list if we don't have a current one going
+              if !current_checkbox
+                html += "<ul class='checklist'><li class='#{style}'>"
 
-            # Or just open a new list element
-            elsif current_checkbox != note_part.paragraph_style.checklist.uuid
-              html += "</li><li class='#{style}'>"
+              # Or just open a new list element
+              elsif current_checkbox != note_part.paragraph_style.checklist.uuid
+                html += "</li><li class='#{style}'>"
+              end
+              # Update our knowledge of the current checkbox
+              current_checkbox = note_part.paragraph_style.checklist.uuid
             end
-
-            # Update our knowledge of the current checkbox
-            current_checkbox = note_part.paragraph_style.checklist.uuid
           end
           current_style = note_part.paragraph_style.style_type
 
+        else
+          # Clear the current style if we did NOT have any paragraph style information
+          current_style = -1
         end
 
         # Add in font stuff
@@ -665,8 +693,10 @@ class AppleNote < AppleCloudKitRecord
         end
         
         # Deal with newlines
-        if current_style == STYLE_TYPE_NUMBERED_LIST or current_style == STYLE_TYPE_DOTTED_LIST or current_style == STYLE_TYPE_DASHED_LIST
+        if (current_style == STYLE_TYPE_NUMBERED_LIST or current_style == STYLE_TYPE_DOTTED_LIST or current_style == STYLE_TYPE_DASHED_LIST)
+          need_to_close_li = slice_to_add.end_with?("\n")
           slice_to_add = slice_to_add.split("\n").join("</li><li>")
+          slice_to_add += "</li><li>" if need_to_close_li
         elsif current_style == STYLE_TYPE_CHECKBOX
           slice_to_add.gsub!("\n","")
         end
@@ -698,45 +728,44 @@ class AppleNote < AppleCloudKitRecord
           html += "</i></b>"
         end
 
-        # Close any remaining styles
-        case current_style
-        when STYLE_TYPE_TITLE
-          html += "</h1>"
-        when STYLE_TYPE_HEADING
-          html += "</h2>"
-        when STYLE_TYPE_SUBHEADING
-          html += "</h3>"
-        when STYLE_TYPE_MONOSPACED
-          html += "</code>"
-        when STYLE_TYPE_NUMBERED_LIST
-          html += "</li></ol>"
-        when STYLE_TYPE_DOTTED_LIST
-          html += "</li></ul>"
-        when STYLE_TYPE_DASHED_LIST
-          html += "</li></ul>"
-        end
-
-        if slice_to_add[-1] == "\n"
-          #html += "\n";
-        end
-
       end
-
 
     end
 
+    # Close any remaining styles
+    case current_style
+    when STYLE_TYPE_TITLE
+      html += "</h1>"
+    when STYLE_TYPE_HEADING
+      html += "</h2>"
+    when STYLE_TYPE_SUBHEADING
+      html += "</h3>"
+    when STYLE_TYPE_MONOSPACED
+      html += "</code>"
+    when STYLE_TYPE_NUMBERED_LIST
+      html += "</li></ol>"
+    when STYLE_TYPE_DOTTED_LIST
+      html += "</li></ul>"
+    when STYLE_TYPE_DASHED_LIST
+      html += "</li></ul>"
+    end
+
+    # Remove any doubled tags
     html.gsub!('</h1><h1>','')
     html.gsub!('</h2><h2>','')
     html.gsub!('</h3><h3>','')
     html.gsub!('</code><code>','')
-    html.gsub!('</del><del>','')
     html.gsub!('</b><b>','')
     html.gsub!('</i><i>','')
     html.gsub!('</u><u>','')
+    html.gsub!('</del><del>','')
+    html.gsub!('<li></li>','')
+    html.gsub!('</ul><ul>','')
     html.gsub!(/<h1>\s*<\/h1>/,'') # Remove empty titles
     html.gsub!(/\n<\/h1>/,'</h1>') # Remove extra line breaks in front of h1
     html.gsub!(/\n<\/h2>/,'</h2>') # Remove extra line breaks in front of h2
     html.gsub!(/\n<\/h3>/,'</h3>') # Remove extra line breaks in front of h3
+    html.gsub!("\u2028",'<br/>') # Translate \u2028 used to denote newlines in lists into an actual HTML line break
 
     # Return what we've built
     return html
