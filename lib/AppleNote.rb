@@ -599,16 +599,22 @@ class AppleNote < AppleCloudKitRecord
         # Deal with styling
         if note_part.paragraph_style
 
+          # Remember if we have a checkbox
+          note_part_is_checkbox = note_part.paragraph_style.style_type == STYLE_TYPE_CHECKBOX
+
+          # Remember if we have a list
+          note_part_is_list = (note_part.paragraph_style.style_type == STYLE_TYPE_DASHED_LIST or note_part.paragraph_style.style_type == STYLE_TYPE_NUMBERED_LIST or note_part.paragraph_style.style_type == STYLE_TYPE_DOTTED_LIST)
+
           # Because similar checkboxes carry over past a line break, 
           # need to close it when we hit a different type
-          if current_checkbox and note_part.paragraph_style.style_type != STYLE_TYPE_CHECKBOX
+          if current_checkbox and !note_part_is_checkbox
             html += "</li></ul>\n"
             current_checkbox = nil
           end
 
           # Add in indents, this doesn't work so well
           indents = 0
-          while indents < note_part.paragraph_style.indent_amount do
+          while indents < note_part.paragraph_style.indent_amount and !note_part_is_checkbox and !note_part_is_list do
             html += "\t"
             indents += 1
           end
