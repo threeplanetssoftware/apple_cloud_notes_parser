@@ -106,6 +106,12 @@ class AppleBackup
       return
     end
 
+    # Fail out if we do not have a filename to copy and log appropriately
+    if !filename_on_phone
+      @logger.error("Can't call back_up_file with filename_on_phone that is nil") if @type != SINGLE_FILE_BACKUP_TYPE
+      return
+    end
+
     # Fail out if the file simply can't be found and log appropriately
     if !File.exist?(filepath_on_disk)
       @logger.error("Can't call back_up_file with filepath_on_disk that does not exist: #{filepath_on_disk}") if @type != SINGLE_FILE_BACKUP_TYPE
