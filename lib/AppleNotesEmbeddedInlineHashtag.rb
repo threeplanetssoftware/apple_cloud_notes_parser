@@ -18,6 +18,7 @@ class AppleNotesEmbeddedInlineHashtag < AppleNotesEmbeddedInlineAttachment
   ##
   # This method just returns the hashtag's text, which is found in alt_text.
   def to_s
+    #return "" if !@alt_text
     @alt_text
   end
 
