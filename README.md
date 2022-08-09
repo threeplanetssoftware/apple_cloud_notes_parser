@@ -41,14 +41,16 @@ The benefit of pointing at full backups is this program can pull files out of th
 ### Options
 
 The options that are currently supported are:
-2. `-f | --file FILE`: Tells the program to look only at a specific file that is identified. 
-1. `-i | --itunes-dir DIRECTORY`: Tells the program to look at an iTunes backup folder.
-4. `-m | --mac DIRECTORY`: Tells the program to look at a folder from a Mac.
-5. `-o | --output-dir DIRECTORY`: Changes the output folder from the default `./output` to the specified one.
-3. `-p | --physical DIRECTORY`: Tells the program to look at a physical backup folder.
-7. `-w | --password-file FILE`: Tells the program which password list to use 
-8. `--show-password-successes`: Tells the program to display to the console which passwords generated decrypts at the end.
-9. `-h | --help`: Prints the usage information.
+
+1. `-f | --file FILE`: Tells the program to look only at a specific file that is identified. 
+2. `-g | --one-output-folder`: Tells the program to always overwrite the same folder `[output]/notes_rip`.
+2. `-i | --itunes-dir DIRECTORY`: Tells the program to look at an iTunes backup folder.
+3. `-m | --mac DIRECTORY`: Tells the program to look at a folder from a Mac.
+4. `-o | --output-dir DIRECTORY`: Changes the output folder from the default `./output` to the specified one.
+5. `-p | --physical DIRECTORY`: Tells the program to look at a physical backup folder.
+6. `-w | --password-file FILE`: Tells the program which password list to use 
+7. `--show-password-successes`: Tells the program to display to the console which passwords generated decrypts at the end.
+8. `-h | --help`: Prints the usage information.
 
 ## How It Works
 
@@ -96,6 +98,9 @@ All of the output from this program will go into the output folder (it will be c
 Within that folder, sub-folders will be created based on the current date and time, to the second. 
 For example, if this program was run on December 17, 2019 at 10:24:28 local, the output for that run would be in `[location of this program]/output/2019_12_17-10_24_28/`. 
 If the type of backup used has the original files referenced in attached media, this program will copy the file into the output directory, under `[location of this program]/output/[date of run]/files`, and beneath that following the file path on disk, relative to the Notes application folder. 
+
+If the `-g` option is passed, this program will always save its output into the `[output location]/notes_rip` folder, overwriting the contents each time. 
+This may be useful for version control, or for people only ever parsing the same set of notes each time. 
 
 This program will produce four CSV files summarizing the information stored in `[location of this program]/output/[date of run]/csv`: `note_store_accounts.csv`, `note_store_embedded_objects.csv`, `note_store_folders.csv`, and `note_store_notes.sqlite`. 
 Finally, it will produce an HTML dump of the notes to reflect the text and table formatting which may be meaningful in `[location of this program]/output/[date of run]/html`.

@@ -17,6 +17,7 @@ backup_type = nil
 password_file = nil
 output_directory = Pathname.new("./output")
 password_success_display = false
+one_output_folder = false
 
 #
 # Options Parser setup
@@ -34,6 +35,11 @@ end
 option_parser.on("-f", "--file FILE", "Single NoteStore.sqlite file.") do |file|
   target_directory = Pathname.new(file)
   backup_type = AppleBackup::SINGLE_FILE_BACKUP_TYPE
+end
+
+# Always overwrite the same folder
+option_parser.on("-g", "--one-output-folder", "Always write to the same output folder.") do
+  one_output_folder = true
 end
 
 # Support physical backups
@@ -82,8 +88,18 @@ puts "\nStarting Apple Notes Parser at #{DateTime.now.strftime("%c")}"
 # Prepare the output folder
 #
 
-# Add a DTG to the output folder
-output_directory = output_directory + DateTime.now().strftime("%Y_%m_%d-%H_%M_%S")
+if one_output_folder
+  # Add "notes_rip to the folder name
+  output_directory = output_directory + "notes_rip"
+else
+  # Add a DTG to the output folder
+  output_directory = output_directory + DateTime.now().strftime("%Y_%m_%d-%H_%M_%S")
+end
+
+# Delete the old copy if we want just one output folder every time
+if one_output_folder and output_directory.exist?
+  output_directory.rmtree
+end
 
 # Create the output folder if it doesn't exist
 if !output_directory.exist?
