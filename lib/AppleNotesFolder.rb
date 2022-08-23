@@ -54,7 +54,7 @@ class AppleNotesFolder < AppleCloudKitRecord
 
     # Sort the array if we want to retain the order
     note_order = @notes
-    note_order = @notes.sort_by { |note| [note.is_pinned ? 0 : 1, note.modify_time] } if @retain_order
+    note_order = @notes.sort_by { |note| [note.is_pinned ? 1 : 0, note.modify_time] }.reverse if @retain_order
 
     # Now display whatever we ended up with
     note_order.each do |note|
