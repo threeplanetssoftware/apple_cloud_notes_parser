@@ -321,7 +321,8 @@ class AppleNote < AppleCloudKitRecord
   # This class method returns an Array representing the headers needed for an AppleNote CSV export.
   def self.to_csv_headers
     ["Note Primary Key", 
-     "Note ID", 
+     "Note ID",
+     "Pinned?", 
      "Owning Account Name", 
      "Owning Folder Name",
      "Modify By Device", 
@@ -346,8 +347,11 @@ class AppleNote < AppleCloudKitRecord
   # are cryptographic variables, it also includes the +crypto_salt+, +crypto_tag+, +crypto_key+, 
   # +crypto_iv+, and +encrypted_data+, all as hex, vice binary.
   def to_csv
+    tmp_pinned = "N"
+    tmp_pinned = "Y" if @is_pinned
     [@primary_key, 
      @note_id, 
+     tmp_pinned,
      @account.name, 
      @folder.name, 
      @cloudkit_last_modified_device, 
