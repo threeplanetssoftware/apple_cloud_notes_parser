@@ -63,7 +63,8 @@ class AppleNote < AppleCloudKitRecord
                 :crypto_password,
                 :cloudkit_creator_record_id,
                 :cloudkit_modify_device,
-                :notestore
+                :notestore,
+                :is_pinned
 
   ##
   # Creates a new AppleNote. Expects an Integer +z_pk+, an Integer +znote+ representing the ZICNOTEDATA.ZNOTE field, 
@@ -101,6 +102,9 @@ class AppleNote < AppleCloudKitRecord
     @database = @notestore.database
     @backup = @notestore.backup
     @logger = @backup.logger
+
+    # Handle pinning, added in iOS 11
+    @is_pinned = false
 
     # Treat legacy stuff different
     if @notestore.version == AppleNoteStore::IOS_LEGACY_VERSION
@@ -507,18 +511,16 @@ class AppleNote < AppleCloudKitRecord
   # metadata, and its contents, if applicable. It does not generate 
   # full HTML, just enough for this note's card to be displayed.
   def generate_html
-    html = "<a id='note_#{@note_id}'><h1>Note #{@note_id}</h1></a>\n"
+    html = "<a id='note_#{@note_id}'><h1>Note #{@note_id}#{" (📌)" if @is_pinned}</h1></a>\n"
     html += "<b>Account:</b> #{@account.name} <br />\n"
     html += "<b>Folder:</b> <a href='#folder_#{@folder.primary_key}'>#{@folder.name}</a> <br/>\n"
     html += "<b>Title:</b> #{@title} <br/>\n"
     html += "<b>Created:</b> #{@creation_time} <br/>\n"
     html += "<b>Modified:</b> #{@modify_time} <br />\n"
-    #html += "<b>Password:</b> #{@crypto_password} <br />\n" if @crypto_password
     html += "<b>CloudKit Creator:</b> #{@notestore.cloud_kit_participants[@cloudkit_creator_record_id].email} <br />\n" if @cloudkit_creator_record_id and @notestore.cloud_kit_participants[@cloudkit_creator_record_id]
     html += "<b>CloudKit Last Modified User:</b> #{@notestore.cloud_kit_participants[@cloudkit_modifier_record_id].email} <br />\n" if @cloudkit_modifier_record_id and @notestore.cloud_kit_participants[@cloudkit_modifier_record_id]
     html += "<b>CloudKit Last Modified Device:</b> #{@cloudkit_last_modified_device} <br />\n" if @cloudkit_last_modified_device
     html += "<b>Tags:</b> #{self.get_all_tags.join(", ")}<br />\n" if self.has_tags
-    #html += "<b>Content:</b>\n"
     html += "<div class='note-content'>\n"
 
     # Handle the text to insert, only if we have plaintext to run
