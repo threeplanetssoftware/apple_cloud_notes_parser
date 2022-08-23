@@ -17,7 +17,8 @@ class AppleNoteStore
                 :version,
                 :backup,
                 :database,
-                :cloud_kit_participants
+                :cloud_kit_participants,
+                :retain_order
 
   IOS_VERSION_15 = 15
   IOS_VERSION_14 = 14
@@ -46,6 +47,7 @@ class AppleNoteStore
     @folders = Hash.new()
     @accounts = Hash.new()
     @cloud_kit_participants = Hash.new()
+    @retain_order = false
     puts "Guessed Notes Version: #{@version}"
     @logger.debug("Guessed Notes Version: #{@version}")
   end
@@ -479,6 +481,7 @@ class AppleNoteStore
       tmp_folder = AppleNotesFolder.new(row["Z_PK"],
                                         row["ZTITLE2"],
                                         get_account(row["ZOWNER"]))
+      tmp_folder.retain_order = @retain_order
 
       # Add server-side data, if relevant
       tmp_folder.add_cloudkit_server_record_data(row[server_record_column]) if row[server_record_column]

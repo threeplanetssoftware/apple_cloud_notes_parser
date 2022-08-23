@@ -14,7 +14,8 @@ class AppleBackup
                 :type,
                 :output_folder,
                 :logger,
-                :decrypter
+                :decrypter,
+                :retain_order
 
   # For backups that are created by iTunes and hash the files
   HASHED_BACKUP_TYPE = 1
@@ -43,6 +44,8 @@ class AppleBackup
     @note_store_legacy_location = @output_folder + "notes.sqlite"
     @note_store_temporary_location = @output_folder + "test.sqlite"
     @decrypter = AppleDecrypter.new(self)
+
+    @retain_order = false
   end
 
   ##
@@ -161,6 +164,7 @@ class AppleBackup
   # This function kicks off the parsing of notes
   def rip_notes
     @note_stores.each do |note_store|
+      note_store.retain_order = @retain_order
       @logger.debug("Apple Backup: Ripping notes from Note Store version #{note_store.version}")
       note_store.rip_all_objects()
     end

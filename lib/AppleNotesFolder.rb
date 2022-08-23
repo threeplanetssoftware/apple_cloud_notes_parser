@@ -9,7 +9,8 @@ class AppleNotesFolder < AppleCloudKitRecord
   attr_accessor :primary_key,
                 :name,
                 :account,
-                :notes
+                :notes,
+                :retain_order
 
   ##
   # Creates a new AppleNotesFolder.
@@ -23,6 +24,7 @@ class AppleNotesFolder < AppleCloudKitRecord
     @primary_key = folder_primary_key
     @name = folder_name
     @account = folder_account
+    @retain_order = false
     # Uncomment the below line if you want to see the folder names during creation
     #puts "Folder #{@primary_key} is called #{@name}"
   end
@@ -49,8 +51,14 @@ class AppleNotesFolder < AppleCloudKitRecord
   def generate_html
     html = "<a id='folder_#{@primary_key}'><h1>#{@account.name} - #{@name}</h1></a>"
     html += "<ul>\n";
-    @notes.each do |note|
-      html += "<li><a href='#note_#{note.note_id}'>Note #{note.note_id}</a>: #{note.title}</li>\n";
+
+    # Sort the array if we want to retain the order
+    note_order = @notes
+    note_order = @notes.sort_by { |note| [note.is_pinned ? 0 : 1, note.modify_time] } if @retain_order
+
+    # Now display whatever we ended up with
+    note_order.each do |note|
+      html += "<li><a href='#note_#{note.note_id}'>Note #{note.note_id}</a>: #{note.title}#{" (📌)" if note.is_pinned}</li>\n";
     end
     html += "</ul>\n";
     return html
