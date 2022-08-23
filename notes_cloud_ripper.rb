@@ -12,12 +12,13 @@ require_relative 'lib/AppleNoteStore.rb'
 
 # Set up variables for the run
 options = {}
-target_directory = nil
 backup_type = nil
-password_file = nil
-output_directory = Pathname.new("./output")
-password_success_display = false
 one_output_folder = false
+output_directory = Pathname.new("./output")
+password_file = nil
+password_success_display = false
+retain_order = false
+target_directory = nil
 
 #
 # Options Parser setup
@@ -62,6 +63,11 @@ end
 # Add in a password file for encrypted notes
 option_parser.on("-w", "--password-file FILE", "File with plaintext passwords, one per line.") do |file|
   password_file = Pathname.new(file)
+end
+
+# Retain Notes' folder and note displayed ordering, vice database ordering
+option_parser.on("-r", "--retain-display-order", "Retain the display order for folders and notes, not the database's order.") do
+  retain_order = true
 end
 
 # Add in a password file for encrypted notes
@@ -136,6 +142,8 @@ end
 if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid_notes?
 
   logger.debug("Backup is valid, ripping notes")
+
+  apple_backup.retain_order = retain_order
 
   # Add the password file
   apple_backup.decrypter.add_passwords_from_file(password_file)

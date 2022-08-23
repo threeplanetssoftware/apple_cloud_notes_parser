@@ -48,9 +48,10 @@ The options that are currently supported are:
 3. `-m | --mac DIRECTORY`: Tells the program to look at a folder from a Mac.
 4. `-o | --output-dir DIRECTORY`: Changes the output folder from the default `./output` to the specified one.
 5. `-p | --physical DIRECTORY`: Tells the program to look at a physical backup folder.
-6. `-w | --password-file FILE`: Tells the program which password list to use 
-7. `--show-password-successes`: Tells the program to display to the console which passwords generated decrypts at the end.
-8. `-h | --help`: Prints the usage information.
+6. `-r | --retain-display-order`: Tells the program to display the HTML output in the order Apple Notes displays it, not the database's order. 
+7. `-w | --password-file FILE`: Tells the program which password list to use 
+8. `--show-password-successes`: Tells the program to display to the console which passwords generated decrypts at the end.
+9. `-h | --help`: Prints the usage information.
 
 ## How It Works
 
@@ -101,6 +102,11 @@ If the type of backup used has the original files referenced in attached media, 
 
 If the `-g` option is passed, this program will always save its output into the `[output location]/notes_rip` folder, overwriting the contents each time. 
 This may be useful for version control, or for people only ever parsing the same set of notes each time. 
+
+If the `-r` or `--retain-display-order` option is passed, then the HTML output will order the note entries under each folder at the top as Apple Notes displays them, not in the actual database order. 
+This means that pinned notes will appear before unpinned notes and notes within the pinned and unpinned groups will be sorted according to modification time, newest to oldest. 
+The order of note content at the bottom of the page will retain database order, by the note's ID (i.e. if Note 14 will come after Note 13 and before Note 15, regardless of which folders they are in). 
+Soon the folder names themselves will also reflect the ordering as it appears in Apple Notes. 
 
 This program will produce four CSV files summarizing the information stored in `[location of this program]/output/[date of run]/csv`: `note_store_accounts.csv`, `note_store_embedded_objects.csv`, `note_store_folders.csv`, and `note_store_notes.sqlite`. 
 Finally, it will produce an HTML dump of the notes to reflect the text and table formatting which may be meaningful in `[location of this program]/output/[date of run]/html`.
