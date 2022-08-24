@@ -56,13 +56,15 @@ class AppleNoteStore
   # This method does a set of database calls to try to guess the version of Apple Notes we are ripping. 
   # It tries to structure the checks to bail out as each specific version is recognized and then assume we are not it.
   # Helpful changelogs: 
-  # 14 (): ??
-  # 13 (https://www.apple.com/ios/ios-13/): Added checklists and shared folders, better search, and gallery 
-  # 12 (https://web.archive.org/web/20190909033052/https://www.apple.com/ios/ios-12/): Nothing major 
-  # 11 (https://web.archive.org/web/20180828212252/https://www.apple.com/ios/ios-11/): Added document scanner, added tables 
-  # 10 (https://web.archive.org/web/20170912052423/https://www.apple.com/ios/ios-10): Added collaboration features 
-  # 9 (https://web.archive.org/web/20160906075542/https://www.apple.com/ios/): Added sketches, ability to insert images inline, websites, and maps. Added iCLoud support
-  # 8 (https://web.archive.org/web/20150905181128/http://www.apple.com/ios/): Added rich text support, and adding images
+  # 16 (): No need for separate password to lock notes
+  # 15 (https://support.apple.com/en-us/HT212788): Hashtags, mentions
+  # 14 (https://support.apple.com/en-us/HT211808): Better scanning
+  # 13 (https://support.apple.com/en-us/HT210393): Added checklists and shared folders, better search, and gallery 
+  # 12 (https://support.apple.com/en-us/HT209084): Nothing major 
+  # 11 (https://support.apple.com/en-us/HT208067): Added document scanner, added tables 
+  # 10 (https://support.apple.com/en-us/HT208011): Added collaboration features 
+  # 9 (https://support.apple.com/en-us/HT208010): Added sketches, ability to insert images inline, websites, and maps. Added iCLoud support
+  # 8 (https://support.apple.com/en-us/HT208000): Added rich text support, and adding images
   def self.guess_ios_version(database_to_check)
     database_tables = get_database_tables(database_to_check)
 
