@@ -1,6 +1,7 @@
 require 'keyed_archive'
 require 'sqlite3'
-require_relative 'AppleCloudKitRecord'
+require_relative 'notestore_pb.rb'
+require_relative 'AppleCloudKitRecord.rb'
 
 ##
 # This class represents an object embedded in an AppleNote.
@@ -209,6 +210,194 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
   def get_parent_primary_key
     return nil if !@parent
     return @parent.primary_key
+  end
+
+  ## 
+  # This method handles spawning embedded objects based on the ZTypeUti or ZTypeUti1
+  # field in the database. It expects an AppleNote +note+ which is the genesis of the object 
+  # and a NoteStoreProto +note_proto+ that contains attribute runs. This returns a +Hash+ 
+  # containing the resulting String and an array ob objects. 
+  def self.generate_embedded_objects(note, note_proto)
+    to_return = Hash.new()
+    to_return[:to_string] = ""
+    to_return[:objects] = Array.new()
+
+    notestore = note.notestore
+    database = note.database
+    note_id = note.note_id
+    backup = note.backup
+    logger = backup.logger
+
+    # Tables cells will be a MergableDataProto
+    root_node = note_proto
+    # Note objects will be a NoteStoreProto
+    if note_proto.is_a? NoteStoreProto
+      root_node = note_proto.document
+    end
+  
+    to_return[:to_string] = root_node.note.note_text
+    root_node.note.attribute_run.each do |note_part|
+
+      # Check for something embedded
+      if note_part.attachment_info
+        tmp_embedded_object = nil
+
+        z_type_uti = "ZICCLOUDSYNCINGOBJECT.ZTYPEUTI, ZICCLOUDSYNCINGOBJECT.ZTYPEUTI1, ZICCLOUDSYNCINGOBJECT.ZALTTEXT, ZICCLOUDSYNCINGOBJECT.ZTOKENCONTENTIDENTIFIER"
+
+        # For versions older than iOS 15
+        if notestore.version < AppleNoteStore::IOS_VERSION_15
+          z_type_uti = "ZICCLOUDSYNCINGOBJECT.ZTYPEUTI"
+        end
+
+        tmp_query = "SELECT ZICCLOUDSYNCINGOBJECT.Z_PK, ZICCLOUDSYNCINGOBJECT.ZNOTE, " + 
+                    "ZICCLOUDSYNCINGOBJECT.ZCREATIONDATE, ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE, " +
+                    "#{z_type_uti}, ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER " + 
+                    "FROM ZICCLOUDSYNCINGOBJECT " +
+                    "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?"
+
+        # If the note was "deleted", the obects will have been deleted, and this will turn up nothing
+        database.execute(tmp_query, note_part.attachment_info.attachment_identifier) do |row|
+          logger.debug("AppleNote: Note #{note_id} replacing attachment #{row["ZIDENTIFIER"]}")
+          
+          # Pull the right field to make a new UTI object
+          tmp_uti_string = row["ZTYPEUTI"]
+          if row["ZTYPEUTI1"]
+            tmp_uti_string = row["ZTYPEUTI1"]
+          end
+          tmp_uti = AppleUniformTypeIdentifier.new(tmp_uti_string)
+
+          # Handle inline text attachments
+          if tmp_uti.conforms_to_inline_attachment
+            if tmp_uti.uti == "com.apple.notes.inlinetextattachment.hashtag"
+              tmp_embedded_object = AppleNotesEmbeddedInlineHashtag.new(row["Z_PK"],
+                                                                           row["ZIDENTIFIER"],
+                                                                           row["ZTYPEUTI1"],
+                                                                           note,
+                                                                           row["ZALTTEXT"],
+                                                                           row["ZTOKENCONTENTIDENTIFIER"])
+            elsif tmp_uti.uti == "com.apple.notes.inlinetextattachment.mention"
+              tmp_embedded_object = AppleNotesEmbeddedInlineMention.new(row["Z_PK"],
+                                                                           row["ZIDENTIFIER"],
+                                                                           row["ZTYPEUTI1"],
+                                                                           note,
+                                                                           row["ZALTTEXT"],
+                                                                           row["ZTOKENCONTENTIDENTIFIER"])
+            else
+              puts "#{row["ZTYPEUTI1"]} is unrecognized ZTYPEUTI1, please submit a bug report to this project's GitHub repo to report this: https://github.com/threeplanetssoftware/apple_cloud_notes_parser/issues"
+              logger.debug("#{row["ZTYPEUTI1"]} is unrecognized ZTYPEUTI1, check ZICCLOUDSYNCINGOBJECT Z_PK: #{row["Z_PK"]}")
+              tmp_embedded_object = AppleNotesEmbeddedInlineAttachment.new(row["Z_PK"],
+                                                                           row["ZIDENTIFIER"],
+                                                                           row["ZTYPEUTI1"],
+                                                                           note,
+                                                                           row["ZALTTEXT"],
+                                                                           row["ZTOKENCONTENTIDENTIFIER"])
+            end
+          # Handle actual objects
+          elsif tmp_uti.conforms_to_image
+            tmp_embedded_object = AppleNotesEmbeddedPublicJpeg.new(row["Z_PK"],
+                                                                   row["ZIDENTIFIER"],
+                                                                   row["ZTYPEUTI"],
+                                                                   note,
+                                                                   backup,
+                                                                   nil)
+          elsif tmp_uti.conforms_to_audiovisual 
+            tmp_embedded_object = AppleNotesEmbeddedPublicVideo.new(row["Z_PK"],
+                                                                    row["ZIDENTIFIER"],
+                                                                    row["ZTYPEUTI"],
+                                                                    note,
+                                                                    backup,
+                                                                    nil)
+          elsif tmp_uti.conforms_to_audio
+            tmp_embedded_object = AppleNotesEmbeddedPublicAudio.new(row["Z_PK"],
+                                                                    row["ZIDENTIFIER"],
+                                                                    row["ZTYPEUTI"],
+                                                                    note,
+                                                                    backup,
+                                                                    nil)
+          elsif tmp_uti.uti == "public.vcard"
+            tmp_embedded_object = AppleNotesEmbeddedPublicVCard.new(row["Z_PK"],
+                                                                    row["ZIDENTIFIER"],
+                                                                    row["ZTYPEUTI"],
+                                                                    note,
+                                                                    backup)
+          elsif tmp_uti.conforms_to_document
+            tmp_embedded_object = AppleNotesEmbeddedDocument.new(row["Z_PK"],
+                                                                 row["ZIDENTIFIER"],
+                                                                 row["ZTYPEUTI"],
+                                                                 note,
+                                                                 backup)
+          elsif tmp_uti.uti == "com.adobe.pdf"
+            tmp_embedded_object = AppleNotesEmbeddedPDF.new(row["Z_PK"],
+                                                            row["ZIDENTIFIER"],
+                                                            row["ZTYPEUTI"],
+                                                            note,
+                                                            backup)
+          elsif tmp_uti.conforms_to_document
+            tmp_embedded_object = AppleNotesEmbeddedPDF.new(row["Z_PK"],
+                                                            row["ZIDENTIFIER"],
+                                                            row["ZTYPEUTI"],
+                                                            note,
+                                                            backup)
+          elsif tmp_uti.uti == "public.url"
+            tmp_embedded_object = AppleNotesEmbeddedPublicURL.new(row["Z_PK"],
+                                                                  row["ZIDENTIFIER"],
+                                                                  row["ZTYPEUTI"],
+                                                                  note)
+          elsif tmp_uti.uti == "com.apple.notes.gallery"
+            tmp_embedded_object = AppleNotesEmbeddedGallery.new(row["Z_PK"],
+                                                                row["ZIDENTIFIER"],
+                                                                row["ZTYPEUTI"],
+                                                                note,
+                                                                backup)
+          elsif tmp_uti.uti == "com.apple.notes.table"
+            tmp_embedded_object = AppleNotesEmbeddedTable.new(row["Z_PK"],
+                                                              row["ZIDENTIFIER"],
+                                                              row["ZTYPEUTI"],
+                                                              note)
+          elsif tmp_uti.uti == "com.apple.drawing.2"
+            tmp_embedded_object = AppleNotesEmbeddedDrawing.new(row["Z_PK"],
+                                                                row["ZIDENTIFIER"],
+                                                                row["ZTYPEUTI"],
+                                                                note,
+                                                                backup)
+          # Catch any other public.* types that likely represent something stored on disk
+          elsif tmp_uti.is_public? or tmp_uti.uti == "com.apple.macbinary-archive"
+            tmp_embedded_object = AppleNotesEmbeddedPublicObject.new(row["Z_PK"],
+                                                                     row["ZIDENTIFIER"],
+                                                                     row["ZTYPEUTI"],
+                                                                     note,
+                                                                     backup)
+          # Deal with dynamic entries
+          elsif tmp_uti.is_dynamic?
+            tmp_embedded_object = AppleNotesEmbeddedPublicObject.new(row["Z_PK"],
+                                                                     row["ZIDENTIFIER"],
+                                                                     row["ZTYPEUTI"],
+                                                                     note,
+                                                                     backup)
+          else
+            tmp_embedded_object = AppleNotesEmbeddedObject.new(row["Z_PK"],
+                                                               row["ZIDENTIFIER"],
+                                                               row["ZTYPEUTI"],
+                                                               note)
+            puts "#{row["ZTYPEUTI"]} is unrecognized ZTYPEUTI, please submit a bug report to this project's GitHub repo to report this: https://github.com/threeplanetssoftware/apple_cloud_notes_parser/issues"
+            logger.debug("#{row["ZTYPEUTI"]} is unrecognized ZTYPEUTI, check ZICCLOUDSYNCINGOBJECT Z_PK: #{row["Z_PK"]}")
+          end
+        end
+
+        # If we still have't created an embedded object, we likely had somthing that was previously deleted
+        if !tmp_embedded_object
+          tmp_embedded_object = AppleNotesEmbeddedDeletedObject.new(note_part.attachment_info.attachment_identifier,
+                                                                    note_part.attachment_info.type_uti,
+                                                                    note)
+        end
+
+        # Update plaintext to note something else is here
+        to_return[:to_string] = to_return[:to_string].sub(/\ufffc/, "{#{tmp_embedded_object.to_s}}")
+        to_return[:objects].push(tmp_embedded_object)
+      end
+    end
+
+    to_return
   end
 
   ##

@@ -244,7 +244,7 @@ class AppleNoteStore
     @notes.each do |key, note|
   
       # Loop over eac AppleNotesEmbeddedObject
-      note.embedded_objects.each do |embedded_object|
+      note.all_embedded_objects.each do |embedded_object|
 
         # Get the results of AppleNotesEmbeddedObject.to_csv
         embedded_object_csv = embedded_object.to_csv
