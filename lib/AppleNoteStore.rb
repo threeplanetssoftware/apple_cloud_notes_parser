@@ -20,6 +20,7 @@ class AppleNoteStore
                 :cloud_kit_participants,
                 :retain_order
 
+  IOS_VERSION_16 = 16
   IOS_VERSION_15 = 15
   IOS_VERSION_14 = 14
   IOS_VERSION_13 = 13
@@ -74,6 +75,11 @@ class AppleNoteStore
     # If ZICNOTEDATA has no columns, this is a legacy copy
     if zicnotedata_columns.length == 0
       return IOS_LEGACY_VERSION
+    end
+
+    # It appears ZACCOUNT6 - ZACCOUNT8 showed up in iOS 16's updates
+    if ziccloudsyncingobject_columns.include?("ZACCOUNT6: INTEGER")
+      return IOS_VERSION_16
     end
 
     # It appears ZACCOUNT5 showed up in iOS 15's updates
@@ -539,10 +545,15 @@ class AppleNoteStore
     server_share_column = server_share_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
     folder_field = "ZFOLDER"
-    account_field = "ZACCOUNT4"
+    account_field = "ZACCOUNT7"
     note_id_field = "ZNOTE"
     creation_date_field = "ZCREATIONDATE1"
  
+    # In version 15, what is now in ZACCOUNT7 as of iOS 16 (the account ID) was in ZACCOUNT4
+    if @version == IOS_VERSION_15
+      account_field = "ZACCOUNT4"
+    end
+
     # In version 13 and 14, what is now in ZACCOUNT4 as of iOS 15 (the account ID) was in ZACCOUNT3
     if @version < IOS_VERSION_15
       account_field = "ZACCOUNT3"
