@@ -139,10 +139,10 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
       target_dictionary_object.dictionary.element.each do |row|
         current_row = get_target_uuid_from_object_entry(@table_objects[row.key.object_index])
         target_cell = @table_objects[row.value.object_index]
-
+        
         # Check for any embedded objects and generate them if they exist
         replaced_objects = AppleNotesEmbeddedObject.generate_embedded_objects(@note, target_cell)
-        @reconstructed_table[@row_indices[current_row]][@column_indices[current_column]] = replaced_objects[:to_string]
+        @reconstructed_table[@row_indices[current_row]][@column_indices[current_column]] = replaced_objects[:to_string] if (@row_indices[current_row] and @column_indices[current_column])
 
         # Push any embedded objects into the AppleNote's recursive array, pushing onto the regular array would overwrite the table
         replaced_objects[:objects].each do |replaced_object|
