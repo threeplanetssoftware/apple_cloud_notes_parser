@@ -88,17 +88,19 @@ class AppleNotesEmbeddedGallery < AppleNotesEmbeddedObject
       end
     end
 
-    # Inflate the GZip
-    zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
-    gunzipped_data = zlib_inflater.inflate(gzipped_data)
+    # Inflate the GZip if it exists, deleted objects won't
+    if gzipped_data
+      zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
+      gunzipped_data = zlib_inflater.inflate(gzipped_data)
 
-    # Read the protobuff
-    mergabledata_proto = MergableDataProto.decode(gunzipped_data)
-    mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
-      if mergeable_data_object_entry.custom_map
-        create_child_from_uuid(mergeable_data_object_entry.custom_map.map_entry.first.value.string_value)
+      # Read the protobuff
+      mergabledata_proto = MergableDataProto.decode(gunzipped_data)
+      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
+        if mergeable_data_object_entry.custom_map
+          create_child_from_uuid(mergeable_data_object_entry.custom_map.map_entry.first.value.string_value)
+        end
+
       end
-
     end
     nil
   end
