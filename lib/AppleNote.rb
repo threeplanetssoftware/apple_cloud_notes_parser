@@ -448,7 +448,7 @@ class AppleNote < AppleCloudKitRecord
       if note_part.attachment_info
 
         if @embedded_objects[embedded_object_index]
-          html += @embedded_objects[embedded_object_index].generate_html# + "\n"
+          html += @embedded_objects[embedded_object_index].generate_html
         else
           html += "[Object missing, this is common for deleted notes]"
         end
@@ -567,6 +567,11 @@ class AppleNote < AppleCloudKitRecord
           slice_to_add += "</li><li>" if need_to_close_li
         elsif current_style == STYLE_TYPE_CHECKBOX
           slice_to_add.gsub!("\n","")
+        end
+
+        # Add in links that are part of the text itself
+        if note_part.link and note_part.link.length > 0
+          slice_to_add = "<a href='#{note_part.link}' target='_blank'>#{slice_to_add}</a>"
         end
 
         html += slice_to_add
