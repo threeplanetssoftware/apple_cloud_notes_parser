@@ -62,11 +62,9 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       optional :attachment_info, :message, 12, "AttachmentInfo"
     end
     add_message "NoteStoreProto" do
-      required :unknown_1, :int32, 1
       required :document, :message, 2, "Document"
     end
     add_message "Document" do
-      required :unknown_1, :int32, 1
       required :version, :int32, 2
       required :note, :message, 3, "Note"
     end
@@ -75,11 +73,9 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       repeated :attribute_run, :message, 5, "AttributeRun"
     end
     add_message "MergableDataProto" do
-      required :unknown_1, :int32, 1
       required :mergable_data_object, :message, 2, "MergableDataObject"
     end
     add_message "MergableDataObject" do
-      required :unknown_1, :int32, 1
       required :version, :int32, 2
       required :mergeable_data_object_data, :message, 3, "MergeableDataObjectData"
     end
@@ -91,10 +87,19 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     end
     add_message "MergeableDataObjectEntry" do
       required :register_latest, :message, 1, "RegisterLatest"
+      optional :list, :message, 5, "List"
       optional :dictionary, :message, 6, "Dictionary"
+      optional :unknown_message, :message, 9, "UnknownMergeableDataObjectEntryMessage"
       optional :note, :message, 10, "Note"
       optional :custom_map, :message, 13, "MergeableDataObjectMap"
       optional :ordered_set, :message, 16, "OrderedSet"
+    end
+    add_message "UnknownMergeableDataObjectEntryMessage" do
+      optional :unknown_entry, :message, 1, "UnknownMergeableDataObjectEntryMessageEntry"
+    end
+    add_message "UnknownMergeableDataObjectEntryMessageEntry" do
+      optional :unknown_int1, :int32, 1
+      optional :unknown_int2, :int64, 2
     end
     add_message "MergeableDataObjectMap" do
       required :type, :int32, 1
@@ -115,6 +120,22 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
     add_message "OrderedSetOrderingArrayAttachment" do
       required :index, :int32, 1
       required :uuid, :bytes, 2
+    end
+    add_message "List" do
+      repeated :list_entry, :message, 1, "ListEntry"
+    end
+    add_message "ListEntry" do
+      required :id, :message, 2, "ObjectID"
+      optional :details, :message, 3, "ListEntryDetails"
+      required :additional_details, :message, 4, "ListEntryDetails"
+    end
+    add_message "ListEntryDetails" do
+      optional :list_entry_details_key, :message, 1, "ListEntryDetailsKey"
+      optional :id, :message, 2, "ObjectID"
+    end
+    add_message "ListEntryDetailsKey" do
+      required :list_entry_details_type_index, :int32, 1
+      required :list_entry_details_key, :int32, 2
     end
   end
 end
@@ -137,8 +158,14 @@ MergableDataProto = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("Me
 MergableDataObject = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("MergableDataObject").msgclass
 MergeableDataObjectData = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("MergeableDataObjectData").msgclass
 MergeableDataObjectEntry = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("MergeableDataObjectEntry").msgclass
+UnknownMergeableDataObjectEntryMessage = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("UnknownMergeableDataObjectEntryMessage").msgclass
+UnknownMergeableDataObjectEntryMessageEntry = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("UnknownMergeableDataObjectEntryMessageEntry").msgclass
 MergeableDataObjectMap = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("MergeableDataObjectMap").msgclass
 OrderedSet = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("OrderedSet").msgclass
 OrderedSetOrdering = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("OrderedSetOrdering").msgclass
 OrderedSetOrderingArray = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("OrderedSetOrderingArray").msgclass
 OrderedSetOrderingArrayAttachment = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("OrderedSetOrderingArrayAttachment").msgclass
+List = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("List").msgclass
+ListEntry = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("ListEntry").msgclass
+ListEntryDetails = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("ListEntryDetails").msgclass
+ListEntryDetailsKey = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("ListEntryDetailsKey").msgclass

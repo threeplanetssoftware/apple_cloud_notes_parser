@@ -134,11 +134,26 @@ message MergeableDataObjectData {
 // UUIDs are rows, and another might hold the text of a cell.
 message MergeableDataObjectEntry {
   required RegisterLatest register_latest = 1;
+  optional List list = 5;
   optional Dictionary dictionary = 6;
+  optional UnknownMergeableDataObjectEntryMessage unknown_message = 9;
   optional Note note = 10;
   optional MergeableDataObjectMap custom_map = 13;
   optional OrderedSet ordered_set = 16;
 }
+
+// This is unknown, it first was noticed in folder order analysis.
+message UnknownMergeableDataObjectEntryMessage {
+  optional UnknownMergeableDataObjectEntryMessageEntry unknown_entry = 1;
+}
+
+// This is unknown, it first was noticed in folder order analysis.
+// "unknown_int2" is where the folder order is stored
+message UnknownMergeableDataObjectEntryMessageEntry {
+  optional int32 unknown_int1 = 1;
+  optional int64 unknown_int2 = 2;
+}
+
 
 // The Object Map uses its type to identify what you are looking at and 
 // then a map entry to do something with that value.
@@ -174,4 +189,25 @@ message OrderedSetOrderingArrayAttachment {
   required bytes uuid = 2;
 }
 
+// A List holds details about multiple objects
+message List {
+  repeated ListEntry list_entry = 1;
+}
 
+// A list Entry holds details about a specific object
+message ListEntry {
+  required ObjectID id = 2;
+  optional ListEntryDetails details = 3; // I dislike this naming, but don't have better information
+  required ListEntryDetails additional_details = 4;
+}
+
+// List Entry Details hold another object ID and unidentified mapping
+message ListEntryDetails {
+  optional ListEntryDetailsKey list_entry_details_key= 1;
+  optional ObjectID id = 2;
+}
+
+message ListEntryDetailsKey {
+  required int32 list_entry_details_type_index = 1;
+  required int32 list_entry_details_key = 2;
+}

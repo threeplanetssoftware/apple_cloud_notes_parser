@@ -152,6 +152,7 @@ types = {
   },
 
   "mergeable_data_object_data": { #
+    1: ("mergeable_data_object_stats", "Mergeable Data Object Stats"),
     3: ("mergeable_data_object_entry", "Mergeable Data Object Entry"),
     4: ("string", "Mergeable Data Object Key Item"),
     5: ("string", "Mergeable Data Object Type Item"),
@@ -159,14 +160,39 @@ types = {
     # 7: unknown?
   },
 
+  "enum stat_enum": { #
+    0: "0: ??",
+    1: "1: Total Mergeable Data Objects",
+  },
+
+  "mergeable_data_object_stats": { #
+    1: ("mergeable_data_object_stat", "Mergeable Data Object Stat"),
+  },
+
+  "mergeable_data_object_stat": { #
+    1: ("int32", "Stat Type"), # This may actually be an enum
+    2: ("int32", "Value"),
+  },
+
   "mergeable_data_object_entry": { #
     1: ("register_latest", "Register Latest"),
     5: ("list", "List"),
     6: ("dictionary", "Dictionary"),
-    # 9: unknown?
+    9: ("mergeable_data_object_unknown_message", "Unknown Message"),
     10: ("note", "Note"),
     13: ("mergeable_data_object_custom_map", "Object Map"),
     16: ("ordered_set", "Ordered Set"),
+  },
+
+  "mergeable_data_object_unknown_message": {
+    1: ("mergeable_data_object_unknown_message_entry", "Unknown Entry"),
+    #1: ("bytes", "bytes"),
+    #1: ("map_entry", "Unknown Entry"),
+  },
+
+  "mergeable_data_object_unknown_message_entry": {
+    1: ("int32", "Unknown Int"),
+    2: ("int64", "Unknown Int 2"),
   },
 
   "list": {
@@ -175,11 +201,18 @@ types = {
 
   "list_entry": {
     2: ("object_id", "Object ID"),
-    4: ("list_entry_details", "List Entry Details"),
+    3: ("list_entry_details", "List Entry Details"),
+    4: ("list_entry_details", "List Entry Additional Details"),
   },
 
   "list_entry_details": {
+    1: ("list_entry_details_key", "List Entry Details Key"),
     2: ("object_id", "Object ID"),
+  },
+
+  "list_entry_details_key": {
+    1: ("varint", "list_entry_details_type_index"),
+    2: ("varint", "list_entry_details_key"),
   },
 
   "mergeable_data_object_custom_map": {
