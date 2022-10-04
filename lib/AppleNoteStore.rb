@@ -46,6 +46,7 @@ class AppleNoteStore
     @version = version
     @notes = Hash.new()
     @folders = Hash.new()
+    @folder_order = Hash.new()
     @accounts = Hash.new()
     @cloud_kit_participants = Hash.new()
     @retain_order = false
@@ -275,7 +276,7 @@ class AppleNoteStore
   # CSV object.
   def get_folder_csv
     to_return = [AppleNotesFolder.to_csv_headers]
-    @folders.each do |key, folder|
+    @folders.sort_by{|key, folder| key}.each do |key, folder|
       to_return.push(folder.to_csv)
     end
     to_return
@@ -375,6 +376,10 @@ class AppleNoteStore
     server_share_column = "ZSERVERSHARE"
     server_share_column = server_share_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
+    # Set the ZACCOUNTDATA column to look at
+    account_data_column = "-1 as ZACCOUNTDATA"
+    account_data_column = "ZICCLOUDSYNCINGOBJECT.ZACCOUNTDATA" if @version >= 13 # This column appears to show up in iOS 12
+
     @logger.debug("Rip Account: Using server_record_column of #{server_record_column}")
 
     # Set the query
@@ -382,7 +387,7 @@ class AppleNoteStore
                    "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.ZCRYPTOITERATIONCOUNT, " + 
                    "ZICCLOUDSYNCINGOBJECT.ZCRYPTOVERIFIER, ZICCLOUDSYNCINGOBJECT.ZCRYPTOSALT, " + 
                    "ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER, ZICCLOUDSYNCINGOBJECT.#{server_share_column}, " +
-                   "ZICCLOUDSYNCINGOBJECT.ZUSERRECORDNAME " +
+                   "ZICCLOUDSYNCINGOBJECT.ZUSERRECORDNAME, #{account_data_column} " +
                    "FROM ZICCLOUDSYNCINGOBJECT " + 
                    "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?"
     
@@ -424,6 +429,49 @@ class AppleNoteStore
                                          row["ZCRYPTOVERIFIER"])
       end
 
+      # Store the folder structure if we have one
+      if row["ZACCOUNTDATA"] and row["ZACCOUNTDATA"] > 0
+        account_data_query_string = "SELECT ZICCLOUDSYNCINGOBJECT.ZMERGEABLEDATA " + 
+                                    "FROM ZICCLOUDSYNCINGOBJECT " + 
+                                    "WHERE Z_PK=?"
+        @database.execute(account_data_query_string, row["ZACCOUNTDATA"]) do |account_data_row|
+          gzipped_data = account_data_row["ZMERGEABLEDATA"]
+
+          # Inflate the GZip
+          zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
+          mergeable_data = zlib_inflater.inflate(gzipped_data)
+
+          # Read the protobuff
+          mergabledata_proto = MergableDataProto.decode(mergeable_data)
+
+          # Loop over all the mergeable data object entries to find the list
+          mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
+
+            # Once you find the list, loop over each entry to...
+            if mergeable_data_object_entry.list
+              mergeable_data_object_entry.list.list_entry.each do |list_entry|
+
+                # Fetch the folder order, which is an int64 in the protobuf
+                additional_details_index = list_entry.additional_details.id.object_index
+                additional_details_object = mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry[additional_details_index]
+                tmp_folder_placement = additional_details_object.unknown_message.unknown_entry.unknown_int2
+
+                # Pull out the object index we can find the UUID at
+                list_index = list_entry.id.object_index
+
+                # Use that index to find the UUID's object
+                tmp_folder_uuid_object = mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry[list_index]
+
+                # Look inside that object to get the string value that is saved in the custom map
+                tmp_folder_uuid = tmp_folder_uuid_object.custom_map.map_entry.first.value.string_value
+
+                @folder_order[tmp_folder_uuid] = tmp_folder_placement
+              end
+            end
+          end
+        end
+      end
+
       @logger.debug("Rip Account: Created account #{tmp_account.name}")
 
       @accounts[account_id] = tmp_account
@@ -453,6 +501,16 @@ class AppleNoteStore
       @logger.debug("Rip Folders final array: #{key} corresponds to #{folder.name}")
     end
 
+    # Sort the folders if we want to retain the order, group each account together
+    if @retain_order
+      @folders = @folders.sort_by{|folder_id, folder| [folder.account.name, folder.sort_order]}.to_h
+
+      # Also organize the child folders nicely
+      @folders.each do |folder_id, folder|
+        folder.sort_children
+      end
+    end
+
   end
 
   ##
@@ -473,14 +531,15 @@ class AppleNoteStore
   
     query_string = "SELECT ZICCLOUDSYNCINGOBJECT.ZTITLE2, ZICCLOUDSYNCINGOBJECT.ZOWNER, " + 
                    "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.#{server_share_column}, " +
-                   "ZICCLOUDSYNCINGOBJECT.Z_PK " +
+                   "ZICCLOUDSYNCINGOBJECT.Z_PK, ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER, " +
+                   "ZICCLOUDSYNCINGOBJECT.ZPARENT " +
                    "FROM ZICCLOUDSYNCINGOBJECT " + 
                    "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?"
 
     #Change things up for the legacy version
     if @version == IOS_LEGACY_VERSION
       query_string = "SELECT ZSTORE.Z_PK, ZSTORE.ZNAME as ZTITLE2, " +
-                     "ZSTORE.ZACCOUNT as ZOWNER " + 
+                     "ZSTORE.ZACCOUNT as ZOWNER, '' as ZIDENTIFIER " +
                      "FROM ZSTORE " +
                      "WHERE ZSTORE.Z_PK=?"
     end
@@ -489,7 +548,10 @@ class AppleNoteStore
       tmp_folder = AppleNotesFolder.new(row["Z_PK"],
                                         row["ZTITLE2"],
                                         get_account(row["ZOWNER"]))
+
+      # Set whether the folder displays notes in numeric order, or by modification date
       tmp_folder.retain_order = @retain_order
+      tmp_folder.sort_order = @folder_order[row["ZIDENTIFIER"]] if @folder_order[row["ZIDENTIFIER"]]
 
       # Add server-side data, if relevant
       tmp_folder.add_cloudkit_server_record_data(row[server_record_column]) if row[server_record_column]
@@ -505,8 +567,21 @@ class AppleNoteStore
 
       @logger.debug("Rip Folder: Created folder #{tmp_folder.name}")
 
+      # Handle folder heirarchy
+      if row["ZPARENT"]
+        tmp_parent_folder_id = row["ZPARENT"]
+        tmp_parent_folder = get_folder(tmp_parent_folder_id) #@folders[tmp_parent_folder_id]
+
+        tmp_folder.parent = tmp_parent_folder
+        tmp_parent_folder.add_child(tmp_folder)
+        @logger.debug("Rip Folder: Added folder #{tmp_folder.full_name} as child to #{tmp_parent_folder.name}")
+      end
+      
+      # Whether child or not, we add it to the overall tracker so we can look up by folder ID.
+      # We'll clean up on output by testing to see if a folder has a parent.
       @folders[folder_id] = tmp_folder
-    end 
+
+    end
   end
 
   ##
@@ -757,7 +832,8 @@ class AppleNoteStore
     html += "</head>\n"
     html += "<body>\n"
     @folders.each do |folder_id, folder|
-      html += folder.generate_html + "\n"
+      # Only kick out results if the folder isn't a child folder
+      html += folder.generate_html + "\n" if !folder.is_child?
     end
   
     html += "<div class='note-cards'>\n"
