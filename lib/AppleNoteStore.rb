@@ -437,35 +437,39 @@ class AppleNoteStore
         @database.execute(account_data_query_string, row["ZACCOUNTDATA"]) do |account_data_row|
           gzipped_data = account_data_row["ZMERGEABLEDATA"]
 
-          # Inflate the GZip
-          zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
-          mergeable_data = zlib_inflater.inflate(gzipped_data)
+          # Make sure this exists before we try to unpack it
+          if gzipped_data
 
-          # Read the protobuff
-          mergabledata_proto = MergableDataProto.decode(mergeable_data)
+            # Inflate the GZip
+            zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
+            mergeable_data = zlib_inflater.inflate(gzipped_data)
 
-          # Loop over all the mergeable data object entries to find the list
-          mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
+            # Read the protobuff
+            mergabledata_proto = MergableDataProto.decode(mergeable_data)
 
-            # Once you find the list, loop over each entry to...
-            if mergeable_data_object_entry.list
-              mergeable_data_object_entry.list.list_entry.each do |list_entry|
+            # Loop over all the mergeable data object entries to find the list
+            mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
 
-                # Fetch the folder order, which is an int64 in the protobuf
-                additional_details_index = list_entry.additional_details.id.object_index
-                additional_details_object = mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry[additional_details_index]
-                tmp_folder_placement = additional_details_object.unknown_message.unknown_entry.unknown_int2
+              # Once you find the list, loop over each entry to...
+              if mergeable_data_object_entry.list
+                mergeable_data_object_entry.list.list_entry.each do |list_entry|
 
-                # Pull out the object index we can find the UUID at
-                list_index = list_entry.id.object_index
+                  # Fetch the folder order, which is an int64 in the protobuf
+                  additional_details_index = list_entry.additional_details.id.object_index
+                  additional_details_object = mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry[additional_details_index]
+                  tmp_folder_placement = additional_details_object.unknown_message.unknown_entry.unknown_int2
 
-                # Use that index to find the UUID's object
-                tmp_folder_uuid_object = mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry[list_index]
+                  # Pull out the object index we can find the UUID at
+                  list_index = list_entry.id.object_index
 
-                # Look inside that object to get the string value that is saved in the custom map
-                tmp_folder_uuid = tmp_folder_uuid_object.custom_map.map_entry.first.value.string_value
+                  # Use that index to find the UUID's object
+                  tmp_folder_uuid_object = mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry[list_index]
 
-                @folder_order[tmp_folder_uuid] = tmp_folder_placement
+                  # Look inside that object to get the string value that is saved in the custom map
+                  tmp_folder_uuid = tmp_folder_uuid_object.custom_map.map_entry.first.value.string_value
+
+                  @folder_order[tmp_folder_uuid] = tmp_folder_placement
+                end
               end
             end
           end
