@@ -387,7 +387,8 @@ class AppleNoteStore
                    "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.ZCRYPTOITERATIONCOUNT, " + 
                    "ZICCLOUDSYNCINGOBJECT.ZCRYPTOVERIFIER, ZICCLOUDSYNCINGOBJECT.ZCRYPTOSALT, " + 
                    "ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER, ZICCLOUDSYNCINGOBJECT.#{server_share_column}, " +
-                   "ZICCLOUDSYNCINGOBJECT.ZUSERRECORDNAME, #{account_data_column} " +
+                   "ZICCLOUDSYNCINGOBJECT.ZUSERRECORDNAME, #{account_data_column}, " +
+                   "ZICCLOUDSYNCINGOBJECT.ZACCOUNTNAMEFORACCOUNTLISTSORTING " +
                    "FROM ZICCLOUDSYNCINGOBJECT " + 
                    "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?"
     
@@ -412,6 +413,9 @@ class AppleNoteStore
       # Add server-side data, if relevant
       tmp_account.user_record_name = row["ZUSERRECORDNAME"] if row["ZUSERRECORDNAME"]
       tmp_account.add_cloudkit_server_record_data(row[server_record_column]) if row[server_record_column]
+
+      # Set the sort order for the account so we can properly sort things later
+      tmp_account.sort_order_name = row["ZACCOUNTNAMEFORACCOUNTLISTSORTING"] if row["ZACCOUNTNAMEFORACCOUNTLISTSORTING"]
 
       if(row[server_share_column]) 
         tmp_account.add_cloudkit_sharing_data(row[server_share_column])
@@ -515,7 +519,7 @@ class AppleNoteStore
 
     # Sort the folders if we want to retain the order, group each account together
     if @retain_order
-      @folders = @folders.sort_by{|folder_id, folder| [folder.account.name, folder.sort_order]}.to_h
+      @folders = @folders.sort_by{|folder_id, folder| [folder.account.sort_order_name, folder.sort_order]}.to_h
 
       # Also organize the child folders nicely
       @folders.each do |folder_id, folder|

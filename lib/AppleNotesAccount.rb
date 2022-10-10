@@ -11,7 +11,8 @@ class AppleNotesAccount < AppleCloudKitRecord
                 :name,
                 :notes,
                 :identifier,
-                :user_record_name
+                :user_record_name,
+                :sort_order_name
 
   ##
   # This creates a new AppleNotesAccount. 
@@ -31,6 +32,9 @@ class AppleNotesAccount < AppleCloudKitRecord
     # Set this account's variables
     @primary_key = primary_key
     @name = name
+
+    # Defaulting to the same value as the name, this can be overridden if the sort order is known
+    @sort_order_name = name
     @identifier = identifier
     @user_record_name = ""
     # Uncomment the below line if you want to see the account names during creation
