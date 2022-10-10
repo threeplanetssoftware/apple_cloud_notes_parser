@@ -501,7 +501,15 @@ class AppleNoteStore
       end
     end
 
+    # Loop over all folders to do some clean up
     @folders.each_pair do |key, folder|
+      if folder.is_orphan?
+        tmp_parent_folder_id = folder.parent_id
+        tmp_parent_folder = get_folder(tmp_parent_folder_id)
+        tmp_parent_folder.add_child(folder)
+        @logger.debug("Rip Folder: Added folder #{folder.full_name} as child to #{tmp_parent_folder.name}")
+      end
+
       @logger.debug("Rip Folders final array: #{key} corresponds to #{folder.name}")
     end
 
@@ -571,14 +579,10 @@ class AppleNoteStore
 
       @logger.debug("Rip Folder: Created folder #{tmp_folder.name}")
 
-      # Handle folder heirarchy
+      # Remember folder heirarchy
       if row["ZPARENT"]
         tmp_parent_folder_id = row["ZPARENT"]
-        tmp_parent_folder = get_folder(tmp_parent_folder_id) #@folders[tmp_parent_folder_id]
-
-        tmp_folder.parent = tmp_parent_folder
-        tmp_parent_folder.add_child(tmp_folder)
-        @logger.debug("Rip Folder: Added folder #{tmp_folder.full_name} as child to #{tmp_parent_folder.name}")
+        tmp_folder.parent_id = tmp_parent_folder_id
       end
       
       # Whether child or not, we add it to the overall tracker so we can look up by folder ID.

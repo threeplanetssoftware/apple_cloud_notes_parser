@@ -12,7 +12,8 @@ class AppleNotesFolder < AppleCloudKitRecord
                 :notes,
                 :retain_order,
                 :sort_order,
-                :parent
+                :parent,
+                :parent_id
 
   ##
   # Creates a new AppleNotesFolder.
@@ -33,6 +34,7 @@ class AppleNotesFolder < AppleCloudKitRecord
 
     # By default we have no parent folder
     @parent = nil
+    @parent_id = nil
 
     # Pre-bake the sort order to a nice high value
     @sort_order = (0 - Float::INFINITY)
@@ -57,6 +59,12 @@ class AppleNotesFolder < AppleCloudKitRecord
   # This is a helper function to tell if a folder is a child folder or not
   def is_child?
     return @parent != nil
+  end
+
+  ##
+  # This is a helper function to identify child folders that need their parent set
+  def is_orphan?
+    return (@parent_id != nil and @parent == nil)
   end
 
   ##
