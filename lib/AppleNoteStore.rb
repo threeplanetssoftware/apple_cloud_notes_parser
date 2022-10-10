@@ -184,7 +184,7 @@ class AppleNoteStore
   ##
   # This method ensures that the SQLite3::Database is a valid iCloud version of Apple Notes.
   def valid_notes?
-    return true if @version >= 8 # Easy out if we've already identified the version
+    return true if @version >= IOS_LEGACY_VERSION # Easy out if we've already identified the version
 
     # Just because my fingerprinting isn't great yet, adding in a more manual check for the key tables we need
     expected_tables = ["ZICCLOUDSYNCINGOBJECT",
@@ -370,15 +370,15 @@ class AppleNoteStore
 
     # Set the ZSERVERRECORD column to look at
     server_record_column = "ZSERVERRECORD"
-    server_record_column = server_record_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+    server_record_column = server_record_column + "DATA" if @version >= IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
     # Set the ZSERVERSHARE column to look at
     server_share_column = "ZSERVERSHARE"
-    server_share_column = server_share_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+    server_share_column = server_share_column + "DATA" if @version >= IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
     # Set the ZACCOUNTDATA column to look at
     account_data_column = "-1 as ZACCOUNTDATA"
-    account_data_column = "ZICCLOUDSYNCINGOBJECT.ZACCOUNTDATA" if @version >= 13 # This column appears to show up in iOS 12
+    account_data_column = "ZICCLOUDSYNCINGOBJECT.ZACCOUNTDATA" if @version >= IOS_VERSION_13 # This column appears to show up in iOS 12
 
     @logger.debug("Rip Account: Using server_record_column of #{server_record_column}")
 
@@ -535,11 +535,11 @@ class AppleNoteStore
 
     # Set the ZSERVERRECORD column to look at
     server_record_column = "ZSERVERRECORD"
-    server_record_column = server_record_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+    server_record_column = server_record_column + "DATA" if @version >= IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
     # Set the ZSERVERSHARE column to look at
     server_share_column = "ZSERVERSHARE"
-    server_share_column = server_share_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+    server_share_column = server_share_column + "DATA" if @version >= IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
   
     query_string = "SELECT ZICCLOUDSYNCINGOBJECT.ZTITLE2, ZICCLOUDSYNCINGOBJECT.ZOWNER, " + 
                    "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.#{server_share_column}, " +
@@ -621,11 +621,11 @@ class AppleNoteStore
 
     # Set the ZSERVERRECORD column to look at
     server_record_column = "ZSERVERRECORD"
-    server_record_column = server_record_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+    server_record_column = server_record_column + "DATA" if @version >= IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
     # Set the ZSERVERSHARE column to look at
     server_share_column = "ZSERVERSHARE"
-    server_share_column = server_share_column + "DATA" if @version >= 12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+    server_share_column = server_share_column + "DATA" if @version >= IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
     folder_field = "ZFOLDER"
     account_field = "ZACCOUNT7"
