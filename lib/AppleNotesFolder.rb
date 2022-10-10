@@ -76,7 +76,7 @@ class AppleNotesFolder < AppleCloudKitRecord
   ##
   # This class method spits out an Array containing the CSV headers needed to describe all of these objects
   def self.to_csv_headers
-    ["Folder Primary Key", "Folder Name", "Number of Notes", "Owning Account ID", "Owning Account Name", "Cloudkit Participants", "Parent Folder Primary Key", "Parent Folder Name"]
+    ["Folder Primary Key", "Folder Name", "Number of Notes", "Owning Account ID", "Owning Account Name", "Cloudkit Participants", "Parent Folder Primary Key", "Parent Folder Name", "Smart Folder Query"]
   end
 
   ##
@@ -89,7 +89,8 @@ class AppleNotesFolder < AppleCloudKitRecord
       parent_id = @parent.primary_key
       parent_name = @parent.name
     end
-    to_return = [@primary_key, @name, @notes.length, @account.primary_key, @account.name, participant_emails, parent_id, parent_name]
+
+    to_return = [@primary_key, @name, @notes.length, @account.primary_key, @account.name, participant_emails, parent_id, parent_name, ""]
 
     return to_return
   end

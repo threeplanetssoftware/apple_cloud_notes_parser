@@ -4,6 +4,7 @@ require_relative 'AppleCloudKitShareParticipant'
 require_relative 'AppleNote.rb'
 require_relative 'AppleNotesAccount.rb'
 require_relative 'AppleNotesFolder.rb'
+require_relative 'AppleNotesSmartFolder.rb'
 
 ##
 # This class represents an Apple NoteStore file. It tries to handle the hard work of taking 
@@ -544,11 +545,14 @@ class AppleNoteStore
     # Set the ZSERVERSHARE column to look at
     server_share_column = "ZSERVERSHARE"
     server_share_column = server_share_column + "DATA" if @version >= IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
-  
+ 
+    smart_folder_query = "'' as ZSMARTFOLDERQUERYJSON"
+    smart_folder_query = "ZICCLOUDSYNCINGOBJECT.ZSMARTFOLDERQUERYJSON" if @version >= IOS_VERSION_15
+ 
     query_string = "SELECT ZICCLOUDSYNCINGOBJECT.ZTITLE2, ZICCLOUDSYNCINGOBJECT.ZOWNER, " + 
                    "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.#{server_share_column}, " +
                    "ZICCLOUDSYNCINGOBJECT.Z_PK, ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER, " +
-                   "ZICCLOUDSYNCINGOBJECT.ZPARENT " +
+                   "ZICCLOUDSYNCINGOBJECT.ZPARENT, #{smart_folder_query} " +
                    "FROM ZICCLOUDSYNCINGOBJECT " + 
                    "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?"
 
@@ -561,9 +565,18 @@ class AppleNoteStore
     end
 
     @database.execute(query_string, folder_id) do |row|
+
       tmp_folder = AppleNotesFolder.new(row["Z_PK"],
                                         row["ZTITLE2"],
                                         get_account(row["ZOWNER"]))
+
+      # If this is a smart folder, instead build an AppleNotesSmartFolder
+      if row["ZSMARTFOLDERQUERYJSON"] and row["ZSMARTFOLDERQUERYJSON"].length > 0
+        tmp_folder = AppleNotesSmartFolder.new(row["Z_PK"],
+                                               row["ZTITLE2"],
+                                               get_account(row["ZOWNER"]),
+                                               row["ZSMARTFOLDERQUERYJSON"])
+      end
 
       # Set whether the folder displays notes in numeric order, or by modification date
       tmp_folder.retain_order = @retain_order
@@ -588,7 +601,7 @@ class AppleNoteStore
         tmp_parent_folder_id = row["ZPARENT"]
         tmp_folder.parent_id = tmp_parent_folder_id
       end
-      
+ 
       # Whether child or not, we add it to the overall tracker so we can look up by folder ID.
       # We'll clean up on output by testing to see if a folder has a parent.
       @folders[folder_id] = tmp_folder
