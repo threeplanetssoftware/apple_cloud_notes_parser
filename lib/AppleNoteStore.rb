@@ -855,6 +855,10 @@ class AppleNoteStore
     html += "</style>\n"
     html += "</head>\n"
     html += "<body>\n"
+    @accounts.each do |key, account|
+      html += account.generate_html + "\n"
+    end
+
     @folders.each do |folder_id, folder|
       # Only kick out results if the folder isn't a child folder
       html += folder.generate_html + "\n" if !folder.is_child?

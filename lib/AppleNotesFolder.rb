@@ -27,6 +27,7 @@ class AppleNotesFolder < AppleCloudKitRecord
     @primary_key = folder_primary_key
     @name = folder_name
     @account = folder_account
+    @account.add_folder(self)
     @retain_order = false
 
     # By default we have no children
@@ -62,6 +63,12 @@ class AppleNotesFolder < AppleCloudKitRecord
   # This is a helper function to tell if a folder is a child folder or not
   def is_child?
     return (@parent != nil)
+  end
+
+  ##
+  # This is a helper function to tell if a folder is a parent of any folders
+  def is_parent?
+    return (@child_folders.length > 0)
   end
 
   ##
@@ -109,6 +116,19 @@ class AppleNotesFolder < AppleCloudKitRecord
   def full_name
     return @name if !is_child?
     return "#{@parent.full_name} -> #{@name}"
+  end
+
+  def generate_folder_hierarchy_html
+    html = "<li><a href='#folder_#{@primary_key}'>#{@name}</a>"
+    if is_parent?
+      html += "<ul>"
+      @child_folders.each do |child_folder|
+        html += child_folder.generate_folder_hierarchy_html
+      end
+      html += "</ul>"
+    end
+    html += "</li>"
+    return html
   end
 
   def generate_html

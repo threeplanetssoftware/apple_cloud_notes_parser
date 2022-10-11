@@ -26,8 +26,9 @@ class AppleNotesAccount < AppleCloudKitRecord
     @password = nil
     @server_record_data = nil
 
-    # Initialize notes for this account
+    # Initialize notes and folders Arrays for this account
     @notes = Array.new()
+    @folders = Array.new()
 
     # Set this account's variables
     @primary_key = primary_key
@@ -60,9 +61,17 @@ class AppleNotesAccount < AppleCloudKitRecord
   end
 
   ##
-  # This method requies an AppleNote object as +note+ and adds it to the folder's Array.
+  # This method requies an AppleNote object as +note+ and adds it to the accounts's Array.
   def add_note(note)
     @notes.push(note)
+  end
+
+  ##
+  # This method requies an AppleNotesFolder object as +folder+ and adds it to the accounts's Array.
+  def add_folder(folder)
+    # Remove any copy if we already have it
+    @folders.delete_if {|old_folder| old_folder.primary_key == folder.primary_key}
+    @folders.push(folder)
   end
 
   ##
@@ -105,6 +114,25 @@ class AppleNotesAccount < AppleCloudKitRecord
   def get_crypto_salt_hex
     return @crypto_salt if ! @crypto_salt
     @crypto_salt.unpack("H*")
+  end
+
+  ##
+  # This method generates HTML to display on the overall output.
+  def generate_html
+    html = "<a id='account_#{@primary_key}'><h1>#{@name}</h1></a>"
+    html += "<b>Cloudkit Identifier:</b> #{@user_record_name} <br />\n" if @user_record_name.length > 0
+    html += "<b>Account Identifier:</b> #{@identifier} <br />\n"
+    html += "<b>Last Modified Device:</b> #{@cloudkit_last_modified_device} <br />\n" if @cloudkit_last_modified_device
+    html += "<b>Number of Notes:</b> #{@notes.length} <br />\n"
+
+    html += "<b>Folders:</b> <br />\n"
+    html += "<ul>\n"
+    @folders.each do |folder|
+      html += folder.generate_folder_hierarchy_html if !folder.is_child?
+    end
+    html += "</ul>"
+
+    return html
   end
 
 end
