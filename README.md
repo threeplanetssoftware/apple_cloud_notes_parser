@@ -20,7 +20,7 @@ For example, if the backup is from iTunes, this program will use the Manifest.db
 This program will:
 1. Parse legacy (pre-iOS9) Notes files (but those are already plaintext, so not much to be gained)
 2. Parse iOS 9-15 Cloud Notes files
-3. ... decrypting notes if the password is known
+3. ... decrypting notes if the password is known and the device passcode is not used
 3. ... generating CSV roll-ups of each account, folder, note, and embedded object within them
 4. ... rebuilding the notes as an HTML file to browse and see as they would be displayed on the phone
 5. ... amending the NoteStore.sqlite database to include plaintext and decompressed objects to interact with in other tools
@@ -83,9 +83,11 @@ For example, if you were running this on data from a Mac used by 'Logitech' and 
 
 For backups that may have encrypted notes within them, this option tells the program where to find its password list. This list should have one password per row and any passwords that correctly decrypt an encrypted note will be tried before the rest for future encrypted notes. 
 
-For example, if you were running this on data from a Mac used by 'Logitech,' had the full file system available, and wanted to use a file called "passwords.txt"you would run: `ruby notes_cloud_ripper.rb -m /Users/Logitech/Library/Group Containers/group.com.apple.notes/` -w passwords.txt
+For example, if you were running this on data from a Mac used by 'Logitech,' had the full file system available, and wanted to use a file called "passwords.txt" you would run: `ruby notes_cloud_ripper.rb -m /Users/Logitech/Library/Group Containers/group.com.apple.notes/` -w passwords.txt
 
 Note: As of March 2021, all logging of passwords to the local debug_log.txt file and HTML output has been removed. If you need to see which passwords generated decrypted notes, use the `--show-password-successes` switch and read the console output after the run.
+
+Note: As of iOS 16, users can use their device passcode instead of a spearate password within Notes. This program does not yet handle that case, it will simply fail to decrypt.
 
 ### All Versions
 
