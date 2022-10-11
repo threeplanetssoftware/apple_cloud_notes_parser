@@ -77,6 +77,7 @@ class AppleUniformTypeIdentifier
     return true if @uti == "com.apple.macpaint-image"
     return true if @uti == "com.apple.pict"
     return true if @uti == "com.apple.quicktime-image"
+    return true if @uti == "com.apple.notes.sketch"
     return true if @uti == "com.compuserve.gif"
     return true if @uti == "com.ilm.openexr-image"
     return true if @uti == "com.kodak.flashpix.image"
