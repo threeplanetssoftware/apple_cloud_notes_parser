@@ -51,6 +51,12 @@ class AppleNotesFolder < AppleCloudKitRecord
   end
 
   ##
+  # This method identifies if an AppleNotesFolder has notes in it.
+  def has_notes
+    return (@notes.length > 0)
+  end
+
+  ##
   # This method requires an AppleNotesFolder object as +folder+ and adds it to the folder's @child_folders Array.
   # It also sets the child's parent variables to make sure the relationship goes both ways.
   def add_child(folder)
@@ -118,13 +124,23 @@ class AppleNotesFolder < AppleCloudKitRecord
     return "#{@parent.full_name} -> #{@name}"
   end
 
+  ##
+  # This method returns an Array of AppleNote objects in the appropriate order based on current sort settings.
+  def sorted_notes
+    return @notes if !@retain_order
+    @notes.sort_by { |note| [note.is_pinned ? 1 : 0, note.modify_time] }.reverse
+  end
+
   def generate_folder_hierarchy_html
-    html = "<li><a href='#folder_#{@primary_key}'>#{@name}</a>"
-    if is_parent?
-      html += "<ul>"
+    html = "<li class='folder'><a href='#folder_#{@primary_key}'>#{@name}</a>"
+    if (is_parent? or has_notes)
+      html += "<ul class='folder_list'>"
       @child_folders.each do |child_folder|
         html += child_folder.generate_folder_hierarchy_html
       end
+      #sorted_notes.each do |note|
+      #  html += "<li class='note'><a href='#note_#{note.note_id}'>#{note.note_id}</a>: #{note.title}#{" (📌)" if note.is_pinned}</li>"
+      #end
       html += "</ul>"
     end
     html += "</li>"
@@ -135,12 +151,8 @@ class AppleNotesFolder < AppleCloudKitRecord
     html = "<a id='folder_#{@primary_key}'><h1>#{@account.name} - #{full_name}</h1></a>"
     html += "<ul>\n";
 
-    # Sort the array if we want to retain the order
-    note_order = @notes
-    note_order = @notes.sort_by { |note| [note.is_pinned ? 1 : 0, note.modify_time] }.reverse if @retain_order
-
     # Now display whatever we ended up with
-    note_order.each do |note|
+    sorted_notes.each do |note|
       html += "<li><a href='#note_#{note.note_id}'>Note #{note.note_id}</a>: #{note.title}#{" (📌)" if note.is_pinned}</li>\n";
     end
     html += "</ul>\n";

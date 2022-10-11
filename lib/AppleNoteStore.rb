@@ -411,6 +411,8 @@ class AppleNoteStore
                                           row["ZNAME"],
                                           row["ZIDENTIFIER"])
 
+      tmp_account.retain_order = @retain_order
+
       # Add server-side data, if relevant
       tmp_account.user_record_name = row["ZUSERRECORDNAME"] if row["ZUSERRECORDNAME"]
       tmp_account.add_cloudkit_server_record_data(row[server_record_column]) if row[server_record_column]
@@ -849,6 +851,22 @@ class AppleNoteStore
     html += "}\n"
     html += ".checklist li.unchecked:before {\n"
     html += "\tcontent: '○';\n"
+    html += "\tposition: absolute;\n"
+    html += "\tleft: 0;\n"
+    html += "}\n"
+    html += ".folder_list {\n"
+    html += "\tposition: relative;\n"
+    html += "\tlist-style: none;\n"
+    html += "\tmargin-left: 0;\n"
+    html += "\tpadding-left: 1.2em;\n"
+    html += "}\n"
+    html += ".folder_list li.folder:before {\n"
+    html += "\tcontent: '🗀';\n"
+    html += "\tposition: absolute;\n"
+    html += "\tleft: 0;\n"
+    html += "}\n"
+    html += ".folder_list li.note:before {\n"
+    html += "\tcontent: '🗈';\n"
     html += "\tposition: absolute;\n"
     html += "\tleft: 0;\n"
     html += "}\n"

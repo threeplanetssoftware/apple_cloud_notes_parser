@@ -12,7 +12,8 @@ class AppleNotesAccount < AppleCloudKitRecord
                 :notes,
                 :identifier,
                 :user_record_name,
-                :sort_order_name
+                :sort_order_name,
+                :retain_order
 
   ##
   # This creates a new AppleNotesAccount. 
@@ -29,6 +30,7 @@ class AppleNotesAccount < AppleCloudKitRecord
     # Initialize notes and folders Arrays for this account
     @notes = Array.new()
     @folders = Array.new()
+    @retain_order = false
 
     # Set this account's variables
     @primary_key = primary_key
@@ -117,6 +119,13 @@ class AppleNotesAccount < AppleCloudKitRecord
   end
 
   ##
+  # This method returns an Array containing the AppleNotesFolders for the account, sorted in appropriate order
+  def sorted_folders
+    return @folders if !@retain_order
+    @folders.sort_by{|folder| [folder.sort_order]}
+  end
+
+  ##
   # This method generates HTML to display on the overall output.
   def generate_html
     html = "<a id='account_#{@primary_key}'><h1>#{@name}</h1></a>"
@@ -126,8 +135,8 @@ class AppleNotesAccount < AppleCloudKitRecord
     html += "<b>Number of Notes:</b> #{@notes.length} <br />\n"
 
     html += "<b>Folders:</b> <br />\n"
-    html += "<ul>\n"
-    @folders.each do |folder|
+    html += "<ul class='folder_list'>\n"
+    sorted_folders.each do |folder|
       html += folder.generate_folder_hierarchy_html if !folder.is_child?
     end
     html += "</ul>"
