@@ -509,8 +509,7 @@ class AppleNoteStore
     # Loop over all folders to do some clean up
     @folders.each_pair do |key, folder|
       if folder.is_orphan?
-        tmp_parent_folder_id = folder.parent_id
-        tmp_parent_folder = get_folder(tmp_parent_folder_id)
+        tmp_parent_folder = get_folder(folder.parent_id)
         tmp_parent_folder.add_child(folder)
         @logger.debug("Rip Folder: Added folder #{folder.full_name} as child to #{tmp_parent_folder.name}")
       end

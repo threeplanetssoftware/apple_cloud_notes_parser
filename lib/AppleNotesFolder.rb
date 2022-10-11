@@ -36,7 +36,7 @@ class AppleNotesFolder < AppleCloudKitRecord
     @parent = nil
     @parent_id = nil
 
-    # Pre-bake the sort order to a nice high value
+    # Pre-bake the sort order to a nice low value
     @sort_order = (0 - Float::INFINITY)
 
     # Uncomment the below line if you want to see the folder names during creation
@@ -50,15 +50,18 @@ class AppleNotesFolder < AppleCloudKitRecord
   end
 
   ##
-  # This method requires an AppleNotesFolder object as +folder+ and adds it to the folder's @child_folders Array
+  # This method requires an AppleNotesFolder object as +folder+ and adds it to the folder's @child_folders Array.
+  # It also sets the child's parent variables to make sure the relationship goes both ways.
   def add_child(folder)
+    folder.parent_id = @primary_key
+    folder.parent = self
     @child_folders.push(folder)
   end
 
   ##
   # This is a helper function to tell if a folder is a child folder or not
   def is_child?
-    return @parent != nil
+    return (@parent != nil)
   end
 
   ##
@@ -76,7 +79,15 @@ class AppleNotesFolder < AppleCloudKitRecord
   ##
   # This class method spits out an Array containing the CSV headers needed to describe all of these objects
   def self.to_csv_headers
-    ["Folder Primary Key", "Folder Name", "Number of Notes", "Owning Account ID", "Owning Account Name", "Cloudkit Participants", "Parent Folder Primary Key", "Parent Folder Name", "Smart Folder Query"]
+    ["Folder Primary Key", 
+     "Folder Name", 
+     "Number of Notes", 
+     "Owning Account ID", 
+     "Owning Account Name", 
+     "Cloudkit Participants", 
+     "Parent Folder Primary Key", 
+     "Parent Folder Name", 
+     "Smart Folder Query"]
   end
 
   ##
@@ -96,7 +107,7 @@ class AppleNotesFolder < AppleCloudKitRecord
   end
 
   def full_name
-    return @name if !@parent
+    return @name if !is_child?
     return "#{@parent.full_name} -> #{@name}"
   end
 

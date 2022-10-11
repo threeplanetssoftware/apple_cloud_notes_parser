@@ -1,4 +1,3 @@
-#require_relative 'AppleCloudKitRecord'
 require_relative 'AppleNotesFolder.rb'
 
 ##
@@ -24,22 +23,16 @@ class AppleNotesSmartFolder < AppleNotesFolder
   ##
   # This method generates an Array containing the information needed for CSV generation
   def to_csv
-    participant_emails = @share_participants.map {|participant| participant.email}.join(",")
-    parent_id = ""
-    parent_name = ""
-    if is_child?
-      parent_id = @parent.primary_key
-      parent_name = @parent.name
-    end
-
-    to_return = [@primary_key, @name, @notes.length, @account.primary_key, @account.name, participant_emails, parent_id, parent_name, @query]
+    # Get the parent's CSV and overwrite the query field
+    to_return = super()
+    to_return[8] = @query
 
     return to_return
   end
 
   def generate_html
     html = "<a id='folder_#{@primary_key}'><h1>#{@account.name} - #{full_name}</h1></a>"
-    html += "<code>#{query}</code>"
+    html += "A smart folder looking for notes matching: <code>#{query}</code>"
 
     return html
   end
