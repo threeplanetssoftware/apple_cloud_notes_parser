@@ -445,6 +445,7 @@ class AppleNoteStore
           gzipped_data = account_data_row["ZMERGEABLEDATA"]
 
           # Make sure this exists before we try to unpack it
+          @logger.debug("Rip Account: row['ZMERGEABLEDATA'] is empty!") if !gzipped_data
           if gzipped_data
 
             # Inflate the GZip

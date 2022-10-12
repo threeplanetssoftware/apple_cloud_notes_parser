@@ -354,7 +354,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                                                               row["ZIDENTIFIER"],
                                                               row["ZTYPEUTI"],
                                                               note)
-          elsif tmp_uti.uti == "com.apple.drawing.2" or tmp_uti.uti == "com.apple.drawing"
+          elsif tmp_uti.uti == "com.apple.drawing.2" or tmp_uti.uti == "com.apple.drawing" or tmp_uti.uti == "com.apple.paper"
             tmp_embedded_object = AppleNotesEmbeddedDrawing.new(row["Z_PK"],
                                                                 row["ZIDENTIFIER"],
                                                                 row["ZTYPEUTI"],
