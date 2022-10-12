@@ -621,6 +621,8 @@ class AppleNote < AppleCloudKitRecord
       html += "</li></ul>"
     when STYLE_TYPE_DASHED_LIST
       html += "</li></ul>"
+    when STYLE_TYPE_CHECKBOX
+      html += "</li></ul>"
     end
 
     # Remove any doubled tags
