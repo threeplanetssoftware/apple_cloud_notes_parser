@@ -451,7 +451,8 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
   # This method generates the HTML to be embedded into an AppleNote's HTML for objects that use thumbnails.
   def generate_html_with_images
     return @thumbnails.first.generate_html if @thumbnails.length > 0
-    return "<img src='../#{@reference_location}' />"
+    return "<img src='../#{@reference_location}' />" if @reference_location
+    return "{#{type} missing due to not having a file reference location}"
   end
 
   ##
