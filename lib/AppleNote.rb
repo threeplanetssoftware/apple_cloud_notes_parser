@@ -394,34 +394,33 @@ class AppleNote < AppleCloudKitRecord
     return html
   end
 
-  def generate_html_text
+  ##
+  # This helper function takes a MergableDataProto or NoteStoreProto as +document_proto+ and 
+  # a Hash of AppleNotesEmbeddedObjects as +embedded_objects+. It returns a String containing 
+  # appropriate HTML for the document.
+  def self.htmlify_document(document_proto, embedded_objects)
     html = ""
 
-    # Bail out if we don't have anything to decode
-    return html if !@decompressed_data
+    # Tables cells will be a MergableDataProto
+    root_node = document_proto
+    # Note objects will be a NoteStoreProto
+    if document_proto.is_a? NoteStoreProto
+      root_node = document_proto.document
+    end
 
     # Set up variables for the run
     embedded_object_index = 0
     current_index = 0
     current_style = -1
 
-    # Decode the proto
-    begin
-      tmp_note_store_proto = NoteStoreProto.decode(@decompressed_data)
-    rescue Exception
-    end
-
-    # Bail out if we don't have anything to decode
-    return html if !tmp_note_store_proto
-    
     # Create a copy of the text, which is frozen
-    note_text = tmp_note_store_proto.document.note.note_text.dup
+    note_text = root_node.note.note_text.dup
 
     # Capture if we're in a checkbox, because they're special
     current_checkbox = nil
 
     # Iterate over the attribute runs to display stuffs
-    tmp_note_store_proto.document.note.attribute_run.each_with_index do |note_part, attribute_run_index|
+    root_node.note.attribute_run.each_with_index do |note_part, attribute_run_index|
 
       # Clean up open style tags
       stale_style = (!note_part.paragraph_style or (note_part.paragraph_style.style_type != current_style))
@@ -447,8 +446,8 @@ class AppleNote < AppleCloudKitRecord
       # Check for something embedded, if so, don't put in the characters, replace them with the object
       if note_part.attachment_info
 
-        if @embedded_objects[embedded_object_index]
-          html += @embedded_objects[embedded_object_index].generate_html
+        if embedded_objects[embedded_object_index]
+          html += embedded_objects[embedded_object_index].generate_html
         else
           html += "[Object missing, this is common for deleted notes]"
         end
@@ -642,7 +641,27 @@ class AppleNote < AppleCloudKitRecord
     html.gsub!(/\n<\/h3>/,'</h3>') # Remove extra line breaks in front of h3
     html.gsub!("\u2028",'<br/>') # Translate \u2028 used to denote newlines in lists into an actual HTML line break
 
-    # Return what we've built
+    html
+  end
+
+
+  ##
+  # This function generates the HTML text to represent an overall AppleNote
+  def generate_html_text
+    # Bail out if we don't have anything to decode
+    return html if !@decompressed_data
+
+    # Decode the proto
+    begin
+      tmp_note_store_proto = NoteStoreProto.decode(@decompressed_data)
+    rescue Exception
+    end
+
+    # Bail out if we don't have anything to decode
+    return html if !tmp_note_store_proto
+  
+    # Now using a function designed specifically for turning attribute runs into HTML from anyy source  
+    html = AppleNote.htmlify_document(tmp_note_store_proto, @embedded_objects)
     return html
   end
 

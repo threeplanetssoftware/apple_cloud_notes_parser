@@ -26,8 +26,9 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
     # Set this objects's variables
     super(primary_key, uuid, uti, note)
 
-    # This will hold our reconstructed table
+    # This will hold our reconstructed table, plaintext and HTML
     @reconstructed_table = Array.new
+    @reconstructed_table_html = Array.new
 
     # These variables hold different parts of the protobuf
     @row_items = Array.new
@@ -76,6 +77,7 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
     @total_rows.times do |row|
       row_array = Array.new(@total_columns, "")
       @reconstructed_table.push(row_array)
+      @reconstructed_table_html.push(row_array)
     end
   end
 
@@ -142,10 +144,12 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
         
         # Check for any embedded objects and generate them if they exist
         replaced_objects = AppleNotesEmbeddedObject.generate_embedded_objects(@note, target_cell)
+        cell_string_html = AppleNote.htmlify_document(target_cell, replaced_objects[:objects])
 
         cell_string = ""
-        cell_string = replaced_objects[:to_string] if (replaced_objects[:to_string] and replaced_objects[:to_string])
+        cell_string = replaced_objects[:to_string] if replaced_objects[:to_string]
         @reconstructed_table[@row_indices[current_row]][@column_indices[current_column]] = cell_string if (@row_indices[current_row] and @column_indices[current_column])
+        @reconstructed_table_html[@row_indices[current_row]][@column_indices[current_column]] = cell_string_html if (@row_indices[current_row] and @column_indices[current_column])
 
         # Push any embedded objects into the AppleNote's recursive array, pushing onto the regular array would overwrite the table
         replaced_objects[:objects].each do |replaced_object|
@@ -193,6 +197,9 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
       # We need to reverse the table if it is right to left
       if @table_direction == RIGHT_TO_LEFT_DIRECTION
         @reconstructed_table.each do |row|
+          row.reverse!
+        end
+        @reconstructed_table_html.each do |row|
           row.reverse!
         end
       end
@@ -309,13 +316,13 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
   def generate_html
 
     # Return our to_string function if we aren't reconstructed yet
-    return self.to_s if !@reconstructed_table
+    return self.to_s if !@reconstructed_table_html
 
     # Create an HTML table
     html = "<table style='border:1px solid black'>\n";
 
     # Loop over each row and create a new table row
-    @reconstructed_table.each do |row|
+    @reconstructed_table_html.each do |row|
       html += "<tr>\n";
 
       # Loop over each column and place the cell value into a td
