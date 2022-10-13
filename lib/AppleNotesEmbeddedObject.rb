@@ -216,7 +216,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
   # This method handles spawning embedded objects based on the ZTypeUti or ZTypeUti1
   # field in the database. It expects an AppleNote +note+ which is the genesis of the object 
   # and a NoteStoreProto +note_proto+ that contains attribute runs. This returns a +Hash+ 
-  # containing the resulting String and an array ob objects. 
+  # containing the resulting String and an array of objects. 
   def self.generate_embedded_objects(note, note_proto)
     to_return = Hash.new()
     to_return[:to_string] = ""
@@ -234,7 +234,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     if note_proto.is_a? NoteStoreProto
       root_node = note_proto.document
     end
-  
+ 
     to_return[:to_string] = root_node.note.note_text
     root_node.note.attribute_run.each do |note_part|
 
