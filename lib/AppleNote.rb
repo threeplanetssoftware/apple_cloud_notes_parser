@@ -111,6 +111,9 @@ class AppleNote < AppleCloudKitRecord
     # Handle pinning, added in iOS 11
     @is_pinned = false
 
+    # Cache HTML once generated, useful for multiple outputs that all want the HTML
+    @html = nil
+
     # Treat legacy stuff different
     if @notestore.version == AppleNoteStore::IOS_LEGACY_VERSION
       @plaintext = @compressed_data
@@ -371,6 +374,10 @@ class AppleNote < AppleCloudKitRecord
   # metadata, and its contents, if applicable. It does not generate 
   # full HTML, just enough for this note's card to be displayed.
   def generate_html
+
+    # Bail quickly if we've ever taken the time to build this before
+    return @html if @html
+
     html = "<a id='note_#{@note_id}'><h1>Note #{@note_id}#{" (📌)" if @is_pinned}</h1></a>\n"
     html += "<b>Account:</b> #{@account.name} <br />\n"
     html += "<b>Folder:</b> <a href='#folder_#{@folder.primary_key}'>#{@folder.name}</a> <br/>\n"
@@ -391,7 +398,8 @@ class AppleNote < AppleCloudKitRecord
       html += "{Contents not decrypted}" if @encrypted_data
     end
     html += "</div> <!-- Close the 'note-content' div -->\n"
-    return html
+
+    @html = html
   end
 
   ##
@@ -644,7 +652,6 @@ class AppleNote < AppleCloudKitRecord
     html
   end
 
-
   ##
   # This function generates the HTML text to represent an overall AppleNote
   def generate_html_text
@@ -663,6 +670,36 @@ class AppleNote < AppleCloudKitRecord
     # Now using a function designed specifically for turning attribute runs into HTML from anyy source  
     html = AppleNote.htmlify_document(tmp_note_store_proto, @embedded_objects)
     return html
+  end
+
+  ##
+  # This function prepares the data structure that JSON will use to create a JSON object. It does 
+  # not directly create the JSON object in case this structure needs to be embedded somewhere else.
+  def prepare_json
+    to_return = Hash.new()
+    to_return[:account_key] = @account.primary_key
+    to_return[:account] = @account.name
+    to_return[:folder_key] = @folder.primary_key
+    to_return[:folder] = @folder.name
+    to_return[:note_id] = @note_id
+    to_return[:creation_time] = @creation_time
+    to_return[:modify_time] = @modify_time
+    to_return[:primary_key] = @primary_key
+    to_return[:title] = @title
+    to_return[:plaintext] = @plaintext
+    to_return[:html] = generate_html
+
+    # Add in any embedded objects of various types
+    to_return[:embedded_objects] = Array.new()
+    to_return[:hashtags] = Array.new()
+    to_return[:mentions] = Array.new()
+    @embedded_objects.each do |embedded_object|
+      to_return[:embedded_objects].push(embedded_object.prepare_json)
+      to_return[:hashtags].push(embedded_object.to_s) if embedded_object.is_a? AppleNotesEmbeddedInlineHashtag
+      to_return[:mentions].push(embedded_object.to_s) if embedded_object.is_a? AppleNotesEmbeddedInlineMention
+    end
+  
+    to_return
   end
 
 end

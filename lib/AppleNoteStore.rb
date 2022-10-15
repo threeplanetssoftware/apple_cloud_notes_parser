@@ -51,6 +51,7 @@ class AppleNoteStore
     @accounts = Hash.new()
     @cloud_kit_participants = Hash.new()
     @retain_order = false
+    @html = nil
     puts "Guessed Notes Version: #{@version}"
     @logger.debug("Guessed Notes Version: #{@version}")
   end
@@ -820,6 +821,10 @@ class AppleNoteStore
   end
 
   def generate_html
+
+    # Bail early if we can
+    return @html if @html
+
     html = "<!DOCTYPE html>\n"
     html += "<html>\n"
     html += "<head>\n"
@@ -893,7 +898,37 @@ class AppleNoteStore
 
     html += "</body></html>\n";
 
-    return html
+    @html = html
+  end
+
+  ##
+  # This method prepares the data structure that JSON will use to generate JSON later.
+  def prepare_json
+    to_return = Hash.new()
+    to_return[:version] = @version
+    to_return[:file_path] = @file_path
+    to_return[:backup_type] = @backup.type
+    to_return[:html] = generate_html
+
+    # Add in AppleNotesAccounts
+    to_return[:accounts] = Hash.new()
+    @accounts.each do |account_id, account|
+      to_return[:accounts][account_id] = account.prepare_json
+    end
+
+    # Add in AppleNotesFolders
+    to_return[:folders] = Hash.new()
+    @folders.each do |folder_id, folder|
+      to_return[:folders][folder_id] = folder.prepare_json if !folder.is_child?
+    end
+
+    # Add in AppleNotes
+    to_return[:notes] = Hash.new()
+    @notes.each do |note_id, note|
+      to_return[:notes][note_id] = note.prepare_json
+    end
+
+    to_return
   end
 
 end

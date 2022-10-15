@@ -462,4 +462,21 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     return "{#{type} missing due to not having a file reference location}"
   end
 
+  ##
+  # This method prepares the data structure that JSON will use to generate JSON later.
+  def prepare_json
+    to_return = Hash.new()
+    to_return[:primary_key] = @primary_key
+    to_return[:parent_primary_key] = @parent_primary_key
+    to_return[:note_id] = @note.note_id
+    to_return[:uuid] = @uuid
+    to_return[:type] = @type
+    to_return[:filename] = @filename
+    to_return[:filepath] = @filepath
+    to_return[:is_password_protected] = @is_password_protected
+    to_return[:html] = generate_html
+
+    to_return
+  end
+
 end

@@ -1,4 +1,5 @@
 require 'csv'
+require 'json'
 require 'logger'
 require 'optparse'
 require 'pathname'
@@ -191,6 +192,11 @@ if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid
   logger.debug("Creating HTML output folder: #{html_directory}")
   html_directory.mkpath
 
+  # Make a separate folder to hold the JSON file for cleanliness
+  json_directory = output_directory + "json"
+  logger.debug("Creating JSON output folder: #{json_directory}")
+  json_directory.mkpath
+
   backup_number = 1
   apple_backup.note_stores.each do |note_store|
 
@@ -200,6 +206,12 @@ if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid
     logger.debug("Writing HTML for Note Store")
     File.open(html_directory + "all_notes_#{backup_number}.html", "wb") do |file|
       file.write(note_store.generate_html)
+    end
+
+    # Write out the JSON summary
+    logger.debug("Writing JSON for Note Store")
+    File.open(json_directory + "all_notes_#{backup_number}.json", "wb") do |file|
+      file.write(JSON.generate(note_store.prepare_json))
     end
 
     # Create a CSV of the AppleNotesAccount objects

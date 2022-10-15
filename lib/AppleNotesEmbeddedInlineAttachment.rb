@@ -74,4 +74,19 @@ class AppleNotesEmbeddedInlineAttachment < AppleCloudKitRecord
     return self.to_s
   end
 
+  ##
+  # This method prepares the data structure that JSON will use to generate JSON later.
+  def prepare_json
+    to_return = Hash.new()
+    to_return[:primary_key] = @primary_key
+    to_return[:note_id] = @note.note_id
+    to_return[:uuid] = @uuid
+    to_return[:type] = @type
+    to_return[:alt_text] = @alt_text
+    to_return[:token_identifier] = @token_identifier
+    to_return[:html] = generate_html
+
+    to_return
+  end
+
 end

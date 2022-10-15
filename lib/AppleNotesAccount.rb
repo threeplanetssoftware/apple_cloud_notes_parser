@@ -36,6 +36,9 @@ class AppleNotesAccount < AppleCloudKitRecord
     @primary_key = primary_key
     @name = name
 
+    # Default html to empty until we build it
+    @html = nil
+
     # Defaulting to the same value as the name, this can be overridden if the sort order is known
     @sort_order_name = name
     @identifier = identifier
@@ -128,6 +131,10 @@ class AppleNotesAccount < AppleCloudKitRecord
   ##
   # This method generates HTML to display on the overall output.
   def generate_html
+    
+    # Bail early if we can
+    return @html if @html
+
     html = "<a id='account_#{@primary_key}'><h1>#{@name}</h1></a>"
     html += "<b>Cloudkit Identifier:</b> #{@user_record_name} <br />\n" if @user_record_name.length > 0
     html += "<b>Account Identifier:</b> #{@identifier} <br />\n"
@@ -141,7 +148,19 @@ class AppleNotesAccount < AppleCloudKitRecord
     end
     html += "</ul>"
 
-    return html
+    @html = html
+  end
+
+  ##
+  # This method prepares the data structure that JSON will use to generate JSON later.
+  def prepare_json
+    to_return = Hash.new()
+    to_return[:primary_key] = @primary_key
+    to_return[:name] = @name
+    to_return[:identifier] = @identifier
+    to_return[:html] = generate_html
+
+    to_return
   end
 
 end

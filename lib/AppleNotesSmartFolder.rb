@@ -37,4 +37,11 @@ class AppleNotesSmartFolder < AppleNotesFolder
     return html
   end
 
+  def prepare_json
+    to_return = super()
+    to_return[:query] = @query
+
+    to_return
+  end
+
 end

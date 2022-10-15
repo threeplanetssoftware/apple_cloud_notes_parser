@@ -148,6 +148,10 @@ class AppleNotesFolder < AppleCloudKitRecord
   end
 
   def generate_html
+
+    # Bail early if we can
+    return @html if @html
+
     html = "<a id='folder_#{@primary_key}'><h1>#{@account.name} - #{full_name}</h1></a>"
     html += "<ul>\n";
 
@@ -162,7 +166,25 @@ class AppleNotesFolder < AppleCloudKitRecord
       html += child_folder.generate_html
     end
 
-    return html
+    @html = html
+  end
+
+  ##
+  # This method prepares the data structure that JSON will use to generate JSON later.
+  def prepare_json
+    to_return = Hash.new()
+    to_return[:primary_key] = @primary_key
+    to_return[:name] = @name
+    to_return[:account_id] = @account.primary_key
+    to_return[:account] = @account.name
+    to_return[:parent_folder_id] = @parent_id
+    to_return[:child_folders] = Hash.new()
+    @child_folders.each do |child_folder|
+      to_return[:child_folders][child_folder.primary_key] = child_folder.prepare_json
+    end
+    to_return[:html] = generate_html
+
+    to_return
   end
 
 end
