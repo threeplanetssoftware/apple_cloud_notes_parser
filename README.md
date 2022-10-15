@@ -111,7 +111,8 @@ The order of note content at the bottom of the page will retain database order, 
 Soon the folder names themselves will also reflect the ordering as it appears in Apple Notes. 
 
 This program will produce four CSV files summarizing the information stored in `[location of this program]/output/[date of run]/csv`: `note_store_accounts.csv`, `note_store_embedded_objects.csv`, `note_store_folders.csv`, and `note_store_notes.sqlite`. 
-Finally, it will produce an HTML dump of the notes to reflect the text and table formatting which may be meaningful in `[location of this program]/output/[date of run]/html`.
+It will also produce an HTML dump of the notes to reflect the text and table formatting which may be meaningful in `[location of this program]/output/[date of run]/html`. 
+Finally, it will produce a JSON dump for each of the NoteStore files, summarizing the accounts, folders, and notes within that NoteStore file.
 
 Because Apple devices often have more than one version of Notes, it is important to note (pun intended) that all of the output is suffixed by a number, starting at 1, to identify which of the backups it corresponds to. 
 In all cases where more than one is found, care is taken to produce output that assigns the suffix of 1 for the modern version, and the suffix of 2 for the legacy version. 
@@ -269,6 +270,7 @@ apple_cloud_notes_parser
   |     |-debug_log.txt: A more verbose log to assist with debugging
   |     |-files: This folder holds files copied out of the backup, such as pictures
   |     |-html: This folder holds the generated HTML copy of the Notestore
+  |     |-json: This folder holds the generated JSON summary of the Notestore
   |     |-Manifest.db: If run on an iTunes backup, this is a copy of the Manifest.db
   |     |-NoteStore.sqlite: If run on a modern version, this copy of the target file will include plaintext versions of the Notes
   |     |-notes.sqlite: If run on a legacy version, this copy is just a copy for ease of use
