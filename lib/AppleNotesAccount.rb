@@ -158,6 +158,8 @@ class AppleNotesAccount < AppleCloudKitRecord
     to_return[:primary_key] = @primary_key
     to_return[:name] = @name
     to_return[:identifier] = @identifier
+    to_return[:cloudkit_identifier] = @user_record_name
+    to_return[:cloudkit_last_modified_device] = @cloudkit_last_modified_device
     to_return[:html] = generate_html
 
     to_return

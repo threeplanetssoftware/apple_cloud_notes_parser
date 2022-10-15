@@ -916,6 +916,12 @@ class AppleNoteStore
       to_return[:accounts][account_id] = account.prepare_json
     end
 
+    # Add in AppleCloudKitShareParticipants
+    to_return[:cloudkit_participants] = Hash.new()
+    @cloud_kit_participants.each do |record_id, cloudkit_participant|
+      to_return[:cloudkit_participants][record_id] = cloudkit_participant.prepare_json
+    end
+
     # Add in AppleNotesFolders
     to_return[:folders] = Hash.new()
     @folders.each do |folder_id, folder|

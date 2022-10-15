@@ -384,8 +384,8 @@ class AppleNote < AppleCloudKitRecord
     html += "<b>Title:</b> #{@title} <br/>\n"
     html += "<b>Created:</b> #{@creation_time} <br/>\n"
     html += "<b>Modified:</b> #{@modify_time} <br />\n"
-    html += "<b>CloudKit Creator:</b> #{@notestore.cloud_kit_participants[@cloudkit_creator_record_id].email} <br />\n" if @cloudkit_creator_record_id and @notestore.cloud_kit_participants[@cloudkit_creator_record_id]
-    html += "<b>CloudKit Last Modified User:</b> #{@notestore.cloud_kit_participants[@cloudkit_modifier_record_id].email} <br />\n" if @cloudkit_modifier_record_id and @notestore.cloud_kit_participants[@cloudkit_modifier_record_id]
+    html += "<b>CloudKit Creator:</b> #{@notestore.cloud_kit_participants[@cloudkit_creator_record_id].email} <br />\n" if cloud_kit_record_known?(@cloudkit_creator_record_id, @notestore.cloud_kit_participants)
+    html += "<b>CloudKit Last Modified User:</b> #{@notestore.cloud_kit_participants[@cloudkit_modifier_record_id].email} <br />\n" if cloud_kit_record_known?(@cloudkit_modifier_record_id, @notestore.cloud_kit_participants)
     html += "<b>CloudKit Last Modified Device:</b> #{@cloudkit_last_modified_device} <br />\n" if @cloudkit_last_modified_device
     html += "<b>Tags:</b> #{self.get_all_tags.join(", ")}<br />\n" if self.has_tags
     html += "<div class='note-content'>\n"
@@ -682,9 +682,12 @@ class AppleNote < AppleCloudKitRecord
     to_return[:folder_key] = @folder.primary_key
     to_return[:folder] = @folder.name
     to_return[:note_id] = @note_id
+    to_return[:primary_key] = @primary_key
     to_return[:creation_time] = @creation_time
     to_return[:modify_time] = @modify_time
-    to_return[:primary_key] = @primary_key
+    to_return[:cloudkit_creator_id] = @cloudkit_creator_record_id
+    to_return[:cloudkit_modifier_id] = @cloudkit_modifier_record_id
+    to_return[:cloudkit_last_modified_device] = @cloudkit_last_modified_device
     to_return[:title] = @title
     to_return[:plaintext] = @plaintext
     to_return[:html] = generate_html

@@ -84,4 +84,11 @@ class AppleCloudKitRecord
     end
   end
 
+  ##
+  # This method takes a String +record_id+ and a Hash +cloud_kit_participants+ to determine if 
+  # the particular cloudkit record is known
+  def cloud_kit_record_known?(record_id, cloud_kit_participants)
+    return (record_id != nil and cloud_kit_participants != nil and cloud_kit_participants[record_id] != nil)
+  end
+
 end
