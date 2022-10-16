@@ -88,4 +88,13 @@ class AppleNotesEmbeddedPublicURL < AppleNotesEmbeddedObject
     return "<a href='#{@url}'>#{@url}</a>"
   end
 
+  ##
+  # Generates the data structure used lated by JSON to create a JSON object.
+  def prepare_json
+    to_return = super()
+    to_return[:url] = @url
+
+    to_return
+  end
+
 end

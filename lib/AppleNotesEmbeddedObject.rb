@@ -476,6 +476,12 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     to_return[:is_password_protected] = @is_password_protected
     to_return[:html] = generate_html
 
+    # Add in thumbnails in case folks want smaller pictures
+    to_return[:thumbnails] = Array.new()
+    @thumbnails.each do |thumbnail|
+      to_return[:thumbnails].push(thumbnail.prepare_json)
+    end
+
     to_return
   end
 

@@ -688,6 +688,8 @@ class AppleNote < AppleCloudKitRecord
     to_return[:cloudkit_creator_id] = @cloudkit_creator_record_id
     to_return[:cloudkit_modifier_id] = @cloudkit_modifier_record_id
     to_return[:cloudkit_last_modified_device] = @cloudkit_last_modified_device
+    to_return[:is_pinned] = @is_pinned
+    to_return[:is_password_protected] = @is_password_protected
     to_return[:title] = @title
     to_return[:plaintext] = @plaintext
     to_return[:html] = generate_html

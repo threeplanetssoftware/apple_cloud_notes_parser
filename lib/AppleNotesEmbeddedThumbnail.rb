@@ -78,8 +78,24 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   ##
   # This method generates the HTML necessary to display the image inline.
   def generate_html
-    return "<a href='../#{@parent.reference_location}'><img src='../#{@reference_location}' /></a>" if @parent.reference_location
+    return "<a href='../#{@parent.reference_location}'><img src='../#{@reference_location}' /></a>" if (@parent.reference_location and @reference_location)
     return "{Image missing due to not having file reference point}"
+  end
+
+  ##
+  # This method prepares the data structure that will be used by JSON to generate a JSON object later.
+  def prepare_json
+    to_return = Hash.new()
+    to_return[:primary_key] = @primary_key
+    to_return[:parent_primary_key] = @parent_primary_key
+    to_return[:note_id] = @note.note_id
+    to_return[:uuid] = @uuid
+    to_return[:type] = @type
+    to_return[:filename] = @filename
+    to_return[:filepath] = @filepath
+    to_return[:is_password_protected] = @is_password_protected
+
+    to_return   
   end
 
 end

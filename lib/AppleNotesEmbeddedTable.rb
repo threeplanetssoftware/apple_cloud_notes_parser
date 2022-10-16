@@ -341,4 +341,19 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
     return html
   end
 
+  ##
+  # This method prepares the data structure that JSON will use to generate a JSON object later.
+  def prepare_json
+    to_return = super()
+    to_return[:table] = Array.new()
+    @reconstructed_table.each_with_index do |row, row_index|
+      to_return[:table][row_index] = Array.new()
+      row.each_with_index do |column, column_index|
+        to_return[:table][row_index][column_index] = column
+      end
+    end
+    
+    to_return
+  end
+
 end
