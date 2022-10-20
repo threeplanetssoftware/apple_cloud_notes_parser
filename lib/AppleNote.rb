@@ -23,6 +23,209 @@ require_relative 'AppleNotesEmbeddedTable.rb'
 require_relative 'AppleNoteStore.rb'
 require_relative 'AppleUniformTypeIdentifier.rb'
 
+# A little monkey patching never hurt anyone
+class ParagraphStyle
+  def ==(other_paragraph_style)
+    return false if !other_paragraph_style
+    same_style_type = (style_type == other_paragraph_style.style_type)
+    same_alignment = (alignment == other_paragraph_style.alignment)
+    same_indent = (indent_amount == other_paragraph_style.indent_amount)
+    same_checklist = (checklist == other_paragraph_style.checklist)
+
+    return (same_style_type and same_alignment and same_indent and same_checklist)
+  end
+end
+
+class Color
+  def red_hex_string
+    (red * 255).round().to_s(16).upcase
+  end
+
+  def green_hex_string
+    (green * 255).round().to_s(16).upcase
+  end
+
+  def blue_hex_string
+    (blue * 255).round().to_s(16).upcase
+  end
+end
+
+class AttributeRun
+
+  def has_style_type
+    paragraph_style and paragraph_style.style_type
+  end
+
+  def same_style?(other_attribute_run)
+    return false if !other_attribute_run
+    same_paragraph = (paragraph_style == other_attribute_run.paragraph_style)
+    same_font = (font == other_attribute_run.font)
+    same_font_weight = (font_weight == other_attribute_run.font_weight)
+    same_underlined = (underlined == other_attribute_run.underlined)
+    same_strikethrough = (strikethrough == other_attribute_run.strikethrough)
+    same_superscript = (superscript == other_attribute_run.superscript)
+    same_link = (link == other_attribute_run.link)
+    same_color = (color == other_attribute_run.color)
+    same_attachment_info = (attachment_info == other_attribute_run.attachment_info)
+
+    no_attachment_info = !attachment_info # We don't want to get so greedy with attachments
+
+    return (same_paragraph and same_font and same_font_weight and same_underlined and same_strikethrough and same_superscript and same_link and same_color and same_attachment_info and no_attachment_info)
+  end
+
+  def generate_html(text_to_insert)
+    html = ""
+   
+    # Deal with the style type 
+    if has_style_type
+      case paragraph_style.style_type
+      when AppleNote::STYLE_TYPE_TITLE
+        html += "<h1>"
+      when AppleNote::STYLE_TYPE_HEADING
+        html += "<h2>"
+      when AppleNote::STYLE_TYPE_SUBHEADING
+        html += "<h3>"
+      when AppleNote::STYLE_TYPE_MONOSPACED
+        html += "<code>"
+      when AppleNote::STYLE_TYPE_NUMBERED_LIST
+        html += "<ol><li>"
+      when AppleNote::STYLE_TYPE_DOTTED_LIST
+        html += "<ul><li>"
+      when AppleNote::STYLE_TYPE_DASHED_LIST
+        html += "<ul><li>"
+      when AppleNote::STYLE_TYPE_CHECKBOX
+        # Set the style to apply to the list item
+        style = "unchecked"
+        style = "checked" if paragraph_style.checklist.done == 1
+
+        html += "<ul class='checklist'><li class='#{style}'>"
+      end
+    end
+
+    # Deal with the font
+    if font_weight
+      case font_weight
+      when AppleNote::FONT_TYPE_DEFAULT
+        # Do nothing
+      when AppleNote::FONT_TYPE_BOLD
+        html += "<b>"
+      when AppleNote::FONT_TYPE_ITALIC
+        html += "<i>"
+      when AppleNote::FONT_TYPE_BOLD_ITALIC
+        html += "<b><i>"
+      end
+    end
+
+    # Add in underlined
+    if underlined == 1
+      html += "<u>"
+    end
+
+    # Add in strikethrough
+    if strikethrough == 1
+      html += "<del>"
+    end
+  
+    # Handle fonts and colors 
+    font_style = ""
+    color_style = ""
+
+    if font and font.font_name
+      font_style = "face='#{font.font_name}'"
+    end
+
+    if color
+      color_style = "color='##{color.red_hex_string}#{color.green_hex_string}#{color.blue_hex_string}'"
+    end
+ 
+    if font_style.length > 0 and color_style.length > 0
+      html +="<font #{font_style} #{color_style}>"
+    elsif font_style.length > 0
+      html +="<font #{font_style}>"
+    elsif color_style.length > 0
+      html +="<font #{color_style}>"
+    end
+
+    # Edit the text if we need to make small changes based on the paragraph style
+    if has_style_type
+      if (paragraph_style.style_type == AppleNote::STYLE_TYPE_NUMBERED_LIST or paragraph_style.style_type == AppleNote::STYLE_TYPE_DOTTED_LIST or paragraph_style.style_type == AppleNote::STYLE_TYPE_DASHED_LIST)
+        need_to_close_li = text_to_insert.end_with?("\n")
+        text_to_insert = text_to_insert.split("\n").join("</li><li>")
+        text_to_insert += "</li><li>" if need_to_close_li
+      elsif paragraph_style.style_type == AppleNote::STYLE_TYPE_CHECKBOX
+        text_to_insert.gsub!("\n","")
+      end
+    end
+
+    # Add in links that are part of the text itself
+    if link and link.length > 0
+      text_to_insert = "<a href='#{link}' target='_blank'>#{text_to_insert}</a>"
+    end
+
+    # Add the text into HTML finally and start closing things up
+    html += text_to_insert
+
+    # Handle fonts
+    if font_style.length > 0 or color_style.length > 0
+      html +="</font>"
+    end
+
+    # Add in underlined
+    if underlined == 1
+      html += "</u>"
+    end
+
+    # Add in strikethrough
+    if strikethrough == 1
+      html += "</del>"
+    end
+
+    # Deal with the font
+    if font_weight
+      case font_weight
+      when AppleNote::FONT_TYPE_DEFAULT
+        # Do nothing
+      when AppleNote::FONT_TYPE_BOLD
+        html += "</b>"
+      when AppleNote::FONT_TYPE_ITALIC
+        html += "</i>"
+      when AppleNote::FONT_TYPE_BOLD_ITALIC
+        html += "</i></b>"
+      end
+    end
+
+    # Deal with the style type 
+    if has_style_type
+      case paragraph_style.style_type
+      when AppleNote::STYLE_TYPE_TITLE
+        html += "</h1>"
+      when AppleNote::STYLE_TYPE_HEADING
+        html += "</h2>"
+      when AppleNote::STYLE_TYPE_SUBHEADING
+        html += "</h3>"
+      when AppleNote::STYLE_TYPE_MONOSPACED
+        html += "</code>"
+      when AppleNote::STYLE_TYPE_NUMBERED_LIST
+        html += "</li></ol>"
+      when AppleNote::STYLE_TYPE_DOTTED_LIST
+        html += "</li></ul>"
+      when AppleNote::STYLE_TYPE_DASHED_LIST
+        html += "</li></ul>"
+      when AppleNote::STYLE_TYPE_CHECKBOX
+        html += "</li></ul>"
+      end
+    end
+
+    html.gsub!(/<h1>\s*<\/h1>/,'') # Remove empty titles
+    html.gsub!(/\n<\/h1>/,'</h1>') # Remove extra line breaks in front of h1
+    html.gsub!(/\n<\/h2>/,'</h2>') # Remove extra line breaks in front of h2
+    html.gsub!(/\n<\/h3>/,'</h3>') # Remove extra line breaks in front of h3
+    html.gsub!("\u2028",'<br/>') # Translate \u2028 used to denote newlines in lists into an actual HTML line break
+
+    return html
+  end
+end
+
 ##
 #
 # This class represents an Apple Note.
@@ -419,37 +622,31 @@ class AppleNote < AppleCloudKitRecord
     # Set up variables for the run
     embedded_object_index = 0
     current_index = 0
-    current_style = -1
 
     # Create a copy of the text, which is frozen
     note_text = root_node.note.note_text.dup
 
-    # Capture if we're in a checkbox, because they're special
-    current_checkbox = nil
+    # Create an Array to condense similar attribute runs into
+    condensed_attribute_runs = Array.new()
 
-    # Iterate over the attribute runs to display stuffs
-    root_node.note.attribute_run.each_with_index do |note_part, attribute_run_index|
+    # Preprocess array to combine disparate parts that can be shoved together
+    root_node.note.attribute_run.reverse!
+    while root_node.note.attribute_run.length > 0
+      current_node = root_node.note.attribute_run.pop()
 
-      # Clean up open style tags
-      stale_style = (!note_part.paragraph_style or (note_part.paragraph_style.style_type != current_style))
-      if stale_style
-        case current_style
-        when STYLE_TYPE_TITLE
-          html += "</h1>"
-        when STYLE_TYPE_HEADING
-          html += "</h2>"
-        when STYLE_TYPE_SUBHEADING
-          html += "</h3>"
-        when STYLE_TYPE_MONOSPACED
-          html += "</code>"
-        when STYLE_TYPE_NUMBERED_LIST
-          html += "</li></ol>"
-        when STYLE_TYPE_DOTTED_LIST
-          html += "</li></ul>"
-        when STYLE_TYPE_DASHED_LIST
-          html += "</li></ul>"
-        end
+      # Start greedily grabbing every attribute run that looks like it matches the same style
+      while current_node.same_style?(root_node.note.attribute_run.last)
+        next_node = root_node.note.attribute_run.pop()
+        # Extend the length by the length of the node we're removing
+        current_node.length += next_node.length
       end
+
+      # Add the lengthened attribute run to the Array
+      condensed_attribute_runs.push(current_node)
+    end
+
+    # Iterate over this smaller set when we know each attribute run can be self-contained
+    condensed_attribute_runs.each_with_index do |note_part, attribute_run_index|
 
       # Check for something embedded, if so, don't put in the characters, replace them with the object
       if note_part.attachment_info
@@ -461,97 +658,8 @@ class AppleNote < AppleCloudKitRecord
         end
         embedded_object_index += 1
         current_index += note_part.length
-        current_style = -1
 
       else # We must have text to parse
-
-        # Deal with styling
-        if note_part.paragraph_style
-
-          # Remember if we have a checkbox
-          note_part_is_checkbox = note_part.paragraph_style.style_type == STYLE_TYPE_CHECKBOX
-
-          # Remember if we have a list
-          note_part_is_list = (note_part.paragraph_style.style_type == STYLE_TYPE_DASHED_LIST or note_part.paragraph_style.style_type == STYLE_TYPE_NUMBERED_LIST or note_part.paragraph_style.style_type == STYLE_TYPE_DOTTED_LIST)
-
-          # Because similar checkboxes carry over past a line break, 
-          # need to close it when we hit a different type
-          if current_checkbox and !note_part_is_checkbox
-            html += "</li></ul>\n"
-            current_checkbox = nil
-          end
-
-          # Add in indents, this doesn't work so well
-          indents = 0
-          while indents < note_part.paragraph_style.indent_amount and !note_part_is_checkbox and !note_part_is_list do
-            html += "\t"
-            indents += 1
-          end
-
-          # Add new style
-          needs_new_style = (attribute_run_index == 0 or (note_part.paragraph_style.style_type != current_style) or current_style == STYLE_TYPE_CHECKBOX)
-          if needs_new_style
-            case note_part.paragraph_style.style_type
-            when STYLE_TYPE_TITLE
-              html += "<h1>"
-            when STYLE_TYPE_HEADING
-              html += "<h2>"
-            when STYLE_TYPE_SUBHEADING
-              html += "<h3>"
-            when STYLE_TYPE_MONOSPACED
-              html += "<code>"
-            when STYLE_TYPE_NUMBERED_LIST
-              html += "<ol><li>"
-            when STYLE_TYPE_DOTTED_LIST
-              html += "<ul><li>"
-            when STYLE_TYPE_DASHED_LIST
-              html += "<ul><li>"
-            when STYLE_TYPE_CHECKBOX
-
-              # Set the style to apply to the list item
-              style = "unchecked"
-              style = "checked" if note_part.paragraph_style.checklist.done == 1
-
-              # Open a list if we don't have a current one going
-              if !current_checkbox
-                html += "<ul class='checklist'><li class='#{style}'>"
-
-              # Or just open a new list element
-              elsif current_checkbox != note_part.paragraph_style.checklist.uuid
-                html += "</li><li class='#{style}'>"
-              end
-              # Update our knowledge of the current checkbox
-              current_checkbox = note_part.paragraph_style.checklist.uuid
-            end
-          end
-          current_style = note_part.paragraph_style.style_type
-
-        else
-          # Clear the current style if we did NOT have any paragraph style information
-          current_style = -1
-        end
-
-        # Add in font stuff
-        case note_part.font_weight
-        when FONT_TYPE_DEFAULT
-          # Do nothing
-        when FONT_TYPE_BOLD 
-          html += "<b>"
-        when FONT_TYPE_ITALIC
-          html += "<i>"
-        when FONT_TYPE_BOLD_ITALIC
-          html += "<b><i>"
-        end
-
-        # Add in underlined
-        if note_part.underlined == 1
-          html += "<u>"
-        end
-
-        # Add in strikethrough
-        if note_part.strikethrough == 1
-          html += "<del>"
-        end
 
         # Add in the slice of text represented by this run
         slice_to_add = note_text.slice(current_index, note_part.length)
@@ -567,87 +675,13 @@ class AppleNote < AppleCloudKitRecord
           slice_to_add = note_text.slice(current_index, note_part.length - double_characters)
         end
         
-        # Deal with newlines
-        if (current_style == STYLE_TYPE_NUMBERED_LIST or current_style == STYLE_TYPE_DOTTED_LIST or current_style == STYLE_TYPE_DASHED_LIST)
-          need_to_close_li = slice_to_add.end_with?("\n")
-          slice_to_add = slice_to_add.split("\n").join("</li><li>")
-          slice_to_add += "</li><li>" if need_to_close_li
-        elsif current_style == STYLE_TYPE_CHECKBOX
-          slice_to_add.gsub!("\n","")
-        end
-
-        # Add in links that are part of the text itself
-        if note_part.link and note_part.link.length > 0
-          slice_to_add = "<a href='#{note_part.link}' target='_blank'>#{slice_to_add}</a>"
-        end
-
-        html += slice_to_add
+        html += note_part.generate_html(slice_to_add)
 
         # Increment our counter to be sure we don't loop infinitely
         current_index += (note_part.length - double_characters)
-
-        # Close strikethrough
-        if note_part.strikethrough == 1
-          html += "</del>"
-        end
-
-        # Close underlined
-        if note_part.underlined == 1
-          html += "</u>"
-        end
-
-        # Close font stuff
-        case note_part.font_weight
-        when FONT_TYPE_DEFAULT
-          # Do nothing
-        when FONT_TYPE_BOLD
-          html += "</b>"
-        when FONT_TYPE_ITALIC
-          html += "</i>"
-        when FONT_TYPE_BOLD_ITALIC
-          html += "</i></b>"
-        end
-
       end
 
     end
-
-    # Close any remaining styles
-    case current_style
-    when STYLE_TYPE_TITLE
-      html += "</h1>"
-    when STYLE_TYPE_HEADING
-      html += "</h2>"
-    when STYLE_TYPE_SUBHEADING
-      html += "</h3>"
-    when STYLE_TYPE_MONOSPACED
-      html += "</code>"
-    when STYLE_TYPE_NUMBERED_LIST
-      html += "</li></ol>"
-    when STYLE_TYPE_DOTTED_LIST
-      html += "</li></ul>"
-    when STYLE_TYPE_DASHED_LIST
-      html += "</li></ul>"
-    when STYLE_TYPE_CHECKBOX
-      html += "</li></ul>"
-    end
-
-    # Remove any doubled tags
-    html.gsub!('</h1><h1>','')
-    html.gsub!('</h2><h2>','')
-    html.gsub!('</h3><h3>','')
-    html.gsub!('</code><code>','')
-    html.gsub!('</b><b>','')
-    html.gsub!('</i><i>','')
-    html.gsub!('</u><u>','')
-    html.gsub!('</del><del>','')
-    html.gsub!('<li></li>','')
-    html.gsub!('</ul><ul>','')
-    html.gsub!(/<h1>\s*<\/h1>/,'') # Remove empty titles
-    html.gsub!(/\n<\/h1>/,'</h1>') # Remove extra line breaks in front of h1
-    html.gsub!(/\n<\/h2>/,'</h2>') # Remove extra line breaks in front of h2
-    html.gsub!(/\n<\/h3>/,'</h3>') # Remove extra line breaks in front of h3
-    html.gsub!("\u2028",'<br/>') # Translate \u2028 used to denote newlines in lists into an actual HTML line break
 
     html
   end
