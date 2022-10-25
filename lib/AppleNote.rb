@@ -1,3 +1,4 @@
+require 'cgi'
 require 'keyed_archive'
 require 'sqlite3'
 require 'zlib'
@@ -566,6 +567,9 @@ class AppleNote < AppleCloudKitRecord
         if double_characters > 0
           slice_to_add = note_text.slice(current_index, note_part.length - double_characters)
         end
+
+        # Escape HTML in the actual text of the note
+        slice_to_add = CGI::escapeHTML(slice_to_add)
         
         # Deal with newlines
         if (current_style == STYLE_TYPE_NUMBERED_LIST or current_style == STYLE_TYPE_DOTTED_LIST or current_style == STYLE_TYPE_DASHED_LIST)
@@ -576,7 +580,7 @@ class AppleNote < AppleCloudKitRecord
           slice_to_add.gsub!("\n","")
         end
 
-        # Add in links that are part of the text itself
+        # Add in links that are part of the text itself, doing this after cleaning the note so the <a> tag lives
         if note_part.link and note_part.link.length > 0
           slice_to_add = "<a href='#{note_part.link}' target='_blank'>#{slice_to_add}</a>"
         end
