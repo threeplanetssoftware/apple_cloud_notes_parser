@@ -1,3 +1,4 @@
+require 'cgi'
 require 'keyed_archive'
 require 'sqlite3'
 require_relative 'notestore_pb.rb'
@@ -458,7 +459,10 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
   ##
   # This method generates the HTML to be embedded into an AppleNote's HTML for objects that are just downloadable.
   def generate_html_with_link(type="Media")
-    return "<a href='../#{@reference_location}'>#{type} #{@filename}</a>" if @reference_location
+    # This type of media can have user-created names, so we need to make sure we clean the closing apostrophe out
+    # Not using CGI::escape because that will insert "+" in place of a space, not "%20" and the file system won't be
+    # happy.
+    return "<a href='../#{@reference_location.to_s.gsub("'","%27")}'>#{type} #{@filename}</a>" if @reference_location
     return "{#{type} missing due to not having a file reference location}"
   end
 
