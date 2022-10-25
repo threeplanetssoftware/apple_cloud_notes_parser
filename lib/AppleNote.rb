@@ -146,6 +146,9 @@ class AttributeRun
       html +="<font #{color_style}>"
     end
 
+    # Escape HTML in the actual text of the note
+    text_to_insert = CGI::escapeHTML(text_to_insert)
+
     # Edit the text if we need to make small changes based on the paragraph style
     if has_style_type
       if (paragraph_style.style_type == AppleNote::STYLE_TYPE_NUMBERED_LIST or paragraph_style.style_type == AppleNote::STYLE_TYPE_DOTTED_LIST or paragraph_style.style_type == AppleNote::STYLE_TYPE_DASHED_LIST)
@@ -157,7 +160,7 @@ class AttributeRun
       end
     end
 
-    # Add in links that are part of the text itself
+    # Add in links that are part of the text itself, doing this after cleaning the note so the <a> tag lives
     if link and link.length > 0
       text_to_insert = "<a href='#{link}' target='_blank'>#{text_to_insert}</a>"
     end
