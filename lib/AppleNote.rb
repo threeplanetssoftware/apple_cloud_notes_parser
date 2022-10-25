@@ -168,6 +168,16 @@ class AttributeRun
     if strikethrough == 1
       html += "<del>" if (initial_run or previous_run.strikethrough != 1)
     end
+
+    # Add in superscript
+    if superscript == 1
+      html += "<sup>" if (initial_run or previous_run.superscript != 1)
+    end
+
+    # Add in subscript
+    if superscript == -1
+      html += "<sub>" if (initial_run or previous_run.superscript != -1)
+    end
   
     # Handle fonts and colors 
     font_style = ""
@@ -230,14 +240,24 @@ class AttributeRun
       html +="</font>" if !closed_font
     end
 
-    # Add in underlined
-    if underlined == 1
-      html += "</u>" if (final_run or next_run.underlined != 1)
+    # Add in subscript
+    if superscript == -1
+      html += "</sub>" if (final_run or next_run.superscript != -1)
+    end
+
+    # Add in superscript
+    if superscript == 1
+      html += "</sup>" if (final_run or next_run.superscript != 1)
     end
 
     # Add in strikethrough
     if strikethrough == 1
       html += "</del>" if (final_run or next_run.underlined != 1)
+    end
+
+    # Add in underlined
+    if underlined == 1
+      html += "</u>" if (final_run or next_run.underlined != 1)
     end
 
     # Deal with the font
