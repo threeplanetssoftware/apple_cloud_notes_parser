@@ -74,6 +74,24 @@ class AttributeRun
   end
 
   ##
+  # This method compares the paragraph_style.style_type integer of two AttributeRun 
+  # objects to see if they have the same style_type.
+  def same_style_type?(other_attribute_run)
+    return false if !other_attribute_run
+
+    # We clearly aren't the same if one or the other lacks a style type completely
+    return false if (other_attribute_run.has_style_type and !has_style_type)
+    return false if (!other_attribute_run.has_style_type and has_style_type)
+
+    # If neither has a style type, that is the same
+    return true if (!other_attribute_run.has_style_type and !has_style_type)
+
+    # Compare our style_type to the other style_type and return the result
+    return (other_attribute_run.paragraph_style.style_type == paragraph_style.style_type)
+    
+  end
+
+  ##
   # Helper function to tell if a given AttributeRun is an AppleNote::STYLE_TYPE_CHECKBOX.
   def is_checkbox?
     return (has_style_type and paragraph_style.style_type == AppleNote::STYLE_TYPE_CHECKBOX)
@@ -118,19 +136,19 @@ class AttributeRun
     if has_style_type
       case paragraph_style.style_type
       when AppleNote::STYLE_TYPE_TITLE
-        html += "<h1>" if (initial_run or (previous_run.has_style_type and previous_run.paragraph_style.style_type != paragraph_style.style_type))
+        html += "<h1>" if (initial_run or !same_style_type?(previous_run))
       when AppleNote::STYLE_TYPE_HEADING
-        html += "<h2>" if (initial_run or (previous_run.has_style_type and previous_run.paragraph_style.style_type != paragraph_style.style_type))
+        html += "<h2>" if (initial_run or !same_style_type?(previous_run))
       when AppleNote::STYLE_TYPE_SUBHEADING
-        html += "<h3>" if (initial_run or (previous_run.has_style_type and previous_run.paragraph_style.style_type != paragraph_style.style_type))
+        html += "<h3>" if (initial_run or !same_style_type?(previous_run))
       when AppleNote::STYLE_TYPE_MONOSPACED
-        html += "<code>" if (initial_run or (previous_run.has_style_type and previous_run.paragraph_style.style_type != paragraph_style.style_type))
+        html += "<code>" if (initial_run or !same_style_type?(previous_run))
       when AppleNote::STYLE_TYPE_NUMBERED_LIST
-        html += "<ol><li>" if (initial_run or (previous_run.has_style_type and previous_run.paragraph_style.style_type != paragraph_style.style_type))
+        html += "<ol><li>" if (initial_run or !same_style_type?(previous_run))
       when AppleNote::STYLE_TYPE_DOTTED_LIST
-        html += "<ul><li>" if (initial_run or (previous_run.has_style_type and previous_run.paragraph_style.style_type != paragraph_style.style_type))
+        html += "<ul><li>" if (initial_run or !same_style_type?(previous_run))
       when AppleNote::STYLE_TYPE_DASHED_LIST
-        html += "<ul><li>" if (initial_run or (previous_run.has_style_type and previous_run.paragraph_style.style_type != paragraph_style.style_type))
+        html += "<ul><li>" if (initial_run or !same_style_type?(previous_run))
       when AppleNote::STYLE_TYPE_CHECKBOX
         # Set the style to apply to the list item
         style = "unchecked"
@@ -278,21 +296,21 @@ class AttributeRun
     if has_style_type
       case paragraph_style.style_type
       when AppleNote::STYLE_TYPE_TITLE
-        html += "</h1>" if (final_run or !next_run.has_style_type or next_run.paragraph_style.style_type != paragraph_style.style_type)
+        html += "</h1>" if (final_run or !same_style_type?(next_run))
       when AppleNote::STYLE_TYPE_HEADING
-        html += "</h2>" if (final_run or !next_run.has_style_type or next_run.paragraph_style.style_type != paragraph_style.style_type)
+        html += "</h2>" if (final_run or !same_style_type?(next_run))
       when AppleNote::STYLE_TYPE_SUBHEADING
-        html += "</h3>" if (final_run or !next_run.has_style_type or next_run.paragraph_style.style_type != paragraph_style.style_type)
+        html += "</h3>" if (final_run or !same_style_type?(next_run))
       when AppleNote::STYLE_TYPE_MONOSPACED
-        html += "</code>" if (final_run or !next_run.has_style_type or next_run.paragraph_style.style_type != paragraph_style.style_type)
+        html += "</code>" if (final_run or !same_style_type?(next_run))
       when AppleNote::STYLE_TYPE_NUMBERED_LIST
-        html += "</li></ol>" if (final_run or !next_run.has_style_type or next_run.paragraph_style.style_type != paragraph_style.style_type)
+        html += "</li></ol>" if (final_run or !same_style_type?(next_run))
       when AppleNote::STYLE_TYPE_DOTTED_LIST
-        html += "</li></ul>" if (final_run or !next_run.has_style_type or next_run.paragraph_style.style_type != paragraph_style.style_type)
+        html += "</li></ul>" if (final_run or !same_style_type?(next_run))
       when AppleNote::STYLE_TYPE_DASHED_LIST
-        html += "</li></ul>" if (final_run or !next_run.has_style_type or next_run.paragraph_style.style_type != paragraph_style.style_type)
+        html += "</li></ul>" if (final_run or !same_style_type?(next_run))
       when AppleNote::STYLE_TYPE_CHECKBOX
-        html += "</li></ul>" if (final_run or !next_run.has_style_type or next_run.paragraph_style.style_type != paragraph_style.style_type)
+        html += "</li></ul>" if (final_run or !same_style_type?(next_run))
       end
     end
 
