@@ -48,6 +48,10 @@ class Color
   def blue_hex_string
     (blue * 255).round().to_s(16).upcase
   end
+
+  def full_hex_string
+    "##{red_hex_string}#{green_hex_string}#{blue_hex_string}"    
+  end
 end
 
 class AttributeRun
@@ -87,8 +91,14 @@ class AttributeRun
     return true if (!other_attribute_run.has_style_type and !has_style_type)
 
     # Compare our style_type to the other style_type and return the result
-    return (other_attribute_run.paragraph_style.style_type == paragraph_style.style_type)
-    
+    return (other_attribute_run.paragraph_style.style_type == paragraph_style.style_type)  
+  end
+
+  ##
+  # Helper function to tell if a given AttributeRun has the same font weight as this one.
+  def same_font_weight?(other_attribute_run)
+    return false if !other_attribute_run
+    return (other_attribute_run.font_weight == font_weight)
   end
 
   ##
@@ -133,47 +143,49 @@ class AttributeRun
     final_run = true if !next_run
  
     # Deal with the style type 
-    if has_style_type
+    if has_style_type and (initial_run or !same_style_type?(previous_run))
       case paragraph_style.style_type
       when AppleNote::STYLE_TYPE_TITLE
-        html += "<h1>" if (initial_run or !same_style_type?(previous_run))
+        html += "<h1>"
       when AppleNote::STYLE_TYPE_HEADING
-        html += "<h2>" if (initial_run or !same_style_type?(previous_run))
+        html += "<h2>"
       when AppleNote::STYLE_TYPE_SUBHEADING
-        html += "<h3>" if (initial_run or !same_style_type?(previous_run))
+        html += "<h3>"
       when AppleNote::STYLE_TYPE_MONOSPACED
-        html += "<code>" if (initial_run or !same_style_type?(previous_run))
+        html += "<code>"
       when AppleNote::STYLE_TYPE_NUMBERED_LIST
-        html += "<ol><li>" if (initial_run or !same_style_type?(previous_run))
+        html += "<ol><li>"
       when AppleNote::STYLE_TYPE_DOTTED_LIST
-        html += "<ul><li>" if (initial_run or !same_style_type?(previous_run))
+        html += "<ul><li>"
       when AppleNote::STYLE_TYPE_DASHED_LIST
-        html += "<ul><li>" if (initial_run or !same_style_type?(previous_run))
-      when AppleNote::STYLE_TYPE_CHECKBOX
-        # Set the style to apply to the list item
-        style = "unchecked"
-        style = "checked" if paragraph_style.checklist.done == 1
+        html += "<ul><li>"
+      end
+    end
+  
+    # Handle AppleNote::STYLE_TYPE_CHECKBOX separately because they're special
+    if (has_style_type and paragraph_style.style_type == AppleNote::STYLE_TYPE_CHECKBOX)
+      # Set the style to apply to the list item
+      style = "unchecked"
+      style = "checked" if paragraph_style.checklist.done == 1
 
-        if (initial_run or !previous_run.is_checkbox?)
-          html += "<ul class='checklist'><li class='#{style}'>"
-        elsif previous_run.paragraph_style.checklist.uuid != paragraph_style.checklist.uuid
-          html += "</li><li class='#{style}'>"
-        end
-
+      if (initial_run or !previous_run.is_checkbox?)
+        html += "<ul class='checklist'><li class='#{style}'>"
+      elsif previous_run.paragraph_style.checklist.uuid != paragraph_style.checklist.uuid
+        html += "</li><li class='#{style}'>"
       end
     end
 
     # Deal with the font
-    if font_weight
+    if font_weight and (initial_run or !same_font_weight?(previous_run))
       case font_weight
       when AppleNote::FONT_TYPE_DEFAULT
         # Do nothing
       when AppleNote::FONT_TYPE_BOLD
-        html += "<b>" if (initial_run or (previous_run.font_weight and previous_run.font_weight != font_weight))
+        html += "<b>"
       when AppleNote::FONT_TYPE_ITALIC
-        html += "<i>" if (initial_run or (previous_run.font_weight and previous_run.font_weight != font_weight))
+        html += "<i>"
       when AppleNote::FONT_TYPE_BOLD_ITALIC
-        html += "<b><i>" if (initial_run or (previous_run.font_weight and previous_run.font_weight != font_weight))
+        html += "<b><i>"
       end
     end
 
@@ -206,7 +218,7 @@ class AttributeRun
     end
 
     if color
-      color_style = "color='##{color.red_hex_string}#{color.green_hex_string}#{color.blue_hex_string}'"
+      color_style = "color='#{color.full_hex_string}'"
     end
  
     if font_style.length > 0 and color_style.length > 0
@@ -223,26 +235,28 @@ class AttributeRun
     closed_font = false
 
     # Edit the text if we need to make small changes based on the paragraph style
-    if has_style_type
-      if is_any_list?
-        need_to_close_li = text_to_insert.end_with?("\n")
-        text_to_insert = text_to_insert.split("\n").join("</li><li>")
+    if has_style_type and is_any_list?
+      need_to_close_li = text_to_insert.end_with?("\n")
+      text_to_insert = text_to_insert.split("\n").join("</li><li>")
 
-        # Check it see if we have an open list element...
-        if need_to_close_li
+      # Check it see if we have an open list element...
+      if need_to_close_li
 
-          # Also if we're going to need to close a font element...
-          if (font_style.length > 0 or color_style.length > 0)
-            # ... if so close the font and remember we did so
-            text_to_insert += "</font>"
-            closed_font = true
-          end
-          # ... then close the list element tag
-          text_to_insert += "</li><li>"
+        # Also if we're going to need to close a font element...
+        if (font_style.length > 0 or color_style.length > 0)
+          # ... if so close the font and remember we did so
+          text_to_insert += "</font>"
+          closed_font = true
         end
-      elsif is_checkbox?
-        text_to_insert.gsub!("\n","")
+
+        # ... then close the list element tag
+        text_to_insert += "</li><li>"
       end
+    end
+
+    # Clean up checkbox newlines
+    if has_style_type and is_checkbox?
+      text_to_insert.gsub!("\n","")
     end
 
     # Add in links that are part of the text itself, doing this after cleaning the note so the <a> tag lives
@@ -278,39 +292,39 @@ class AttributeRun
       html += "</u>" if (final_run or next_run.underlined != 1)
     end
 
-    # Deal with the font
-    if font_weight
+    # Close the font if this is the last AttributeRun or if the next is different
+    if font_weight and (final_run or !same_font_weight?(next_run))
       case font_weight
       when AppleNote::FONT_TYPE_DEFAULT
         # Do nothing
       when AppleNote::FONT_TYPE_BOLD
-        html += "</b>" if (final_run or !next_run.font_weight or next_run.font_weight != font_weight) 
+        html += "</b>"
       when AppleNote::FONT_TYPE_ITALIC
-        html += "</i>" if (final_run or !next_run.font_weight or next_run.font_weight != font_weight)
+        html += "</i>"
       when AppleNote::FONT_TYPE_BOLD_ITALIC
-        html += "</i></b>" if (final_run or !next_run.font_weight or next_run.font_weight != font_weight)
+        html += "</i></b>"
       end
     end
 
-    # Deal with the style type 
-    if has_style_type
+    # Close the style type if this is the last AttributeRun or if the next is different
+    if has_style_type and (final_run or !same_style_type?(next_run))
       case paragraph_style.style_type
       when AppleNote::STYLE_TYPE_TITLE
-        html += "</h1>" if (final_run or !same_style_type?(next_run))
+        html += "</h1>" 
       when AppleNote::STYLE_TYPE_HEADING
-        html += "</h2>" if (final_run or !same_style_type?(next_run))
+        html += "</h2>" 
       when AppleNote::STYLE_TYPE_SUBHEADING
-        html += "</h3>" if (final_run or !same_style_type?(next_run))
+        html += "</h3>" 
       when AppleNote::STYLE_TYPE_MONOSPACED
-        html += "</code>" if (final_run or !same_style_type?(next_run))
+        html += "</code>" 
       when AppleNote::STYLE_TYPE_NUMBERED_LIST
-        html += "</li></ol>" if (final_run or !same_style_type?(next_run))
+        html += "</li></ol>" 
       when AppleNote::STYLE_TYPE_DOTTED_LIST
-        html += "</li></ul>" if (final_run or !same_style_type?(next_run))
+        html += "</li></ul>" 
       when AppleNote::STYLE_TYPE_DASHED_LIST
-        html += "</li></ul>" if (final_run or !same_style_type?(next_run))
+        html += "</li></ul>" 
       when AppleNote::STYLE_TYPE_CHECKBOX
-        html += "</li></ul>" if (final_run or !same_style_type?(next_run))
+        html += "</li></ul>" 
       end
     end
 
