@@ -168,7 +168,7 @@ class AttributeRun
     final_run = true if !next_run
  
     # Deal with the style type 
-    if has_style_type and (initial_run or !same_style_type_previous?)
+    if has_style_type and !same_style_type_previous?
       case paragraph_style.style_type
       when AppleNote::STYLE_TYPE_TITLE
         html += "<h1>"
@@ -188,7 +188,7 @@ class AttributeRun
     end
   
     # Handle AppleNote::STYLE_TYPE_CHECKBOX separately because they're special
-    if (has_style_type and paragraph_style.style_type == AppleNote::STYLE_TYPE_CHECKBOX)
+    if is_checkbox?
       # Set the style to apply to the list item
       style = "unchecked"
       style = "checked" if paragraph_style.checklist.done == 1
@@ -201,7 +201,7 @@ class AttributeRun
     end
 
     # Deal with the font
-    if font_weight and (initial_run or !same_font_weight_previous?)
+    if font_weight and !same_font_weight_previous?
       case font_weight
       when AppleNote::FONT_TYPE_DEFAULT
         # Do nothing
@@ -260,7 +260,7 @@ class AttributeRun
     closed_font = false
 
     # Edit the text if we need to make small changes based on the paragraph style
-    if has_style_type and is_any_list?
+    if is_any_list?
       need_to_close_li = text_to_insert.end_with?("\n")
       text_to_insert = text_to_insert.split("\n").join("</li><li>")
 
@@ -280,7 +280,7 @@ class AttributeRun
     end
 
     # Clean up checkbox newlines
-    if has_style_type and is_checkbox?
+    if is_checkbox?
       text_to_insert.gsub!("\n","")
     end
 
@@ -318,7 +318,7 @@ class AttributeRun
     end
 
     # Close the font if this is the last AttributeRun or if the next is different
-    if font_weight and (final_run or !same_font_weight_next?)
+    if font_weight and !same_font_weight_next?
       case font_weight
       when AppleNote::FONT_TYPE_DEFAULT
         # Do nothing
@@ -332,7 +332,7 @@ class AttributeRun
     end
 
     # Close the style type if this is the last AttributeRun or if the next is different
-    if has_style_type and (final_run or !same_style_type_next?)
+    if has_style_type and !same_style_type_next?
       case paragraph_style.style_type
       when AppleNote::STYLE_TYPE_TITLE
         html += "</h1>" 
