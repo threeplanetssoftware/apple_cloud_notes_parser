@@ -56,6 +56,8 @@ end
 
 class AttributeRun
 
+  attr_accessor :previous_run, :next_run
+
   def has_style_type
     paragraph_style and paragraph_style.style_type
   end
@@ -75,6 +77,18 @@ class AttributeRun
     no_attachment_info = !attachment_info # We don't want to get so greedy with attachments
 
     return (same_paragraph and same_font and same_font_weight and same_underlined and same_strikethrough and same_superscript and same_link and same_color and same_attachment_info and no_attachment_info)
+  end
+
+  ##
+  # This method checks if the previous AttributeRun had the same style_type
+  def same_style_type_previous?
+    same_style_type?(previous_run)
+  end
+
+  ##
+  # This method checks if the next AttributeRun had the same style_type
+  def same_style_type_next?
+    same_style_type?(next_run)
   end
 
   ##
@@ -99,6 +113,18 @@ class AttributeRun
   def same_font_weight?(other_attribute_run)
     return false if !other_attribute_run
     return (other_attribute_run.font_weight == font_weight)
+  end
+
+  ##
+  # Helper function to tell if the previous AttributeRun has the same font weight as this one.
+  def same_font_weight_previous?
+    same_font_weight?(previous_run)
+  end
+
+  ##
+  # Helper function to tell if the next AttributeRun has the same font weight as this one.
+  def same_font_weight_next?
+    same_font_weight?(next_run)
   end
 
   ##
@@ -132,9 +158,8 @@ class AttributeRun
   end
 
   ##
-  # This method generates the HTML for a given AttributeRun. It expects a String as +text_to_insert+, 
-  # the immediately preceeding AttributeRun as +previous_run+ and the immediate following AttributeRun as +next_run+. 
-  def generate_html(text_to_insert, previous_run, next_run)
+  # This method generates the HTML for a given AttributeRun. It expects a String as +text_to_insert+
+  def generate_html(text_to_insert)
     html = ""
   
     initial_run = false
@@ -143,7 +168,7 @@ class AttributeRun
     final_run = true if !next_run
  
     # Deal with the style type 
-    if has_style_type and (initial_run or !same_style_type?(previous_run))
+    if has_style_type and (initial_run or !same_style_type_previous?)
       case paragraph_style.style_type
       when AppleNote::STYLE_TYPE_TITLE
         html += "<h1>"
@@ -176,7 +201,7 @@ class AttributeRun
     end
 
     # Deal with the font
-    if font_weight and (initial_run or !same_font_weight?(previous_run))
+    if font_weight and (initial_run or !same_font_weight_previous?)
       case font_weight
       when AppleNote::FONT_TYPE_DEFAULT
         # Do nothing
@@ -293,7 +318,7 @@ class AttributeRun
     end
 
     # Close the font if this is the last AttributeRun or if the next is different
-    if font_weight and (final_run or !same_font_weight?(next_run))
+    if font_weight and (final_run or !same_font_weight_next?)
       case font_weight
       when AppleNote::FONT_TYPE_DEFAULT
         # Do nothing
@@ -307,7 +332,7 @@ class AttributeRun
     end
 
     # Close the style type if this is the last AttributeRun or if the next is different
-    if has_style_type and (final_run or !same_style_type?(next_run))
+    if has_style_type and (final_run or !same_style_type_next?)
       case paragraph_style.style_type
       when AppleNote::STYLE_TYPE_TITLE
         html += "</h1>" 
@@ -744,6 +769,7 @@ class AppleNote < AppleCloudKitRecord
 
     # Preprocess array to combine disparate parts that can be shoved together
     root_node.note.attribute_run.reverse!
+    previous_run = nil
     while root_node.note.attribute_run.length > 0
       current_node = root_node.note.attribute_run.pop()
 
@@ -756,6 +782,13 @@ class AppleNote < AppleCloudKitRecord
 
       # Add the lengthened attribute run to the Array
       condensed_attribute_runs.push(current_node)
+
+      # Update the linked list pointers
+      current_node.previous_run = previous_run
+      previous_run.next_run = current_node if previous_run
+
+      # Update the counter so we remember the "last" previous run
+      previous_run = current_node
     end
 
     # Iterate over this smaller set when we know each attribute run can be self-contained
@@ -795,7 +828,7 @@ class AppleNote < AppleCloudKitRecord
         next_run = condensed_attribute_runs[attribute_run_index + 1] if attribute_run_index < condensed_attribute_runs.length - 1
 
         # Pull the HTML to insert
-        html += note_part.generate_html(slice_to_add, previous_run, next_run)
+        html += note_part.generate_html(slice_to_add)
 
         # Increment our counter to be sure we don't loop infinitely
         current_index += (note_part.length - double_characters)
