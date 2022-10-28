@@ -158,6 +158,30 @@ class AttributeRun
   end
 
   ##
+  # This method calculates the total indentation of a given AttributeRun. It caches the result since
+  # it has to recursively check the previous AttributeRuns.
+  def total_indent
+
+    to_return = 0
+
+    # Determine what this AttributeRun's indent amount is on its own
+    my_indent = 0
+    if paragraph_style and paragraph_style.indent_amount
+      my_indent = paragraph_style.indent_amount
+    end
+
+    # If there is no previous AttributeRun, the answer is just this AttributeRun's indent amount
+    if !previous_run
+      to_return = my_indent
+    # If there is something previous, add our indent to its total indent
+    else
+      to_return = my_indent + previous_run.total_indent
+    end
+    
+    return to_return
+  end
+
+  ##
   # This method generates the HTML for a given AttributeRun. It expects a String as +text_to_insert+
   def generate_html(text_to_insert)
     html = ""
@@ -186,6 +210,11 @@ class AttributeRun
         html += "<ul><li>"
       end
     end
+
+    #if (!is_any_list? and !is_checkbox? and total_indent > 0)
+    #  puts "Total indent: #{total_indent}"
+    #  html += "\t-"
+    #end
   
     # Handle AppleNote::STYLE_TYPE_CHECKBOX separately because they're special
     if is_checkbox?
@@ -258,7 +287,7 @@ class AttributeRun
     text_to_insert = CGI::escapeHTML(text_to_insert)
 
     closed_font = false
-
+    need_to_close_li = false
     # Edit the text if we need to make small changes based on the paragraph style
     if is_any_list?
       need_to_close_li = text_to_insert.end_with?("\n")
@@ -270,12 +299,12 @@ class AttributeRun
         # Also if we're going to need to close a font element...
         if (font_style.length > 0 or color_style.length > 0)
           # ... if so close the font and remember we did so
-          text_to_insert += "</font>"
-          closed_font = true
+          #text_to_insert += "</font>"
+          #closed_font = true
         end
 
         # ... then close the list element tag
-        text_to_insert += "</li><li>"
+        #text_to_insert += "</li><li>"
       end
     end
 
@@ -329,6 +358,10 @@ class AttributeRun
       when AppleNote::FONT_TYPE_BOLD_ITALIC
         html += "</i></b>"
       end
+    end
+
+    if need_to_close_li
+      html += "</li><li>"
     end
 
     # Close the style type if this is the last AttributeRun or if the next is different
