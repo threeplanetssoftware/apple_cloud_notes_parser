@@ -19,20 +19,30 @@ class AppleUniformTypeIdentifier
   end
 
   ##
+  # Checks for a UTI that shouldn't exist or won't behave nicely.
+  def bad_uti?
+    return false if @uti.is_a?(String)
+    return true
+  end
+
+  ##
   # This method returns true if the UTI represented is dynamic.
   def is_dynamic?
+    return false if bad_uti?
     return @uti.start_with?("dyn.")
   end
 
   ##
   # This method returns true if the UTI represented is public.
   def is_public?
+    return false if bad_uti?
     return @uti.start_with?("public.")
   end
 
   ##
   # This method returns true if the UTI conforms to public.audio
   def conforms_to_audio
+    return false if bad_uti?
     return true if @uti == "com.apple.m4a-audio"
     return true if @uti == "com.microsoft.waveform-audio"
     return true if @uti == "public.aiff-audio"
@@ -45,6 +55,7 @@ class AppleUniformTypeIdentifier
   # This method returns true if the UTI conforms to public.video 
   # or public.movie. 
   def conforms_to_audiovisual
+    return false if bad_uti?
     return true if @uti == "com.apple.protected-mpeg-4-video"
     return true if @uti == "com.apple.protected-mpeg-4-audio"
     return true if @uti == "com.apple.quicktime-movie"
@@ -60,6 +71,7 @@ class AppleUniformTypeIdentifier
   ##
   # This method returns true if the UTI conforms to public.data objets that are likely documents
   def conforms_to_document
+    return false if bad_uti?
     return true if @uti == "com.microsoft.word.doc"
     return true if @uti == "com.microsoft.excel.xls"
     return true if @uti == "com.microsoft.powerpoint.ppt"
@@ -71,6 +83,7 @@ class AppleUniformTypeIdentifier
   ##
   # This method returns true if the UTI conforms to public.image
   def conforms_to_image
+    return false if bad_uti?
     return true if @uti == "com.adobe.photoshop-image"
     return true if @uti == "com.adobe.illustrator.ai-image"
     return true if @uti == "com.apple.icns"
@@ -100,6 +113,7 @@ class AppleUniformTypeIdentifier
   ##
   # This method returns true if the UTI represents Apple text enrichment.
   def conforms_to_inline_attachment
+    return false if bad_uti?
     return true if @uti.start_with?("com.apple.notes.inlinetextattachment")
     return false
   end
