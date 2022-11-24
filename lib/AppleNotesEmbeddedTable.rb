@@ -263,50 +263,55 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
       end
     end
 
-    # Inflate the GZip
-    zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
-    mergeable_data = zlib_inflater.inflate(gzipped_data)
+    if gzipped_data and gzipped_data.length > 0
+  
+      # Inflate the GZip
+      zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
+      mergeable_data = zlib_inflater.inflate(gzipped_data)
 
-    # Read the protobuff
-    mergabledata_proto = MergableDataProto.decode(mergeable_data)
+      # Read the protobuff
+      mergabledata_proto = MergableDataProto.decode(mergeable_data)
 
-    # Build list of key items
-    @key_items = Array.new
-    mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_key_item.each do |key_item|
-      @key_items.push(key_item)
-    end
+      # Build list of key items
+      @key_items = Array.new
+      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_key_item.each do |key_item|
+        @key_items.push(key_item)
+      end
 
-    # Build list of type items
-    @type_items = Array.new
-    mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_type_item.each do |type_item|
-      @type_items.push(type_item)
-    end
+      # Build list of type items
+      @type_items = Array.new
+      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_type_item.each do |type_item|
+        @type_items.push(type_item)
+      end
 
-    # Build list of uuid items
-    @uuid_items = Array.new
-    mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_uuid_item.each do |uuid_item|
-      @uuid_items.push(uuid_item)
-    end
+      # Build list of uuid items
+      @uuid_items = Array.new
+      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_uuid_item.each do |uuid_item|
+        @uuid_items.push(uuid_item)
+      end
 
-    # Build Array of objects
-    @table_objects = Array.new
-    mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
-      @table_objects.push(mergeable_data_object_entry)
+      # Build Array of objects
+      @table_objects = Array.new
+      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
+        @table_objects.push(mergeable_data_object_entry)
 
-      # Best way I've found to set the table direction
-      if mergeable_data_object_entry.custom_map
-        if mergeable_data_object_entry.custom_map.map_entry.first.key == @key_items.index("crTableColumnDirection") + 1 #Oddly seems to correspond to 'self'
-          @table_direction = mergeable_data_object_entry.custom_map.map_entry.first.value.string_value
+        # Best way I've found to set the table direction
+        if mergeable_data_object_entry.custom_map
+          if mergeable_data_object_entry.custom_map.map_entry.first.key == @key_items.index("crTableColumnDirection") + 1 #Oddly seems to correspond to 'self'
+            @table_direction = mergeable_data_object_entry.custom_map.map_entry.first.value.string_value
+          end
         end
       end
+
+      # Find the first ICTable, which shuld be the root, and execute
+      mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
+        if mergeable_data_object_entry.custom_map and @type_items[mergeable_data_object_entry.custom_map.type] == "com.apple.notes.ICTable"
+          parse_table(mergeable_data_object_entry)
+        end
+      end
+
     end
 
-    # Find the first ICTable, which shuld be the root, and execute
-    mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
-      if mergeable_data_object_entry.custom_map and @type_items[mergeable_data_object_entry.custom_map.type] == "com.apple.notes.ICTable"
-        parse_table(mergeable_data_object_entry)
-      end
-    end
   end
 
   ##
@@ -316,7 +321,7 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
   def generate_html
 
     # Return our to_string function if we aren't reconstructed yet
-    return self.to_s if !@reconstructed_table_html
+    return self.to_s if (!@reconstructed_table_html or @reconstructed_table_html.length == 0)
 
     # Create an HTML table
     html = "<table style='border:1px solid black'>\n";
@@ -346,6 +351,9 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
   def prepare_json
     to_return = super()
     to_return[:table] = Array.new()
+
+    return to_return if (!@reconstructed_table or @reconstructed_table.length == 0)
+
     @reconstructed_table.each_with_index do |row, row_index|
       to_return[:table][row_index] = Array.new()
       row.each_with_index do |column, column_index|
