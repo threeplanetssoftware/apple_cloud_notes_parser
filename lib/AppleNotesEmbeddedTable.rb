@@ -216,6 +216,10 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
 
     gzipped_data = nil
 
+    # Set the appropriate column to find the data in
+    mergeable_column = "ZMERGEABLEDATA1"
+    mergeable_column = "ZMERGEABLEDATA" if @note.version < AppleNoteStore::IOS_VERSION_13
+
     # If this Table is password protected, fetch the mergeable data from the 
     # ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON column and decrypt it. 
     if @is_password_protected
@@ -248,9 +252,6 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
 
     # Otherwise, pull from the ZICCLOUDSYNCINGOBJECT.ZMERGEABLEDATA column
     else
-      # Set the appropriate column to find the data in
-      mergeable_column = "ZMERGEABLEDATA1"
-      mergeable_column = "ZMERGEABLEDATA" if @note.version < AppleNoteStore::IOS_VERSION_13
 
       @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.#{mergeable_column} " +
                         "FROM ZICCLOUDSYNCINGOBJECT " +
@@ -310,6 +311,8 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
         end
       end
 
+    else
+      @logger.error("Table #{@uuid}: Failed to find gzipped data to rebuild the table, check the #{mergeable_column} column for this UUID: \"SELECT hex(#{mergeable_column}) FROM ZICCLOUDSYNCINGOBJECT WHERE ZIDENTIFIER='#{@uuid}';\"")
     end
 
   end
