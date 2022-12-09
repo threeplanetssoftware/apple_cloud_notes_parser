@@ -208,6 +208,7 @@ The JSON output of `AppleNote` is as follows.
   "title": "[Note title]",
   "plaintext": "[plaintext of the note",
   "html": "[HTML of the note]",
+  "note_proto": "[NoteStoreProto dump of the decoded protobuf]",
   "embedded_objects": [
     "[Array of AppleNotesEmbeddedObject object JSON]"
   ],
@@ -229,11 +230,15 @@ The JSON output of `AppleNotesEmbeddedObject` is as follows.
   "uuid": "[ZIDENTIFIER of the object]",
   "type": "[ZTYPEUTI of the object]",
   "filename": "[filename of the object, if applicable]",
-  "filepath": "[filepath of the ibject, including filename, if applicable]",
+  "filepath": "[filepath of the object, including filename, if applicable]",
+  "backup_location": "[Filepath of the original backup location, if applicable]",
   "is_password_protected": "[boolean, whether password protected or not]",
   "html": "[generated HTML for the object]",
   "thumbnails": [
-    "[Array of AppleNotesEmbeddedObject object JSON]"
+    "[Array of AppleNotesEmbeddedObject object JSON, if applicable]"
+  ],
+  "child_objects": [
+    "[Array of AppleNotesEmbeddedObject object JSON, if applicable]"
   ],
   "table": [
     [
