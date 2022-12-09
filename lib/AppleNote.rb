@@ -82,6 +82,7 @@ class AppleNote < AppleCloudKitRecord
     @plaintext = nil
     @decompressed_data = nil
     @encrypted_data = nil
+    @note_proto = nil
     @crypto_iv = nil
     @crypto_tag = nil
     @crypto_key = nil
@@ -144,6 +145,7 @@ class AppleNote < AppleCloudKitRecord
       begin
         tmp_note_store_proto = NoteStoreProto.decode(@decompressed_data)
         @plaintext = tmp_note_store_proto.document.note.note_text
+        @note_proto = tmp_note_store_proto
       rescue Exception
         puts "Error parsing the protobuf for Note #{@note_id}, have to skip it, see the debug log for more details"
         @logger.error("Error parsing the protobuf for Note #{@note_id}, have to skip it")
@@ -539,8 +541,9 @@ class AppleNote < AppleCloudKitRecord
     to_return[:is_pinned] = @is_pinned
     to_return[:is_password_protected] = @is_password_protected
     to_return[:title] = @title
-    to_return[:plaintext] = @plaintext
+    to_return[:plaintext] = @plaintext if @plaintext
     to_return[:html] = generate_html
+    to_return[:note_proto] = @note_proto if @note_proto
 
     # Add in any embedded objects of various types
     to_return[:embedded_objects] = Array.new()
