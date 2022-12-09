@@ -91,8 +91,9 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
     to_return[:note_id] = @note.note_id
     to_return[:uuid] = @uuid
     to_return[:type] = @type
-    to_return[:filename] = @filename
-    to_return[:filepath] = @filepath
+    to_return[:filename] = @filename if (@filename != "")
+    to_return[:filepath] = @filepath if (@filepath != "")
+    to_return[:backup_location] = @backup_location if @backup_location
     to_return[:is_password_protected] = @is_password_protected
 
     to_return   

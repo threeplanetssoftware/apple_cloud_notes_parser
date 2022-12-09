@@ -475,15 +475,25 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     to_return[:note_id] = @note.note_id
     to_return[:uuid] = @uuid
     to_return[:type] = @type
-    to_return[:filename] = @filename
-    to_return[:filepath] = @filepath
+    to_return[:filename] = @filename if (@filename != "")
+    to_return[:filepath] = @filepath if (@filepath != "")
+    to_return[:backup_location] = @backup_location if @backup_location
     to_return[:is_password_protected] = @is_password_protected
     to_return[:html] = generate_html
 
     # Add in thumbnails in case folks want smaller pictures
-    to_return[:thumbnails] = Array.new()
-    @thumbnails.each do |thumbnail|
-      to_return[:thumbnails].push(thumbnail.prepare_json)
+    if @thumbnails.length > 0
+      to_return[:thumbnails] = Array.new()
+      @thumbnails.each do |thumbnail|
+        to_return[:thumbnails].push(thumbnail.prepare_json)
+      end
+    end
+
+    if @child_objects.length > 0
+      to_return[:child_objects] = Array.new()
+      @child_objects.each do |child|
+        to_return[:child_objects].push(child.prepare_json)
+      end
     end
 
     to_return
