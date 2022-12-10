@@ -14,7 +14,8 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                 :filepath,
                 :filename,
                 :backup_location,
-                :parent
+                :parent,
+                :conforms_to
 
   ##
   # Creates a new AppleNotesEmbeddedObject. 
@@ -25,6 +26,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     @primary_key = primary_key
     @uuid = uuid
     @type = uti
+    @conforms_to = uti
     @note = note
     @is_password_protected = @note.is_password_protected
     @backup = @note.backup
@@ -321,6 +323,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                                                                     row["ZTYPEUTI"],
                                                                     note,
                                                                     backup)
+            tmp_embedded_object.conforms_to = "vcard"
           elsif tmp_uti.conforms_to_document
             tmp_embedded_object = AppleNotesEmbeddedDocument.new(row["Z_PK"],
                                                                  row["ZIDENTIFIER"],
@@ -333,34 +336,33 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                                                             row["ZTYPEUTI"],
                                                             note,
                                                             backup)
-          elsif tmp_uti.conforms_to_document
-            tmp_embedded_object = AppleNotesEmbeddedPDF.new(row["Z_PK"],
-                                                            row["ZIDENTIFIER"],
-                                                            row["ZTYPEUTI"],
-                                                            note,
-                                                            backup)
+            tmp_embedded_object.conforms_to = "PDF"
           elsif tmp_uti.uti == "public.url"
             tmp_embedded_object = AppleNotesEmbeddedPublicURL.new(row["Z_PK"],
                                                                   row["ZIDENTIFIER"],
                                                                   row["ZTYPEUTI"],
                                                                   note)
+            tmp_embedded_object.conforms_to = "url"
           elsif tmp_uti.uti == "com.apple.notes.gallery"
             tmp_embedded_object = AppleNotesEmbeddedGallery.new(row["Z_PK"],
                                                                 row["ZIDENTIFIER"],
                                                                 row["ZTYPEUTI"],
                                                                 note,
                                                                 backup)
+            tmp_embedded_object.conforms_to = "gallery"
           elsif tmp_uti.uti == "com.apple.notes.table"
             tmp_embedded_object = AppleNotesEmbeddedTable.new(row["Z_PK"],
                                                               row["ZIDENTIFIER"],
                                                               row["ZTYPEUTI"],
                                                               note)
+            tmp_embedded_object.conforms_to = "table"
           elsif tmp_uti.uti == "com.apple.drawing.2" or tmp_uti.uti == "com.apple.drawing" or tmp_uti.uti == "com.apple.paper"
             tmp_embedded_object = AppleNotesEmbeddedDrawing.new(row["Z_PK"],
                                                                 row["ZIDENTIFIER"],
                                                                 row["ZTYPEUTI"],
                                                                 note,
                                                                 backup)
+            tmp_embedded_object.conforms_to = "drawing"
           # Catch any other public.* types that likely represent something stored on disk
           elsif tmp_uti.is_public? or tmp_uti.uti == "com.apple.macbinary-archive"
             tmp_embedded_object = AppleNotesEmbeddedPublicObject.new(row["Z_PK"],
@@ -383,14 +385,19 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
             puts "#{row["ZTYPEUTI"]} is unrecognized ZTYPEUTI, please submit a bug report to this project's GitHub repo to report this: https://github.com/threeplanetssoftware/apple_cloud_notes_parser/issues"
             logger.debug("#{row["ZTYPEUTI"]} is unrecognized ZTYPEUTI, check ZICCLOUDSYNCINGOBJECT Z_PK: #{row["Z_PK"]}")
           end
+        
+          # Set a string on the object to remember what it conforms to
+          tmp_embedded_object.conforms_to = tmp_uti.get_conforms_to_string if (tmp_embedded_object.conforms_to == tmp_uti.to_s)
         end
 
-        # If we still have't created an embedded object, we likely had somthing that was previously deleted
+        # If we still have't created an embedded object, we likely had something that was previously deleted
         if !tmp_embedded_object
           tmp_embedded_object = AppleNotesEmbeddedDeletedObject.new(note_part.attachment_info.attachment_identifier,
                                                                     note_part.attachment_info.type_uti,
                                                                     note)
+          tmp_embedded_object.conforms_to = "deleted"
         end
+
 
         # Update plaintext to note something else is here
         to_return[:to_string] = to_return[:to_string].sub(/\ufffc/, "{#{tmp_embedded_object.to_s}}")
@@ -475,6 +482,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     to_return[:note_id] = @note.note_id
     to_return[:uuid] = @uuid
     to_return[:type] = @type
+    to_return[:conforms_to] = @conforms_to
     to_return[:filename] = @filename if (@filename != "")
     to_return[:filepath] = @filepath if (@filepath != "")
     to_return[:backup_location] = @backup_location if @backup_location

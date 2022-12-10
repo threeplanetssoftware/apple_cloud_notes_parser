@@ -19,6 +19,21 @@ class AppleUniformTypeIdentifier
   end
 
   ##
+  # This method returns a string indicating roughly how this UTI 
+  # should be treated. 
+  def get_conforms_to_string
+    return "bad_uti" if bad_uti?
+    return "audio" if conforms_to_audio
+    return "document" if conforms_to_document
+    return "dynamic" if is_dynamic?
+    return "image" if conforms_to_image
+    return "inline" if conforms_to_inline_attachment
+    return "other public" if is_public?
+    return "video" if conforms_to_audiovisual
+    return "uti: #{@uti}"
+  end
+
+  ##
   # Checks for a UTI that shouldn't exist or won't behave nicely.
   def bad_uti?
     return false if @uti.is_a?(String)

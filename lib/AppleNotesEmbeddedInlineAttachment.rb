@@ -10,7 +10,8 @@ class AppleNotesEmbeddedInlineAttachment < AppleCloudKitRecord
   attr_accessor :primary_key,
                 :uuid,
                 :type,
-                :parent
+                :parent,
+                :conforms_to
 
   ##
   # Creates a new AppleNotesEmbeddedInlineAttachment. 
@@ -23,6 +24,7 @@ class AppleNotesEmbeddedInlineAttachment < AppleCloudKitRecord
     @primary_key = primary_key
     @uuid = uuid
     @type = uti
+    @conforms_to = uti
     @note = note
     @alt_text = alt_text
     @token_identifier = token_identifier
@@ -82,6 +84,7 @@ class AppleNotesEmbeddedInlineAttachment < AppleCloudKitRecord
     to_return[:note_id] = @note.note_id
     to_return[:uuid] = @uuid
     to_return[:type] = @type
+    to_return[:conforms_to] = @conforms_to
     to_return[:alt_text] = @alt_text
     to_return[:token_identifier] = @token_identifier
     to_return[:html] = generate_html
