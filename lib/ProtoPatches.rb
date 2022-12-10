@@ -227,7 +227,7 @@ class AttributeRun
 
     # Add in strikethrough
     if strikethrough == 1
-      html += "<del>" if (initial_run or previous_run.strikethrough != 1)
+      html += "<s>" if (initial_run or previous_run.strikethrough != 1)
     end
 
     # Add in superscript
@@ -315,7 +315,7 @@ class AttributeRun
 
     # Add in strikethrough
     if strikethrough == 1
-      html += "</del>" if (final_run or next_run.underlined != 1)
+      html += "</s>" if (final_run or next_run.underlined != 1)
     end
 
     # Add in underlined
