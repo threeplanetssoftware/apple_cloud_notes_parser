@@ -94,7 +94,7 @@ class AppleNotesEmbeddedDrawing < AppleNotesEmbeddedObject
   # This method returns the +filepath+ of this object. 
   # This is computed based on the assumed default storage location.
   def get_media_filepath
-    "Accounts/#{@note.account.identifier}/FallbackImages/#{@filename}"
+    "#{@note.account.account_folder}FallbackImages/#{@filename}"
   end
 
   ##

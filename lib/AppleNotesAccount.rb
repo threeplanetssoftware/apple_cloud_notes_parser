@@ -1,3 +1,4 @@
+require 'fileutils'
 require_relative 'AppleCloudKitRecord'
 
 ##
@@ -13,7 +14,8 @@ class AppleNotesAccount < AppleCloudKitRecord
                 :identifier,
                 :user_record_name,
                 :sort_order_name,
-                :retain_order
+                :retain_order,
+                :account_folder
 
   ##
   # This creates a new AppleNotesAccount. 
@@ -43,6 +45,10 @@ class AppleNotesAccount < AppleCloudKitRecord
     @sort_order_name = name
     @identifier = identifier
     @user_record_name = ""
+
+    # Figure out the Account's folder for attachments
+    @account_folder = "Accounts/#{@identifier}/"
+
     # Uncomment the below line if you want to see the account names during creation
     # puts "Account #{@primary_key} is called #{@name}"
   end

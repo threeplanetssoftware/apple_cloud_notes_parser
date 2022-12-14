@@ -180,8 +180,8 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
   ##
   # This handles a striaght forward mapping of UUID and filename
   def get_media_filepath_with_uuid_and_filename
-    return "Accounts/#{@note.account.identifier}/Media/#{get_media_uuid}/#{get_media_uuid}" if @is_password_protected
-    "Accounts/#{@note.account.identifier}/Media/#{get_media_uuid}/#{@filename}"
+    return "#{@note.account.account_folder}Media/#{get_media_uuid}/#{get_media_uuid}" if @is_password_protected
+    "#{@note.account.account_folder}Media/#{get_media_uuid}/#{@filename}"
   end
 
   ##

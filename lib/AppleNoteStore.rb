@@ -414,6 +414,13 @@ class AppleNoteStore
 
       tmp_account.retain_order = @retain_order
 
+      # Handle LocalAccounts that are in odd places
+      likely_location = @backup.root_folder + tmp_account.account_folder
+      if tmp_account.identifier == "LocalAccount" and not likely_location.exist?
+        tmp_account.account_folder = ""
+        @logger.debug("Rip Account: LocalAccount found with files in the Notes root folder, not an account folder, this is fine.")
+      end
+
       # Add server-side data, if relevant
       tmp_account.user_record_name = row["ZUSERRECORDNAME"] if row["ZUSERRECORDNAME"]
       tmp_account.add_cloudkit_server_record_data(row[server_record_column]) if row[server_record_column]
