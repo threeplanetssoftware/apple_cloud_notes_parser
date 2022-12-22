@@ -324,6 +324,13 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                                                                     note,
                                                                     backup)
             tmp_embedded_object.conforms_to = "vcard"
+          elsif tmp_uti.uti == "com.apple.ical.ics"
+            tmp_embedded_object = AppleNotesEmbeddedCalendar.new(row["Z_PK"],
+                                                                 row["ZIDENTIFIER"],
+                                                                 row["ZTYPEUTI"],
+                                                                 note,
+                                                                 backup)
+            tmp_embedded_object.conforms_to = "ical"
           elsif tmp_uti.conforms_to_document
             tmp_embedded_object = AppleNotesEmbeddedDocument.new(row["Z_PK"],
                                                                  row["ZIDENTIFIER"],
