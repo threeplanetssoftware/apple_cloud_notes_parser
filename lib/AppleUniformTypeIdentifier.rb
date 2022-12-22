@@ -92,6 +92,7 @@ class AppleUniformTypeIdentifier
     return true if @uti == "com.microsoft.powerpoint.ppt"
     return true if @uti == "org.oasis-open.opendocument.text"
     return true if @uti == "org.openxmlformats.wordprocessingml.document"
+    return true if @uti == "com.apple.ical.ics"
     return false
   end
 
