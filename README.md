@@ -197,6 +197,7 @@ The JSON output of `AppleNote` is as follows.
   "folder_key": "[z_pk of the folder]",
   "folder": "[Folder name]",
   "note_id": "[note ID]",
+  "uuid": "[note uuid from ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER]",
   "primary_key": "[z_pk of the note]",
   "creation_time": "[creation time in YYYY-MM-DD HH:MM:SS TZ format]",
   "modify_time": "[modify time in YYYY-MM-DD HH:MM:SS TZ format]",

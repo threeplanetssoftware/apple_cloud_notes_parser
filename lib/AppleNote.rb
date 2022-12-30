@@ -67,7 +67,8 @@ class AppleNote < AppleCloudKitRecord
                 :cloudkit_creator_record_id,
                 :cloudkit_modify_device,
                 :notestore,
-                :is_pinned
+                :is_pinned,
+                :uuid
 
   ##
   # Creates a new AppleNote. Expects an Integer +z_pk+, an Integer +znote+ representing the ZICNOTEDATA.ZNOTE field, 
@@ -110,6 +111,7 @@ class AppleNote < AppleCloudKitRecord
     @database = @notestore.database
     @backup = @notestore.backup
     @logger = @backup.logger
+    @uuid = ""
 
     # Handle pinning, added in iOS 11
     @is_pinned = false
@@ -194,7 +196,8 @@ class AppleNote < AppleCloudKitRecord
      "Crypto Tag (hex)",
      "Crypto Key (hex)",
      "Crypto IV (hex)",
-     "Encrypted Data (hex)"]
+     "Encrypted Data (hex)",
+     "UUID"]
   end
 
   ##
@@ -223,7 +226,8 @@ class AppleNote < AppleCloudKitRecord
      get_crypto_tag_hex,
      get_crypto_key_hex,
      get_crypto_iv_hex,
-     get_encrypted_data_hex]
+     get_encrypted_data_hex,
+     @uuid]
   end
 
   ## 
@@ -533,6 +537,7 @@ class AppleNote < AppleCloudKitRecord
     to_return[:folder_key] = @folder.primary_key
     to_return[:folder] = @folder.name
     to_return[:note_id] = @note_id
+    to_return[:uuid] = @uuid
     to_return[:primary_key] = @primary_key
     to_return[:creation_time] = @creation_time
     to_return[:modify_time] = @modify_time

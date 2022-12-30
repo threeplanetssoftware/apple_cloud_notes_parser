@@ -683,7 +683,8 @@ class AppleNoteStore
                    "ZICCLOUDSYNCINGOBJECT.ZTITLE1, ZICCLOUDSYNCINGOBJECT.#{account_field}, " +
                    "ZICCLOUDSYNCINGOBJECT.ZACCOUNT2, ZICCLOUDSYNCINGOBJECT.#{folder_field}, " + 
                    "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD, " + 
-                   "ZICCLOUDSYNCINGOBJECT.#{server_share_column}, ZICCLOUDSYNCINGOBJECT.ZISPINNED " + 
+                   "ZICCLOUDSYNCINGOBJECT.#{server_share_column}, ZICCLOUDSYNCINGOBJECT.ZISPINNED, " + 
+                   "ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER " + 
                    "FROM ZICNOTEDATA, ZICCLOUDSYNCINGOBJECT " + 
                    "WHERE ZICNOTEDATA.ZNOTE=? AND ZICCLOUDSYNCINGOBJECT.Z_PK=ZICNOTEDATA.ZNOTE"
 
@@ -703,7 +704,7 @@ class AppleNoteStore
                      "ZICCLOUDSYNCINGOBJECT.ZTITLE1, ZICCLOUDSYNCINGOBJECT.ZACCOUNT2, " +
                      "Z_11NOTES.Z_11FOLDERS, ZICCLOUDSYNCINGOBJECT.#{server_record_column}, " + 
                      "ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD, ZICCLOUDSYNCINGOBJECT.#{server_share_column}, " + 
-                     "ZICCLOUDSYNCINGOBJECT.ZISPINNED " + 
+                     "ZICCLOUDSYNCINGOBJECT.ZISPINNED, ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER " + 
                      "FROM ZICNOTEDATA, ZICCLOUDSYNCINGOBJECT, Z_11NOTES " + 
                      "WHERE ZICNOTEDATA.ZNOTE=? AND ZICCLOUDSYNCINGOBJECT.Z_PK=ZICNOTEDATA.ZNOTE AND Z_11NOTES.Z_8NOTES=ZICNOTEDATA.ZNOTE"
       folder_field = "Z_11FOLDERS"
@@ -753,6 +754,11 @@ class AppleNoteStore
       # Set the pinned status
       if row["ZISPINNED"] == 1
         tmp_note.is_pinned = true
+      end
+
+      # Set the UUID, if it exists
+      if row["ZIDENTIFIER"]
+        tmp_note.uuid = row["ZIDENTIFIER"]
       end
 
       tmp_account.add_note(tmp_note) if tmp_account
