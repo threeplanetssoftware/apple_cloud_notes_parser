@@ -15,7 +15,9 @@ class AppleBackup
                 :output_folder,
                 :logger,
                 :decrypter,
-                :retain_order
+                :retain_order,
+                :range_start,
+                :range_end
 
   # For backups that are created by iTunes and hash the files
   HASHED_BACKUP_TYPE = 1
@@ -45,8 +47,31 @@ class AppleBackup
     @note_store_temporary_location = @output_folder + "test.sqlite"
     @decrypter = AppleDecrypter.new(self)
 
+    # Set up date ranges, if desired
+    @range_start = 0
+    @range_end = Time.now.to_i
+
     @retain_order = false
   end
+
+  ## 
+  # Explicitly sets the range start of the notestores
+  def set_range_start(range_start)
+    @range_start = range_start
+    @note_stores.each do |notestore|
+      notestore.range_start = @range_start
+    end
+  end
+
+  ## 
+  # Explicitly sets the range end of the notestores
+  def set_range_end(range_end)
+    @range_end = range_end
+    @note_stores.each do |notestore|
+      notestore.range_end = @range_end
+    end
+  end
+  
 
   ##
   # No backup on its own is valid, it must be a abckup type that is recognized. In those cases, 

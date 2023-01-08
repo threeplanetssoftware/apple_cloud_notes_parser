@@ -19,7 +19,9 @@ class AppleNoteStore
                 :backup,
                 :database,
                 :cloud_kit_participants,
-                :retain_order
+                :retain_order,
+                :range_start,
+                :range_end
 
   IOS_VERSION_16 = 16
   IOS_VERSION_15 = 15
@@ -53,6 +55,8 @@ class AppleNoteStore
     @retain_order = false
     @html = nil
     puts "Guessed Notes Version: #{@version}"
+    @range_start = @backup.range_start
+    @range_end = @backup.range_end
     @logger.debug("Guessed Notes Version: #{@version}")
   end
 
@@ -623,8 +627,16 @@ class AppleNoteStore
   # This function identifies all AppleNote potential 
   # objects in ZICNOTEDATA and calls +rip_note+ on each.
   def rip_notes()
+    range_start_core = (@range_start - 978307200)
+    range_end_core = (@range_end - 978307200)
+    @logger.debug("Rip Notes: Ripping notes between #{Time.at(range_start)} and #{Time.at(range_end)}")
     if @version >= IOS_VERSION_9
-      @database.execute("SELECT ZICNOTEDATA.ZNOTE FROM ZICNOTEDATA WHERE ZICNOTEDATA.ZDATA NOT NULL") do |row|
+      tmp_query = "SELECT ZICNOTEDATA.ZNOTE " + 
+                  "FROM ZICNOTEDATA, ZICCLOUDSYNCINGOBJECT " + 
+                  "WHERE ZICNOTEDATA.ZDATA NOT NULL AND ZICCLOUDSYNCINGOBJECT.Z_PK=ZICNOTEDATA.ZNOTE AND " + 
+                  "ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1 >= ? AND " + 
+                  "ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1 <= ?"
+      @database.execute(tmp_query, range_start_core, range_end_core) do |row|
         self.rip_note(row["ZNOTE"])
       end
     end

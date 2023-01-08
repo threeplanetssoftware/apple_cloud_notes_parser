@@ -51,7 +51,9 @@ The options that are currently supported are:
 6. `-r | --retain-display-order`: Tells the program to display the HTML output in the order Apple Notes displays it, not the database's order. 
 7. `-w | --password-file FILE`: Tells the program which password list to use 
 8. `--show-password-successes`: Tells the program to display to the console which passwords generated decrypts at the end.
-9. `-h | --help`: Prints the usage information.
+9. `--range-start DATE`: Set the start date of the date range to extract. Must use YYYY-MM-DD format, defaults to 1970-01-01.
+10. `--range-end DATE`: Set the end date of the date range to extract. Must use YYYY-MM-DD format, defaults to [tomorrow].
+11. `-h | --help`: Prints the usage information.
 
 ## How It Works
 
@@ -88,6 +90,19 @@ For example, if you were running this on data from a Mac used by 'Logitech,' had
 Note: As of March 2021, all logging of passwords to the local debug_log.txt file and HTML output has been removed. If you need to see which passwords generated decrypted notes, use the `--show-password-successes` switch and read the console output after the run.
 
 Note: As of iOS 16, users can use their device passcode instead of a spearate password within Notes. This program does not yet handle that case, it will simply fail to decrypt.
+
+### Date Range Extraction
+
+**Note: This feature is not intended to be robust. It does not smartly handle differences in timezones, nor convert to UTC. It is purely intended to help those with large Notes databases to better whittle down how much is processed.**
+
+The `--range-start` and `--range-end` switches allow the user to specify starting and ending dates for which notes to extract. 
+By default, these will cover "all time" (i.e. 1970 through to tomorrow) so all notes should match, assuming system time hasn't been messed with. 
+Officially these switches request the date format in "YYYY-MM-DD" format, but technically as long as [Time.parse()](https://ruby-doc.org/stdlib-2.4.1/libdoc/time/rdoc/Time.html#method-c-parse) can understand the format, it should work.
+
+These selections are made on the `ZICCLOUDSYNCINGOBJECT.ZMODIFIEDDATE1` field, which will capture any notes that have a modified date in that range. For example, if you wanted all notes modified after December 1, 2022, you could run: `ruby notes_cloud_ripper.rb -f NoteStore.sqlite --range-start "2022-12-01"`. As another example, if you wanted to look at just the notes that were modified in June of 2022, you could run: `ruby notes_cloud_ripper.rb -f NoteStore.sqlite --range-start "2022-06-01" --range-end "2022-07-01"`
+
+If you ever need to know what dates were used for a given backup, you can check the `debug_log.txt` file by looking for the line that has "Rip Notes" in it. 
+For example: `grep "Rip Notes" output/notes_rip/debug_log.txt`
 
 ### All Versions
 

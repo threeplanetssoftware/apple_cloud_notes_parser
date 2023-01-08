@@ -20,6 +20,8 @@ password_file = nil
 password_success_display = false
 retain_order = false
 target_directory = nil
+range_start = nil
+range_end = nil
 
 #
 # Options Parser setup
@@ -71,9 +73,33 @@ option_parser.on("-r", "--retain-display-order", "Retain the display order for f
   retain_order = true
 end
 
-# Add in a password file for encrypted notes
-option_parser.on("--show-password-successes", "Toggle the display of password success ON.") do |file|
+# Display password successes on the console
+option_parser.on("--show-password-successes", "Toggle the display of password success ON.") do 
   password_success_display = true
+end
+
+# Add in a start date to bound the notes that are extracted
+option_parser.on("--range-start DATE", "Set the start date of the date range to extract. Must use YYYY-MM-DD format, defaults to 1970-01-01.") do |date|
+  begin
+    range_start = Time.parse(date)
+    puts "Setting the range_start to be #{range_start}"
+  rescue Exception
+    range_start = nil
+    puts "Invalid date format #{date} given for --range-start. Please us the format YYYY-MM-DD."
+    exit
+  end
+end
+
+# Add in an end date to bound the notes that are extracted
+option_parser.on("--range-end DATE", "Set the end date of the date range to extract. Must use YYYY-MM-DD format, defaults to #{(Time.now + 86401).strftime("%Y-%m-%d")}.") do |date|
+  begin
+    range_end = Time.parse(date)
+    puts "Setting the range_end to be #{range_end}"
+  rescue Exception
+    range_end = nil
+    puts "Invalid date format #{date} given for --range-end. Please us the format YYYY-MM-DD."
+    exit
+  end
 end
 
 # Help information, only displayed if we haven't hit on other options
@@ -141,6 +167,9 @@ end
 
 # Check for a valid AppleBackup, if it is ready, rip the notes and spit out CSVs
 if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid_notes?
+
+  apple_backup.set_range_start(range_start.to_i) if range_start
+  apple_backup.set_range_end(range_end.to_i) if range_end
 
   logger.debug("Backup is valid, ripping notes")
 
