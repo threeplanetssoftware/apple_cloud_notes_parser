@@ -71,6 +71,7 @@ class AppleUniformTypeIdentifier
   # or public.movie. 
   def conforms_to_audiovisual
     return false if bad_uti?
+    return true if @uti == "com.apple.m4v-video"
     return true if @uti == "com.apple.protected-mpeg-4-video"
     return true if @uti == "com.apple.protected-mpeg-4-audio"
     return true if @uti == "com.apple.quicktime-movie"
