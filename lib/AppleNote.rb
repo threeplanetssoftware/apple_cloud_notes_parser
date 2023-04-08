@@ -1,6 +1,7 @@
 require 'cgi'
 require 'keyed_archive'
 require 'sqlite3'
+require 'nokogiri'
 require 'zlib'
 require_relative 'ProtoPatches.rb'
 require_relative 'AppleCloudKitRecord.rb'
@@ -41,6 +42,11 @@ class AppleNote < AppleCloudKitRecord
   STYLE_TYPE_DASHED_LIST = 101
   STYLE_TYPE_NUMBERED_LIST = 102
   STYLE_TYPE_CHECKBOX = 103
+
+  STYLE_ALIGNMENT_LEFT = 0
+  STYLE_ALIGNMENT_CENTER = 1
+  STYLE_ALIGNMENT_RIGHT = 2
+  STYLE_ALIGNMENT_JUSTIFY = 3
 
   # Constants that reflect the types of font weighting
   FONT_TYPE_DEFAULT = 0
@@ -386,28 +392,123 @@ class AppleNote < AppleCloudKitRecord
     # Bail quickly if we've ever taken the time to build this before
     return @html if @html
 
-    html = "<a id='note_#{@note_id}'><h1>Note #{@note_id}#{" (📌)" if @is_pinned}</h1></a>\n"
-    html += "<b>Account:</b> #{@account.name} <br />\n"
-    html += "<b>Folder:</b> <a href='#folder_#{@folder.primary_key}'>#{@folder.name}</a> <br/>\n"
-    html += "<b>Title:</b> #{@title} <br/>\n"
-    html += "<b>Created:</b> #{@creation_time} <br/>\n"
-    html += "<b>Modified:</b> #{@modify_time} <br />\n"
-    html += "<b>CloudKit Creator:</b> #{@notestore.cloud_kit_participants[@cloudkit_creator_record_id].email} <br />\n" if cloud_kit_record_known?(@cloudkit_creator_record_id, @notestore.cloud_kit_participants)
-    html += "<b>CloudKit Last Modified User:</b> #{@notestore.cloud_kit_participants[@cloudkit_modifier_record_id].email} <br />\n" if cloud_kit_record_known?(@cloudkit_modifier_record_id, @notestore.cloud_kit_participants)
-    html += "<b>CloudKit Last Modified Device:</b> #{@cloudkit_last_modified_device} <br />\n" if @cloudkit_last_modified_device
-    html += "<b>Tags:</b> #{self.get_all_tags.join(", ")}<br />\n" if self.has_tags
-    html += "<div class='note-content'>\n"
+    builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
+      doc.div {
+        doc.h1 {
+          doc.a(id: "note_#{@note_id}") {
+            doc.text "Note #{@note_id}#{" (📌)" if @is_pinned}"
+          }
+        }
 
-    # Handle the text to insert, only if we have plaintext to run
-    if @plaintext
-      html += "#{plaintext}" if @notestore.version == AppleNoteStore::IOS_LEGACY_VERSION
-      html += generate_html_text if @notestore.version > AppleNoteStore::IOS_VERSION_9
-    else
-      html += "{Contents not decrypted}" if @encrypted_data
+        doc.div {
+          doc.b {
+            doc.text "Account:"
+          }
+
+          doc.text " "
+          doc.text @account.name
+        }
+
+        doc.div {
+          doc.b {
+            doc.text "Folder:"
+          }
+
+          doc.text " "
+          doc.a(href: "#folder_#{@folder.primary_key}") {
+            doc.text @folder.name
+          }
+        }
+
+        doc.div {
+          doc.b {
+            doc.text "Title:"
+          }
+
+          doc.text " "
+          doc.text @title
+        }
+
+        doc.div {
+          doc.b {
+            doc.text "Created:"
+          }
+
+          doc.text " "
+          doc.text @creation_time
+        }
+
+        doc.div {
+          doc.b {
+            doc.text "Modified:"
+          }
+
+          doc.text " "
+          doc.text @modify_time
+        }
+
+        if cloud_kit_record_known?(@cloudkit_creator_record_id, @notestore.cloud_kit_participants)
+          doc.div {
+            doc.b {
+              doc.text "CloudKit Creator:"
+            }
+
+            doc.text " "
+            doc.text @notestore.cloud_kit_participants[@cloudkit_creator_record_id].email
+          }
+        end
+
+        if cloud_kit_record_known?(@cloudkit_modifier_record_id, @notestore.cloud_kit_participants)
+          doc.div {
+            doc.b {
+              doc.text "CloudKit Last Modified User:"
+            }
+
+            doc.text " "
+            doc.text @notestore.cloud_kit_participants[@cloudkit_modifier_record_id].email
+          }
+        end
+
+        if @cloudkit_last_modified_device
+          doc.div {
+            doc.b {
+              doc.text "CloudKit Last Modified Device:"
+            }
+
+            doc.text " "
+            doc.text @cloudkit_last_modified_device
+          }
+        end
+
+        if self.has_tags
+          doc.div {
+            doc.b {
+              doc.text "Tags:"
+            }
+
+            doc.text " "
+            doc.text self.get_all_tags.join(", ")
+          }
+        end
+
+        doc.div(class: "note-content") {
+          # Handle the text to insert, only if we have plaintext to run
+          if @plaintext
+            if @notestore.version == AppleNoteStore::IOS_LEGACY_VERSION
+              doc.text plaintext
+            end
+
+            if @notestore.version > AppleNoteStore::IOS_VERSION_9
+              doc << generate_html_text
+            end
+          elsif @encrypted_data
+            doc.text "{Contents not decrypted}"
+          end
+        }
+      }
     end
-    html += "</div> <!-- Close the 'note-content' div -->\n"
 
-    @html = html
+    @html = builder.doc.root
   end
 
   ##
@@ -415,7 +516,8 @@ class AppleNote < AppleCloudKitRecord
   # a Hash of AppleNotesEmbeddedObjects as +embedded_objects+. It returns a String containing 
   # appropriate HTML for the document.
   def self.htmlify_document(document_proto, embedded_objects)
-    html = ""
+    doc = Nokogiri::HTML5::Document.parse("", nil, "utf-8")
+    node = doc.at_css("body")
 
     # Tables cells will be a MergableDataProto
     root_node = document_proto
@@ -465,9 +567,9 @@ class AppleNote < AppleCloudKitRecord
       if note_part.attachment_info
 
         if embedded_objects[embedded_object_index]
-          html += embedded_objects[embedded_object_index].generate_html
+          node << embedded_objects[embedded_object_index].generate_html
         else
-          html += "[Object missing, this is common for deleted notes]"
+          node << Nokogiri::XML::Text.new("[Object missing, this is common for deleted notes]", node.document)
         end
         embedded_object_index += 1
         current_index += note_part.length
@@ -495,7 +597,7 @@ class AppleNote < AppleCloudKitRecord
         next_run = condensed_attribute_runs[attribute_run_index + 1] if attribute_run_index < condensed_attribute_runs.length - 1
 
         # Pull the HTML to insert
-        html += note_part.generate_html(slice_to_add)
+        note_part.generate_html(slice_to_add, node)
 
         # Increment our counter to be sure we don't loop infinitely
         current_index += (note_part.length - double_characters)
@@ -504,7 +606,7 @@ class AppleNote < AppleCloudKitRecord
 
     end
 
-    html
+    doc
   end
 
   ##

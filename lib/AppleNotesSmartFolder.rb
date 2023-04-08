@@ -31,10 +31,21 @@ class AppleNotesSmartFolder < AppleNotesFolder
   end
 
   def generate_html
-    html = "<a id='folder_#{@primary_key}'><h1>#{@account.name} - #{full_name}</h1></a>"
-    html += "A smart folder looking for notes matching: <code>#{query}</code>"
+    builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
+      doc.h1 {
+        doc.a(id: "folder_#{@primary_key}") {
+          doc.text "#{@account.name} - #{full_name}"
+        }
+      }
+      doc.div {
+        doc.text "A smart folder looking for notes matching: "
+        doc.code {
+          doc.text query
+        }
+      }
+    end
 
-    return html
+    return builder.doc.children
   end
 
   def prepare_json

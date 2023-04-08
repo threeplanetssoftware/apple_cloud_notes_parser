@@ -141,20 +141,69 @@ class AppleNotesAccount < AppleCloudKitRecord
     # Bail early if we can
     return @html if @html
 
-    html = "<a id='account_#{@primary_key}'><h1>#{@name}</h1></a>"
-    html += "<b>Cloudkit Identifier:</b> #{@user_record_name} <br />\n" if @user_record_name.length > 0
-    html += "<b>Account Identifier:</b> #{@identifier} <br />\n"
-    html += "<b>Last Modified Device:</b> #{@cloudkit_last_modified_device} <br />\n" if @cloudkit_last_modified_device
-    html += "<b>Number of Notes:</b> #{@notes.length} <br />\n"
+    builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
+      doc.div {
+        doc.h1 {
+          doc.a(id: "account_#{@primary_key}") {
+            doc.text @name
+          }
+        }
 
-    html += "<b>Folders:</b> <br />\n"
-    html += "<ul class='folder_list'>\n"
-    sorted_folders.each do |folder|
-      html += folder.generate_folder_hierarchy_html if !folder.is_child?
+        if @user_record_name.length > 0
+          doc.div {
+            doc.b {
+              doc.text "Cloudkit Identifier:"
+            }
+
+            doc.text " "
+            doc.text @user_record_name
+          }
+        end
+
+        doc.div {
+          doc.b {
+            doc.text "Account Identifier:"
+          }
+
+          doc.text " "
+          doc.text @identifier
+        }
+
+        if @cloudkit_last_modified_device
+          doc.div {
+            doc.b {
+              doc.text "Last Modified Device:"
+            }
+
+            doc.text " "
+            doc.text @cloudkit_last_modified_device
+          }
+        end
+
+        doc.div {
+          doc.b {
+            doc.text "Number of Notes:"
+          }
+
+          doc.text " "
+          doc.text @notes.length
+        }
+
+        doc.div {
+          doc.b {
+            doc.text "Folders:"
+          }
+
+          doc.ul {
+            sorted_folders.each do |folder|
+              doc << folder.generate_folder_hierarchy_html if !folder.is_child?
+            end
+          }
+        }
+      }
     end
-    html += "</ul>"
 
-    @html = html
+    @html = builder.doc.root
   end
 
   ##

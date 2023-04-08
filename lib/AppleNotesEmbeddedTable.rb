@@ -327,26 +327,23 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
     return self.to_s if (!@reconstructed_table_html or @reconstructed_table_html.length == 0)
 
     # Create an HTML table
-    html = "<table style='border:1px solid black'>\n";
-
-    # Loop over each row and create a new table row
-    @reconstructed_table_html.each do |row|
-      html += "<tr>\n";
-
-      # Loop over each column and place the cell value into a td
-      row.each do |column|
-        to_show = column
-        to_show = "&nbsp;" if to_show == ""
-        html += "<td style='border:1px solid black'>#{to_show}</td>\n";
-      end
-
-      # Close the row
-      html += "</tr>\n";
+    builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
+      doc.table {
+        # Loop over each row and create a new table row
+        @reconstructed_table_html.each do |row|
+          doc.tr {
+            # Loop over each column and place the cell value into a td
+            row.each do |column|
+              doc.td {
+                doc << column
+              }
+            end
+          }
+        end
+      }
     end
 
-    # Close the table
-    html += "</table>\n";
-    return html
+    return builder.doc.root
   end
 
   ##

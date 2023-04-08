@@ -132,19 +132,23 @@ class AppleNotesFolder < AppleCloudKitRecord
   end
 
   def generate_folder_hierarchy_html
-    html = "<li class='folder'><a href='#folder_#{@primary_key}'>#{@name}</a>"
-    if (is_parent? or has_notes)
-      html += "<ul class='folder_list'>"
-      @child_folders.each do |child_folder|
-        html += child_folder.generate_folder_hierarchy_html
-      end
-      #sorted_notes.each do |note|
-      #  html += "<li class='note'><a href='#note_#{note.note_id}'>#{note.note_id}</a>: #{note.title}#{" (📌)" if note.is_pinned}</li>"
-      #end
-      html += "</ul>"
+    builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
+      doc.li(class: "folder") {
+        doc.a(href: "#folder_#{@primary_key}") {
+          doc.text @name
+        }
+
+        if (is_parent? or has_notes)
+          doc.ul(class: "folder_list") {
+            @child_folders.each do |child_folder|
+              doc << child_folder.generate_folder_hierarchy_html
+            end
+          }
+        end
+      }
     end
-    html += "</li>"
-    return html
+
+    return builder.doc.root
   end
 
   def generate_html
@@ -152,21 +156,35 @@ class AppleNotesFolder < AppleCloudKitRecord
     # Bail early if we can
     return @html if @html
 
-    html = "<a id='folder_#{@primary_key}'><h1>#{@account.name} - #{full_name}</h1></a>"
-    html += "<ul>\n";
+    builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
+      doc.div {
+        doc.h1 {
+          doc.a(id: "folder_#{@primary_key}") {
+            doc.text "#{@account.name} - #{full_name}"
+          }
+        }
 
-    # Now display whatever we ended up with
-    sorted_notes.each do |note|
-      html += "<li><a href='#note_#{note.note_id}'>Note #{note.note_id}</a>: #{note.title}#{" (📌)" if note.is_pinned}</li>\n";
+        doc.ul {
+          # Now display whatever we ended up with
+          sorted_notes.each do |note|
+            doc.li {
+              doc.a(href: "#note_#{note.note_id}") {
+                doc.text "Note #{note.note_id}"
+              }
+
+              doc.text ": #{note.title}#{" (📌)" if note.is_pinned}"
+            }
+          end
+        }
+
+        # Recursively genererate HTML for each child folder
+        @child_folders.each do |child_folder|
+          doc << child_folder.generate_html
+        end
+      }
     end
-    html += "</ul>\n";
 
-    # Recursively genererate HTML for each child folder
-    @child_folders.each do |child_folder|
-      html += child_folder.generate_html
-    end
-
-    @html = html
+    @html = builder.doc.root
   end
 
   ##

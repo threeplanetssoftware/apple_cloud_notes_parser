@@ -15,15 +15,15 @@ end
 
 class Color
   def red_hex_string
-    (red * 255).round().to_s(16).upcase
+    (red * 255).round().to_s(16).upcase.rjust(2, "0")
   end
 
   def green_hex_string
-    (green * 255).round().to_s(16).upcase
+    (green * 255).round().to_s(16).upcase.rjust(2, "0")
   end
 
   def blue_hex_string
-    (blue * 255).round().to_s(16).upcase
+    (blue * 255).round().to_s(16).upcase.rjust(2, "0")
   end
 
   def full_hex_string
@@ -33,7 +33,7 @@ end
 
 class AttributeRun
 
-  attr_accessor :previous_run, :next_run
+  attr_accessor :previous_run, :next_run, :tag_is_open
 
   def has_style_type
     paragraph_style and paragraph_style.style_type
@@ -80,6 +80,13 @@ class AttributeRun
 
     # If neither has a style type, that is the same
     return true if (!other_attribute_run.has_style_type and !has_style_type)
+
+    # If the indent levels are different, then the styles are different.
+    return false if (other_attribute_run.paragraph_style.indent_amount != paragraph_style.indent_amount)
+
+    # If both are checkboxes, but they belong to different checklist UUIDs,
+    # then the styles are different.
+    return false if (is_checkbox? && other_attribute_run.is_checkbox? && other_attribute_run.paragraph_style.checklist.uuid != paragraph_style.checklist.uuid)
 
     # Compare our style_type to the other style_type and return the result
     return (other_attribute_run.paragraph_style.style_type == paragraph_style.style_type)  
@@ -131,7 +138,7 @@ class AttributeRun
   ##
   # Helper function to tell if a given AttributeRun is any sort of AppleNote::STYLE_TYPE_X_LIST.
   def is_any_list?
-    return (is_numbered_list? or is_dotted_list? or is_dashed_list?)
+    return (is_numbered_list? or is_dotted_list? or is_dashed_list? or is_checkbox?)
   end
 
   ##
@@ -158,219 +165,276 @@ class AttributeRun
     return to_return
   end
 
-  ##
-  # This method generates the HTML for a given AttributeRun. It expects a String as +text_to_insert+
-  def generate_html(text_to_insert)
-    html = ""
-  
-    initial_run = false
-    initial_run = true if !previous_run
-    final_run = false
-    final_run = true if !next_run
- 
-    # Deal with the style type 
+  def open_html_tag(tag_name, attributes = {})
+    tag = Nokogiri::XML::Node.new(tag_name, @active_html_node.document)
+    attributes.each do |key, value|
+      tag[key] = value
+    end
+
+    @active_html_node = @active_html_node.add_child(tag)
+  end
+
+  def close_html_tag
+    unless @active_html_node.parent.nil?
+      @active_html_node = @active_html_node.parent
+    end
+  end
+
+  def add_text_style_html(text_to_insert)
+    original_active_html_node = @active_html_node
+
+    # Deal with the font
+    if font_weight
+      case font_weight
+      when AppleNote::FONT_TYPE_DEFAULT
+        # Do nothing
+      when AppleNote::FONT_TYPE_BOLD
+        if @active_html_node.node_name != "h1" && @active_html_node.node_name != "h2" && @active_html_node.node_name != "h3"
+          open_html_tag("b")
+        end
+      when AppleNote::FONT_TYPE_ITALIC
+        open_html_tag("i")
+      when AppleNote::FONT_TYPE_BOLD_ITALIC
+        if @active_html_node.node_name != "h1" && @active_html_node.node_name != "h2" && @active_html_node.node_name != "h3"
+          open_html_tag("b")
+        end
+        open_html_tag("i")
+      end
+    end
+
+    # Add in underlined
+    if underlined == 1
+      open_html_tag("u")
+    end
+
+    # Add in strikethrough
+    if strikethrough == 1
+      open_html_tag("s")
+    end
+
+    # Add in superscript
+    if superscript == 1
+      open_html_tag("sup")
+    end
+
+    # Add in subscript
+    if superscript == -1
+      open_html_tag("sub")
+    end
+
+    # Handle fonts and colors
+    style_attrs = {}
+    if font
+      if font.font_name
+        style_attrs["font-family"] = "'#{font.font_name.gsub("'", "\\\\'")}'"
+      end
+      if font.point_size && font.point_size != 0
+        style_attrs["font-size"] = "#{font.point_size}px"
+      end
+    end
+    if color
+      style_attrs["color"] = color.full_hex_string
+    end
+    if style_attrs.any?
+      open_html_tag("span", { style: style_attrs.map { |k, v| "#{k}: #{v}" }.join("; ") })
+    end
+
+    if link and link.length > 0
+      open_html_tag("a", { href: link, target: "_blank" })
+    end
+
+    @active_html_node.add_child(Nokogiri::XML::Text.new(text_to_insert, @active_html_node.document))
+
+    @active_html_node = original_active_html_node
+  end
+
+  def add_html_text(text_to_insert)
+    parts = text_to_insert.split(/(\u2028|\n)/)
+    parts.each_with_index do |line, index|
+      case line
+      # New lines in headers or check lists.
+      when "\u2028"
+        @active_html_node.add_child(Nokogiri::XML::Node.new("br", @active_html_node.document))
+
+      # Normal new lines
+      when "\n"
+        node_name = @active_html_node.node_name
+
+        # Always add a normal new line if inside a <pre> tag.
+        if node_name == "pre" || @active_html_node.ancestors("pre").any?
+          @active_html_node.add_child(Nokogiri::XML::Text.new("\n", @active_html_node.document))
+
+        # Add <br> tags for any other new line.
+        else
+          @active_html_node.add_child(Nokogiri::XML::Node.new("br", @active_html_node.document))
+        end
+      else
+        add_text_style_html(line)
+      end
+    end
+  end
+
+  def open_alignment_tag
+    # Open a new div if the text alignment is not the default.
+    style_attrs = {}
+    case paragraph_style&.alignment
+    when AppleNote::STYLE_ALIGNMENT_CENTER
+      style_attrs["text-align"] = "center"
+    when AppleNote::STYLE_ALIGNMENT_RIGHT
+      style_attrs["text-align"] = "right"
+    when AppleNote::STYLE_ALIGNMENT_JUSTIFY
+      style_attrs["text-align"] = "justify"
+    end
+
+    if style_attrs.any?
+      open_html_tag("div", { style: style_attrs.map { |k, v| "#{k}: #{v}" }.join("; ") })
+    end
+  end
+
+  def open_block_tag
+    # Open a new block-level tag if the current attribute run is of a different
+    # type than the previous.
     if has_style_type and !same_style_type_previous?
       case paragraph_style.style_type
       when AppleNote::STYLE_TYPE_TITLE
-        html += "<h1>"
+        open_html_tag("h1")
       when AppleNote::STYLE_TYPE_HEADING
-        html += "<h2>"
+        open_html_tag("h2")
       when AppleNote::STYLE_TYPE_SUBHEADING
-        html += "<h3>"
+        open_html_tag("h3")
       when AppleNote::STYLE_TYPE_MONOSPACED
-        html += "<code>"
-      when AppleNote::STYLE_TYPE_NUMBERED_LIST
-        html += "<ol><li>"
-      when AppleNote::STYLE_TYPE_DOTTED_LIST
-        html += "<ul><li>"
-      when AppleNote::STYLE_TYPE_DASHED_LIST
-        html += "<ul><li>"
+        open_html_tag("pre")
+      end
+    end
+  end
+
+  def open_indent_tag
+    tag_name = nil
+    tag_attrs = {}
+
+    # Determine which tag to open for indenting the list or block.
+    case paragraph_style&.style_type
+    when AppleNote::STYLE_TYPE_NUMBERED_LIST
+      tag_name = "ol"
+    when AppleNote::STYLE_TYPE_DOTTED_LIST
+      tag_name = "ul"
+      tag_attrs = { class: "dotted" }
+    when AppleNote::STYLE_TYPE_DASHED_LIST
+      tag_name = "ul"
+      tag_attrs = { class: "dashed" }
+    when AppleNote::STYLE_TYPE_CHECKBOX
+      tag_name = "ul"
+      tag_attrs = { class: "checklist" }
+    else
+      # If the text isn't a list, but is still marked as indented, then use a
+      # <blockquote> tag to perform the indenting. The exception is if the text
+      # is monospaced, in which case, there are explicit space characters that
+      # provide the indentation.
+      if paragraph_style&.indent_amount.to_i > 0 && @active_html_node.node_name != "pre"
+        tag_name = "blockquote"
       end
     end
 
-    #if (!is_any_list? and !is_checkbox? and total_indent > 0)
-    #  puts "Total indent: #{total_indent}"
-    #  html += "\t-"
-    #end
-  
-    # Handle AppleNote::STYLE_TYPE_CHECKBOX separately because they're special
-    if is_checkbox?
-      # Set the style to apply to the list item
-      style = "unchecked"
-      style = "checked" if paragraph_style.checklist.done == 1
+    # Open up the indentation tag if we've determined one is necessary.
+    if tag_name
+      indent_amount = paragraph_style&.indent_amount.to_i
+      previous_indent_amount = previous_run&.paragraph_style&.indent_amount.to_i
 
-      if (initial_run or !previous_run.is_checkbox?)
-        html += "<ul class='checklist'><li class='#{style}'>"
-      elsif previous_run.paragraph_style.checklist.uuid != paragraph_style.checklist.uuid
-        html += "</li><li class='#{style}'>"
+      # If this is the same style as the previous indent, or if the indentation
+      # is nested more deeply, then we need to look for the previous list
+      # that's already present in the HTML that we should possibly continue.
+      if paragraph_style&.style_type == previous_run&.paragraph_style&.style_type || indent_amount > 0
+        # If the indent level needs to go deeper than the previous run, or the
+        # previous list tag was never closed, then find the existing list tag
+        # to nest things inside of. Otherwise, look for an existing tag at the
+        # same level to continue.
+        if indent_amount > previous_indent_amount || (indent_amount == previous_indent_amount && previous_run&.tag_is_open)
+          child_tag_name = "li"
+          if tag_name == "blockquote"
+            child_tag_name = "blockquote"
+          end
+
+          # Look for the last, inner-most list tag to continue.
+          @active_html_node = @active_html_node.last_element_child&.at_xpath("(.//#{child_tag_name}[not(.//#{child_tag_name})])[last()]", "(self::node()[self::#{child_tag_name}])") || @active_html_node
+        else
+          # Look for the last list container tag at the same indent level.
+          @active_html_node = @active_html_node.last_element_child&.at_xpath("(.//*[@data-apple-notes-indent-amount=#{indent_amount}])[last()]", "self::node()[@data-apple-notes-indent-amount=#{indent_amount}]") || @active_html_node
+        end
       end
-    end
 
-    # Deal with the font
-    if font_weight and !same_font_weight_previous?
-      case font_weight
-      when AppleNote::FONT_TYPE_DEFAULT
-        # Do nothing
-      when AppleNote::FONT_TYPE_BOLD
-        html += "<b>"
-      when AppleNote::FONT_TYPE_ITALIC
-        html += "<i>"
-      when AppleNote::FONT_TYPE_BOLD_ITALIC
-        html += "<b><i>"
+      # Determine what the current list indent level is for any opened tags we
+      # are nested inside of, and then determine how many new indent levels
+      # need to be opened to reach our target indent amount.
+      current_indent_amount = @active_html_node.attr("data-apple-notes-indent-amount")&.to_i || @active_html_node.ancestors("[data-apple-notes-indent-amount]")&.first&.attr("data-apple-notes-indent-amount")&.to_i
+      if current_indent_amount
+        indent_range = (current_indent_amount + 1)..indent_amount
+      elsif tag_name == "blockquote"
+        indent_range = 1..indent_amount
+      else
+        indent_range = 0..indent_amount
       end
-    end
 
-    # Add in underlined
-    if underlined == 1
-      html += "<u>" if (initial_run or previous_run.underlined != 1)
-    end
+      # For each indent level that's missing, open up new tags for each level.
+      indent_range.each_with_index do |indent_amount, index|
+        level_tag_attrs = tag_attrs.merge({
+          "data-apple-notes-indent-amount" => indent_amount,
+        })
 
-    # Add in strikethrough
-    if strikethrough == 1
-      html += "<s>" if (initial_run or previous_run.strikethrough != 1)
-    end
+        if tag_name != "blockquote"
+          if index > 0
+            open_html_tag("li")
+          end
 
-    # Add in superscript
-    if superscript == 1
-      html += "<sup>" if (initial_run or previous_run.superscript != 1)
-    end
-
-    # Add in subscript
-    if superscript == -1
-      html += "<sub>" if (initial_run or previous_run.superscript != -1)
-    end
-  
-    # Handle fonts and colors 
-    font_style = ""
-    color_style = ""
-
-    if font and font.font_name
-      font_style = "face='#{font.font_name}'"
-    end
-
-    if color
-      color_style = "color='#{color.full_hex_string}'"
-    end
- 
-    if font_style.length > 0 and color_style.length > 0
-      html +="<font #{font_style} #{color_style}>"
-    elsif font_style.length > 0
-      html +="<font #{font_style}>"
-    elsif color_style.length > 0
-      html +="<font #{color_style}>"
-    end
-
-    # Escape HTML in the actual text of the note
-    text_to_insert = CGI::escapeHTML(text_to_insert)
-
-    closed_font = false
-    need_to_close_li = false
-    # Edit the text if we need to make small changes based on the paragraph style
-    if is_any_list?
-      need_to_close_li = text_to_insert.end_with?("\n")
-      text_to_insert = text_to_insert.split("\n").join("</li><li>")
-
-      # Check it see if we have an open list element...
-      if need_to_close_li
-
-        # Also if we're going to need to close a font element...
-        if (font_style.length > 0 or color_style.length > 0)
-          # ... if so close the font and remember we did so
-          #text_to_insert += "</font>"
-          #closed_font = true
+          if indent_amount != indent_range.last
+            level_tag_attrs[:class] = "none"
+          end
         end
 
-        # ... then close the list element tag
-        #text_to_insert += "</li><li>"
+        open_html_tag(tag_name, level_tag_attrs)
       end
     end
+  end
 
-    # Clean up checkbox newlines
+  def add_list_text(text_to_insert)
+    li_attrs = {}
     if is_checkbox?
-      text_to_insert.gsub!("\n","")
+      li_attrs["class"] = (paragraph_style.checklist.done == 1) ? "checked" : "unchecked"
     end
 
-    # Add in links that are part of the text itself, doing this after cleaning the note so the <a> tag lives
-    if link and link.length > 0
-      text_to_insert = "<a href='#{link}' target='_blank'>#{text_to_insert}</a>"
-    end
+    list_items = text_to_insert.split(/(\n)/)
+    list_items.each_with_index do |list_item_text, index|
+      if list_item_text == "\n"
+        if index != list_items.length - 1
+          close_html_tag
+        end
+      else
+        if @active_html_node.node_name != "li"
+          open_html_tag("li", li_attrs)
+        end
 
-    # Add the text into HTML finally and start closing things up
-    html += text_to_insert
-
-    # Handle fonts
-    if font_style.length > 0 or color_style.length > 0
-      html +="</font>" if !closed_font
-    end
-
-    # Add in subscript
-    if superscript == -1
-      html += "</sub>" if (final_run or next_run.superscript != -1)
-    end
-
-    # Add in superscript
-    if superscript == 1
-      html += "</sup>" if (final_run or next_run.superscript != 1)
-    end
-
-    # Add in strikethrough
-    if strikethrough == 1
-      html += "</s>" if (final_run or next_run.underlined != 1)
-    end
-
-    # Add in underlined
-    if underlined == 1
-      html += "</u>" if (final_run or next_run.underlined != 1)
-    end
-
-    # Close the font if this is the last AttributeRun or if the next is different
-    if font_weight and !same_font_weight_next?
-      case font_weight
-      when AppleNote::FONT_TYPE_DEFAULT
-        # Do nothing
-      when AppleNote::FONT_TYPE_BOLD
-        html += "</b>"
-      when AppleNote::FONT_TYPE_ITALIC
-        html += "</i>"
-      when AppleNote::FONT_TYPE_BOLD_ITALIC
-        html += "</i></b>"
+        add_html_text(list_item_text)
       end
     end
+  end
 
-    if need_to_close_li
-      html += "</li><li>"
+  ##
+  # This method generates the HTML for a given AttributeRun. It expects a String as +text_to_insert+
+  def generate_html(text_to_insert, root_node)
+    @active_html_node = root_node
+    @tag_is_open = !text_to_insert.end_with?("\n")
+
+    open_alignment_tag
+    open_block_tag
+    open_indent_tag
+
+    case @active_html_node.node_name
+    when "ol", "ul", "li"
+      add_list_text(text_to_insert)
+    else
+      add_html_text(text_to_insert)
     end
 
-    # Close the style type if this is the last AttributeRun or if the next is different
-    if has_style_type and !same_style_type_next?
-      case paragraph_style.style_type
-      when AppleNote::STYLE_TYPE_TITLE
-        html += "</h1>" 
-      when AppleNote::STYLE_TYPE_HEADING
-        html += "</h2>" 
-      when AppleNote::STYLE_TYPE_SUBHEADING
-        html += "</h3>" 
-      when AppleNote::STYLE_TYPE_MONOSPACED
-        html += "</code>" 
-      when AppleNote::STYLE_TYPE_NUMBERED_LIST
-        html += "</li></ol>" 
-      when AppleNote::STYLE_TYPE_DOTTED_LIST
-        html += "</li></ul>" 
-      when AppleNote::STYLE_TYPE_DASHED_LIST
-        html += "</li></ul>" 
-      when AppleNote::STYLE_TYPE_CHECKBOX
-        html += "</li></ul>" 
-      end
-    end
-
-    html.gsub!(/<h1>\s*<\/h1>/,'') # Remove empty titles
-    html.gsub!(/<li><\/li>/,'') # Remove empty list elements
-    html.gsub!(/\n<\/h1>/,'</h1>') # Remove extra line breaks in front of h1
-    html.gsub!(/\n<\/h2>/,'</h2>') # Remove extra line breaks in front of h2
-    html.gsub!(/\n<\/h3>/,'</h3>') # Remove extra line breaks in front of h3
-    html.gsub!("\u2028",'<br/>') # Translate \u2028 used to denote newlines in lists into an actual HTML line break
-
-    return html
+    return root_node
   end
 end
 
