@@ -128,7 +128,7 @@ class AppleNote < AppleCloudKitRecord
       @is_compressed = is_gzip(zdata) 
       decompress_data if @is_compressed
       extract_plaintext if @decompressed_data
-      replace_embedded_objects if @plaintext
+      replace_embedded_objects if (@plaintext and @account and @folder)
     end
   end
 
