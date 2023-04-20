@@ -89,9 +89,11 @@ class AppleUniformTypeIdentifier
   def conforms_to_document
     return false if bad_uti?
     return true if @uti == "com.apple.log"
+    return true if @uti == "com.apple.rtfd"
     return true if @uti == "com.microsoft.word.doc"
     return true if @uti == "com.microsoft.excel.xls"
     return true if @uti == "com.microsoft.powerpoint.ppt"
+    return true if @uti == "net.openvpn.formats.ovpn"
     return true if @uti == "org.oasis-open.opendocument.text"
     return true if @uti == "org.openxmlformats.wordprocessingml.document"
     return false
