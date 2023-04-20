@@ -128,7 +128,7 @@ class AppleNote < AppleCloudKitRecord
       @is_compressed = is_gzip(zdata) 
       decompress_data if @is_compressed
       extract_plaintext if @decompressed_data
-      replace_embedded_objects if (@plaintext and @account and @folder)
+      replace_embedded_objects if @plaintext
     end
   end
 
@@ -166,7 +166,7 @@ class AppleNote < AppleCloudKitRecord
   # creates sub-classes of AppleNotesEmbeddedObject depending on the ZICCLOUDSYNCINGOBJECT.ZTYPEUTI 
   # column.
   def replace_embedded_objects
-    if @plaintext
+    if (@plaintext and @account and @folder)
       tmp_note_store_proto = NoteStoreProto.decode(@decompressed_data)
       replaced_objects = AppleNotesEmbeddedObject.generate_embedded_objects(self, tmp_note_store_proto)
       @plaintext = replaced_objects[:to_string]
