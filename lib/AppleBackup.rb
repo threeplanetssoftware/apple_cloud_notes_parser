@@ -90,19 +90,23 @@ class AppleBackup
   # computed the same. 
   def copy_notes_database(filepath, destination)
 
-    # Copy the actual NoteStore.sqlite file
-    FileUtils.cp(filepath, destination)
+    begin
+      # Copy the actual NoteStore.sqlite file
+      FileUtils.cp(filepath, destination)
 
-    # Compute the paths to the WAL and SHM files
-    tmp_path, tmp_name = filepath.split
-    wal_filename = tmp_name.to_s + "-wal"
-    shm_filename = tmp_name.to_s + "-shm"
-    wal_filepath = tmp_path + wal_filename
-    shm_filepath = tmp_path + shm_filename
+      # Compute the paths to the WAL and SHM files
+      tmp_path, tmp_name = filepath.split
+      wal_filename = tmp_name.to_s + "-wal"
+      shm_filename = tmp_name.to_s + "-shm"
+      wal_filepath = tmp_path + wal_filename
+      shm_filepath = tmp_path + shm_filename
 
-    # Copy the WAL and SHM files if they exist
-    FileUtils.cp(wal_filepath, @output_folder) if wal_filepath.exist?
-    FileUtils.cp(shm_filepath, @output_folder) if shm_filepath.exist?
+      # Copy the WAL and SHM files if they exist
+      FileUtils.cp(wal_filepath, @output_folder) if wal_filepath.exist?
+      FileUtils.cp(shm_filepath, @output_folder) if shm_filepath.exist?
+    rescue
+      @logger.error("Failed to copy #{filepath} or its journals to #{destination}.")
+    end
 
   end
 
@@ -159,7 +163,8 @@ class AppleBackup
     file_output_directory.mkpath
 
     # Decrypt and write a new file, or copy the file depending on if we are password protected
-    @logger.debug("Copying #{filepath_on_disk} to #{file_output_directory + filename_on_phone}")
+    tmp_target_filepath = file_output_directory + filename_on_phone
+    @logger.debug("Copying #{filepath_on_disk} to #{tmp_target_filepath}")
     if is_password_protected
       File.open(filepath_on_disk, 'rb') do |file|
         encrypted_data = file.read
@@ -167,7 +172,11 @@ class AppleBackup
         File.write(file_output_directory + filename_on_phone.sub(/\.encrypted$/,""), decrypt_result[:plaintext])
       end
     else
-      FileUtils.cp(filepath_on_disk, file_output_directory + filename_on_phone)
+      begin
+        FileUtils.cp(filepath_on_disk, tmp_target_filepath)
+      rescue
+        @logger.error("Failed to copy #{filepath_on_disk} to #{tmp_target_filepath}")
+      end
     end
 
     # return where we put it 
