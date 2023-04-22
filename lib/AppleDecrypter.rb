@@ -96,6 +96,9 @@ class AppleDecrypter
     rescue OpenSSL::Cipher::CipherError
       puts "Caught CipherError trying to generate PBKDF2 key"
       @logger.error("Apple Decrypter: #{debug_text} caught a CipherError while trying to generate PBKDF2 key.")
+    rescue OpenSSL::KDF::KDFError
+      puts "Caught KDFError trying to generate PBKDF2 key"
+      @logger.error("Apple Decrypter: #{debug_text} caught a KDFError while trying to generate PBKDF2 key. Length: #{key_size}, Iterations: #{iterations}")
     end
 
     return generated_key
