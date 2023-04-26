@@ -850,80 +850,110 @@ class AppleNoteStore
     # Bail early if we can
     return @html if @html
 
-    html = "<!DOCTYPE html>\n"
-    html += "<html>\n"
-    html += "<head>\n"
-    html += "<style>\n"
-    html += ".note-cards {\n"
-    html += "\tdisplay: grid;\n"
-    html += "\tgrid-template-columns: repeat(1, 1fr);\n"
-    html += "\tgrid-auto-rows: auto;\n"
-    html += "\tgrid-gap: 1rem;\n"
-    html += "}\n"
-    html += ".note-card {\n"
-    html += "\tborder: 2px solid black;\n"
-    html += "\tborder-radius: 3px;\n"
-    html += "\tpadding: .5rem;\n"
-    html += "}\n"
-    html += ".note-content {\n"
-    html += "\twhite-space: pre-wrap;\n"
-    html += "\toverflow-wrap: break-word;\n"
-    html += "}\n"
-    html += ".checklist {\n"
-    html += "\tposition: relative;\n"
-    html += "\tlist-style: none;\n"
-    html += "\tmargin-left: 0;\n"
-    html += "\tpadding-left: 1.2em;\n"
-    html += "}\n"
-    html += ".checklist li.checked:before {\n"
-    html += "\tcontent: '✓';\n"
-    html += "\tposition: absolute;\n"
-    html += "\tleft: 0;\n"
-    html += "}\n"
-    html += ".checklist li.unchecked:before {\n"
-    html += "\tcontent: '○';\n"
-    html += "\tposition: absolute;\n"
-    html += "\tleft: 0;\n"
-    html += "}\n"
-    html += ".folder_list {\n"
-    html += "\tposition: relative;\n"
-    html += "\tlist-style: none;\n"
-    html += "\tmargin-left: 0;\n"
-    html += "\tpadding-left: 1.2em;\n"
-    html += "}\n"
-    html += ".folder_list li.folder:before {\n"
-    html += "\tcontent: '🗀';\n"
-    html += "\tposition: absolute;\n"
-    html += "\tleft: 0;\n"
-    html += "}\n"
-    html += ".folder_list li.note:before {\n"
-    html += "\tcontent: '🗈';\n"
-    html += "\tposition: absolute;\n"
-    html += "\tleft: 0;\n"
-    html += "}\n"
-    html += "</style>\n"
-    html += "</head>\n"
-    html += "<body>\n"
-    @accounts.each do |key, account|
-      html += account.generate_html + "\n"
+    document = Nokogiri::HTML5::Document.new
+    builder = Nokogiri::HTML::Builder.new({ encoding: "utf-8" }, document) do |doc|
+      doc.html {
+        doc.head {
+          doc.meta(charset: "utf-8")
+          doc.style <<~EOS
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+              font-size: 13px;
+            }
+            h1, h2, h3 {
+              margin: 0px;
+            }
+            .note-cards {
+              display: grid;
+              grid-template-columns: repeat(1, 1fr);
+              grid-auto-rows: auto;
+              grid-gap: 1rem;
+            }
+            .note-card {
+              border: 2px solid black;
+              border-radius: 3px;
+              padding: .5rem;
+            }
+            .note-content {
+              margin-top: 1rem;
+            }
+            pre {
+              margin: 0px;
+            }
+            ul, ol, blockquote {
+              padding: 0px 0px 0px 2rem;
+              margin: 0px;
+            }
+            ul.none, ol.none {
+              list-style-type: none;
+            }
+            ul.dashed {
+              list-style-type: '- ';
+            }
+            .checklist {
+              position: relative;
+              list-style: none;
+              margin-left: 0;
+              padding-left: 1.2em;
+            }
+            .checklist li.checked:before {
+              content: '☑';
+              position: absolute;
+              left: 0;
+            }
+            .checklist li.unchecked:before {
+              content: '☐';
+              position: absolute;
+              left: 0;
+            }
+            .folder_list {
+              position: relative;
+              list-style: none;
+              margin-left: 0;
+              padding-left: 1.2em;
+            }
+            .folder_list li.folder:before {
+              content: '📁';
+              position: absolute;
+              left: 0;
+            }
+            .folder_list li.note:before {
+              content: '📄';
+              position: absolute;
+              left: 0;
+            }
+            table {
+              border-collapse: collapse;
+            }
+            table td {
+              border: 1px solid black;
+              padding: 0.3em;
+            }
+          EOS
+        }
+
+        doc.body {
+          @accounts.each do |key, account|
+            doc << account.generate_html
+          end
+
+          @folders.each do |folder_id, folder|
+            # Only kick out results if the folder isn't a child folder
+            doc << folder.generate_html if !folder.is_child?
+          end
+
+          doc.div(class: "note-cards") {
+            @notes.each do |note_id, note|
+              doc.div(class: "note-card") {
+                doc << note.generate_html
+              }
+            end
+          }
+        }
+      }
     end
 
-    @folders.each do |folder_id, folder|
-      # Only kick out results if the folder isn't a child folder
-      html += folder.generate_html + "\n" if !folder.is_child?
-    end
-  
-    html += "<div class='note-cards'>\n"
-    @notes.each do |note_id, note|
-      html += "<div class='note-card'>\n"
-      html += note.generate_html
-      html += "</div> <!-- Close the 'note-card' div -->\n"
-    end
-    html += "</div> <!-- Close the 'note-cards' div -->\n"
-
-    html += "</body></html>\n";
-
-    @html = html
+    @html = builder.doc
   end
 
   ##
