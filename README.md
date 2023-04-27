@@ -271,41 +271,25 @@ The JSON output of `AppleNotesEmbeddedObject` is as follows.
 
 ### Ruby Version
 
-This program has been tested with the following versions of Ruby:
-
-|Ruby Version| OS | Status |
-|------------|----|--------|
-|2.3.0|Linux|:heavy_check_mark:|
-|2.3.1|Linux|:heavy_check_mark:|
-|2.4.3|Linux|:heavy_check_mark:|
-|2.5.1|Linux|:heavy_check_mark:|
-|2.6.5|Linux|:heavy_check_mark:|
-|2.7.1|Linux|:heavy_check_mark:|
-|2.4.3|macOS 10.13|:heavy_check_mark:|
-|2.5.1|macOS 10.13|:heavy_check_mark:|
-|2.6.5|macOS 10.13|:heavy_check_mark:|
-|2.7.1|macOS 10.13|:heavy_check_mark:|
-|2.6.5|Windows 8|:heavy_check_mark:|
-|2.6.5|Windows 10 Enterprise|:heavy_check_mark:|
+This program requires Ruby version 2.7 or later.
 
 ### Gems
 
 This program requires the following Ruby gems which can be installed by running `bundle install` or `gem install [gemname]`:
 1. fileutils
 2. google-protobuf
-   1. Note: If you use Ruby 2.7, you must have version 3.12 of this gem, or newer
-   2. Note: If you use Ruby 2.3 or 2.4, you must not have any version later than 3.11.4
 3. sqlite3
 4. zlib
 5. openssl
 6. aes_key_wrap
 7. keyed_archive
+8. nokogiri
 
 ## Installation
 
 Below are instructions, generally preferring the command line, for each of Linux, Mac, and Windows. The user can choose to use Git if they want to be able to keep up with changes, or just download the tool once, you do not need to do both. On each OS, you will want to:
 
-1. Install Ruby (at least version 2.3.0, preferably 2.5 or later), its development headers, and bundler if not already installed.
+1. Install Ruby (at least version 2.7, preferably 3.0 or later), its development headers, and bundler if not already installed.
 2. Install development headers for SQLite3 if not already installed.
 3. Get this code
    1. Clone this repository with Git or
