@@ -9,6 +9,5 @@ gem 'rake', ">= 10.5.0"
 gem 'sqlite3', ">= 1.4.0"
 gem 'zlib', ">= 1.1.0"
 gem 'keyed_archive', ">= 1.0.0"
-#gem 'keyed_archive', :git => "git://github.com/paulyoung/keyed_archive.git"
 
-ruby ">= 2.3" 
+ruby ">= 2.7" 
