@@ -33,10 +33,46 @@ This program will:
 ### Base
 
 This program is run by Ruby on a command line, using either `rake` or `ruby`. 
-The easiest use, which is the same as the original Perl script, is to drop your exported `NoteStore.sqlite` into the same directory as this program and then run `rake` (which is the same as running `ruby notes_cloud_ripper.rb --file NoteStore.sqlite`). 
+The easiest use is to drop your exported `NoteStore.sqlite` into the same directory as this program and then run `rake` (which is the same as running `ruby notes_cloud_ripper.rb --file NoteStore.sqlite`). 
 
 If you are more comfortable with the command line, you can point the program anywhere you would like on your computer and specify the type of backup you are looking at, such as: `ruby notes_cloud_ripper.rb --itunes-dir ~/.iTunes/backup1/` or `ruby notes_cloud_ripper.rb --file ~/.iTunes/backup1/4f/4f98687d8ab0d6d1a371110e6b7300f6e465bef2`. 
 The benefit of pointing at full backups is this program can pull files out of them as needed, such as drawings and pictures.
+
+### Docker
+
+Thanks to @jareware, if you have [Docker installed already](https://docs.docker.com/get-docker/) you can run this program as a docker container.
+This is a great way to ensure you will not run into any dependancy issues or have to have Ruby installed. 
+Shell scripts have been provided in the `docker_scripts` folder which may help if they cover your use case. 
+Each of these uses the present working directory to create the output folder. 
+ - `linux_run_file.sh`: This script will run the program on a NoteStore.sqlite file found in the present working directory (as if you ran `-f NoteStore.sqlite`).
+ - `mac_run_file.sh`: This script will run the program on a NoteStore.sqlite file found in the present working directory (as if you ran `-f NoteStore.sqlite`).
+ - `mac_run_notes.sh`: This script will run the program on the local user's Apple Notes directory (as if you used `--mac ~/Library/Group\ Containers/group.com.apple.notes`).
+
+If you are more experienced with Docker, you can use the base image with any of the below options the same as if you ran the program with Ruby. 
+The basic command to use would be: 
+
+``` shell
+docker run --rm \
+  -v [path to your data folder or file]:/data:ro \
+  -v $(pwd)/output:/app/output \
+  ghcr.io/threeplanetssoftware/apple_cloud_notes_parser \
+  [your command line options]
+```
+
+As an example, to run a NoteStore.sqlite file that is in your current directory you would type:
+
+``` shell
+docker run --rm \
+  -v "$(pwd)":/data:ro \
+  -v "$(pwd)"/output:/app/output \
+  ghcr.io/threeplanetssoftware/apple_cloud_notes_parser \
+  -f /data/NoteStore.sqlite --one-output-folder
+```
+
+**Important Caveats**: 
+ - While Docker can make things easier in some respects, it does so at the cost of additional complexity. It is harder to troubleshoot and adds more memory overhead.  It is my hope that the Docker image helps some use this program, but the first troubleshooting step that will be recommended is to use Ruby directly to see if that fixes the issue. 
+ - The [base image](https://hub.docker.com/_/ruby/) that is used for the Docker container is published by Ruby. It relies on a Debian base layer and as of today has multiple "vulnerabilities" identified on Docker (i.e. packages that are out of date). Use the Docker container at your own risk and if you are uncomfortable with it, feel free to clone this repository and use Ruby to run it, instead. 
+ - Docker is a new feature for this program, there may be issues with the rollout. 
 
 ### Options
 
@@ -391,6 +427,13 @@ For reference, the structure of this program is as follows:
 ```
 apple_cloud_notes_parser
   |
+  |-docker_scripts
+  |  |
+  |  |-linux_run_file.sh: Execute the docker version on NoteStore.sqlite in the present working directory
+  |  |-mac_run_file.sh: Execute the docker version on NoteStore.sqlite in the present working directory
+  |  |-mac_run_itunes.sh: Execute the docker version on each of the local Mac user's mobile backups
+  |  |-mac_run_notes.sh: Execute the docker version on the local Mac user's Notes folder
+  |  
   |-lib
   |  |
   |  |-notestore_pb.rb: Protobuf representation generated with protoc
@@ -411,6 +454,7 @@ apple_cloud_notes_parser
   |
   |-.gitignore
   |-.travis.yml
+  |-Dockerfile
   |-Gemfile
   |-LICENSE
   |-README.md
