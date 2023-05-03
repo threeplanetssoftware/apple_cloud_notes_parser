@@ -7,7 +7,7 @@ name: Docker
 
 on:
   release:
-    types: [ published ]
+    types: [ published, edited ]
 
 env:
   # Use docker.io for Docker Hub if empty
