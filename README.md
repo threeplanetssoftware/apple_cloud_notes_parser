@@ -46,6 +46,7 @@ Shell scripts have been provided in the `docker_scripts` folder which may help i
 Each of these uses the present working directory to create the output folder. 
  - `linux_run_file.sh`: This script will run the program on a NoteStore.sqlite file found in the present working directory (as if you ran `-f NoteStore.sqlite`).
  - `mac_run_file.sh`: This script will run the program on a NoteStore.sqlite file found in the present working directory (as if you ran `-f NoteStore.sqlite`).
+ - `mac_run_itunes.sh`: This script will run the program on the local user's Mobile Backups(as if you used `--itunes ~/Library/Application\ Support/MobileSync/Backup/[your backup]`).
  - `mac_run_notes.sh`: This script will run the program on the local user's Apple Notes directory (as if you used `--mac ~/Library/Group\ Containers/group.com.apple.notes`).
 
 If you are more experienced with Docker, you can use the base image with any of the below options the same as if you ran the program with Ruby. 
@@ -72,6 +73,7 @@ docker run --rm \
 **Important Caveats**: 
  - While Docker can make things easier in some respects, it does so at the cost of additional complexity. It is harder to troubleshoot and adds more memory overhead.  It is my hope that the Docker image helps some use this program, but the first troubleshooting step that will be recommended is to use Ruby directly to see if that fixes the issue. 
  - The [base image](https://hub.docker.com/_/ruby/) that is used for the Docker container is published by Ruby. It relies on a Debian base layer and as of today has multiple "vulnerabilities" identified on Docker (i.e. packages that are out of date). Use the Docker container at your own risk and if you are uncomfortable with it, feel free to clone this repository and use Ruby to run it, instead. 
+ - MacOS permissions lead to read errors trying to mount the Notes and iTunes backups from elsewhere in the user's home folder. As a result, the shell scripts create a temporary folder in the present working directory and copy the relevant files into it. This is an ugly hack which will chew up extra disk space and time to perform the copy. If you dislike this tradeoff, feel free to clone this repository and use Ruby to run it, instead. 
  - Docker is a new feature for this program, there may be issues with the rollout. 
 
 ### Options
