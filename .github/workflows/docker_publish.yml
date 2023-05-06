@@ -78,10 +78,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          annotations: { "org.opencontainers.image.source": "https://github.com/threeplanetssoftware/apple_cloud_notes_parser",
-                         "org.opencontainers.image.description": "This program is a parser for the current version of Apple Notes data syncable with iCloud as seen on Apple handsets in iOS 9 and later.",
-                         "org.opencontainers.image.licenses"="MIT"
-                        }
+          annotations: { "org.opencontainers.image.source": "https://github.com/threeplanetssoftware/apple_cloud_notes_parser", "org.opencontainers.image.description": "This program is a parser for the current version of Apple Notes data syncable with iCloud as seen on Apple handsets in iOS 9 and later.", "org.opencontainers.image.licenses"="MIT" }
 
 
       # Sign the resulting Docker image digest except on PRs.
