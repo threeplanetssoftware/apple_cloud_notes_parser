@@ -30,7 +30,7 @@ class AppleNotesSmartFolder < AppleNotesFolder
     return to_return
   end
 
-  def generate_html
+  def generate_html(_individual_files = false)
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
       doc.div {
         doc.h1 {

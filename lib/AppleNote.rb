@@ -68,6 +68,7 @@ class AppleNote < AppleCloudKitRecord
                 :database,
                 :decompressed_data,
                 :account,
+                :folder,
                 :backup,
                 :crypto_password,
                 :cloudkit_creator_record_id,
@@ -377,6 +378,10 @@ class AppleNote < AppleCloudKitRecord
     return to_return
   end
 
+  def title_as_filename(ext = '')
+    "#{@note_id} - #{@title.tr('/:', '_')}#{ext}"
+  end
+
   ## 
   # This method returns all the embedded objects in an AppleNote as an Array.
   def all_embedded_objects
@@ -387,10 +392,8 @@ class AppleNote < AppleCloudKitRecord
   # This method generates HTML to represent this Note, its 
   # metadata, and its contents, if applicable. It does not generate 
   # full HTML, just enough for this note's card to be displayed.
-  def generate_html
-
-    # Bail quickly if we've ever taken the time to build this before
-    return @html if @html
+  def generate_html(individual_files = false)
+    folder_href = individual_files ? "index.html" : "#folder_#{@folder.primary_key}"
 
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
       doc.div {
@@ -415,7 +418,7 @@ class AppleNote < AppleCloudKitRecord
           }
 
           doc.text " "
-          doc.a(href: "#folder_#{@folder.primary_key}") {
+          doc.a(href: folder_href) {
             doc.text @folder.name
           }
         }
@@ -508,7 +511,7 @@ class AppleNote < AppleCloudKitRecord
       }
     end
 
-    @html = builder.doc.root
+    builder.doc.root
   end
 
   ##

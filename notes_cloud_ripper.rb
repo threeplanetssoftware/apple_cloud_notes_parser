@@ -22,6 +22,7 @@ retain_order = false
 target_directory = nil
 range_start = nil
 range_end = nil
+individual_files = false
 
 #
 # Options Parser setup
@@ -100,6 +101,11 @@ option_parser.on("--range-end DATE", "Set the end date of the date range to extr
     puts "Invalid date format #{date} given for --range-end. Please us the format YYYY-MM-DD."
     exit
   end
+end
+
+# Output individual HTML files for each note instead of one large file
+option_parser.on("--individual-files", "Output individual HTML files for each note, organized in folders mirroring the Notes folder structure.") do
+  individual_files = true
 end
 
 # Help information, only displayed if we haven't hit on other options
@@ -233,8 +239,14 @@ if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid
 
     # Write out the HTML summary
     logger.debug("Writing HTML for Note Store")
-    File.open(html_directory + "all_notes_#{backup_number}.html", "wb") do |file|
-      file.write(note_store.generate_html)
+    if individual_files
+      note_store_subdirectory = html_directory + "note_store#{backup_number}"
+      note_store_subdirectory.mkpath
+      note_store.write_individual_html(note_store_subdirectory)
+    else
+      File.open(html_directory + "all_notes_#{backup_number}.html", "wb") do |file|
+        file.write(note_store.generate_html)
+      end
     end
 
     # Write out the JSON summary

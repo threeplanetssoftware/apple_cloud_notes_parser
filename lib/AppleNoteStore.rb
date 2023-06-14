@@ -845,8 +845,83 @@ class AppleNoteStore
     end
   end
 
-  def generate_html
+  HTML_STYLES = <<~EOS
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      font-size: 13px;
+    }
+    h1, h2, h3 {
+      margin: 0px;
+    }
+    .note-cards {
+      display: grid;
+      grid-template-columns: repeat(1, 1fr);
+      grid-auto-rows: auto;
+      grid-gap: 1rem;
+    }
+    .note-card {
+      border: 2px solid black;
+      border-radius: 3px;
+      padding: .5rem;
+    }
+    .note-content {
+      margin-top: 1rem;
+    }
+    pre {
+      margin: 0px;
+    }
+    ul, ol, blockquote {
+      padding: 0px 0px 0px 2rem;
+      margin: 0px;
+    }
+    ul.none, ol.none {
+      list-style-type: none;
+    }
+    ul.dashed {
+      list-style-type: '- ';
+    }
+    .checklist {
+      position: relative;
+      list-style: none;
+      margin-left: 0;
+      padding-left: 1.2em;
+    }
+    .checklist li.checked:before {
+      content: '☑';
+      position: absolute;
+      left: 0;
+    }
+    .checklist li.unchecked:before {
+      content: '☐';
+      position: absolute;
+      left: 0;
+    }
+    .folder_list {
+      position: relative;
+      list-style: none;
+      margin-left: 0;
+      padding-left: 1.2em;
+    }
+    .folder_list li.folder:before {
+      content: '📁';
+      position: absolute;
+      left: 0;
+    }
+    .folder_list li.note:before {
+      content: '📄';
+      position: absolute;
+      left: 0;
+    }
+    table {
+      border-collapse: collapse;
+    }
+    table td {
+      border: 1px solid black;
+      padding: 0.3em;
+    }
+  EOS
 
+  def generate_html
     # Bail early if we can
     return @html if @html
 
@@ -855,81 +930,7 @@ class AppleNoteStore
       doc.html {
         doc.head {
           doc.meta(charset: "utf-8")
-          doc.style <<~EOS
-            body {
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-              font-size: 13px;
-            }
-            h1, h2, h3 {
-              margin: 0px;
-            }
-            .note-cards {
-              display: grid;
-              grid-template-columns: repeat(1, 1fr);
-              grid-auto-rows: auto;
-              grid-gap: 1rem;
-            }
-            .note-card {
-              border: 2px solid black;
-              border-radius: 3px;
-              padding: .5rem;
-            }
-            .note-content {
-              margin-top: 1rem;
-            }
-            pre {
-              margin: 0px;
-            }
-            ul, ol, blockquote {
-              padding: 0px 0px 0px 2rem;
-              margin: 0px;
-            }
-            ul.none, ol.none {
-              list-style-type: none;
-            }
-            ul.dashed {
-              list-style-type: '- ';
-            }
-            .checklist {
-              position: relative;
-              list-style: none;
-              margin-left: 0;
-              padding-left: 1.2em;
-            }
-            .checklist li.checked:before {
-              content: '☑';
-              position: absolute;
-              left: 0;
-            }
-            .checklist li.unchecked:before {
-              content: '☐';
-              position: absolute;
-              left: 0;
-            }
-            .folder_list {
-              position: relative;
-              list-style: none;
-              margin-left: 0;
-              padding-left: 1.2em;
-            }
-            .folder_list li.folder:before {
-              content: '📁';
-              position: absolute;
-              left: 0;
-            }
-            .folder_list li.note:before {
-              content: '📄';
-              position: absolute;
-              left: 0;
-            }
-            table {
-              border-collapse: collapse;
-            }
-            table td {
-              border: 1px solid black;
-              padding: 0.3em;
-            }
-          EOS
+          doc.style(HTML_STYLES)
         }
 
         doc.body {
@@ -954,6 +955,57 @@ class AppleNoteStore
     end
 
     @html = builder.doc
+  end
+
+  def write_individual_html(backup_dir)
+    write_html_content(backup_dir.join("index.html"), "Notes") do |doc|
+      @accounts.each do |key, account|
+        doc << account.generate_html(true)
+      end
+    end
+
+    @folders.each do |folder_id, folder|
+      folder_path = backup_dir.join(folder.to_path)
+      folder_path.mkpath
+      write_html_content(folder_path.join("index.html"), folder.name) do |doc|
+        doc << folder.generate_html(true)
+      end
+    end
+
+    @notes.each do |note_id, note|
+      note_file_name = note.title_as_filename('.html')
+      note_path = if note.folder
+                    backup_dir.join(note.folder.to_path, note_file_name)
+                  else
+                    backup_dir.join(note_file_name)
+                  end
+      write_html_content(note_path, note.title) do |doc|
+        doc.div(class: "note-card") {
+          doc << note.generate_html(true)
+        }
+      end
+    end
+  end
+
+  def write_html_content(path, title)
+    document = Nokogiri::HTML5::Document.new
+    builder = Nokogiri::HTML::Builder.new({ encoding: "utf-8" }, document) do |doc|
+      doc.html {
+        doc.head {
+          doc.meta(charset: "utf-8")
+          doc.style(HTML_STYLES)
+          doc.title(title)
+        }
+
+        doc.body {
+          yield doc
+        }
+      }
+    end
+
+    File.open(path, "wb") do |file|
+      file.write(builder.doc)
+    end
   end
 
   ##

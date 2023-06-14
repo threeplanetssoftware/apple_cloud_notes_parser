@@ -131,17 +131,30 @@ class AppleNotesFolder < AppleCloudKitRecord
     @notes.sort_by { |note| [note.is_pinned ? 1 : 0, note.modify_time] }.reverse
   end
 
-  def generate_folder_hierarchy_html
+  def to_path
+    path = Pathname.new(@name.tr('/:', '_'))
+    if @parent
+      return @parent.to_path.join(path)
+    end
+    return path
+  end
+
+  def generate_folder_hierarchy_html(individual_files = false, relative_root = '')
+    folder_href = "#folder_#{@primary_key}"
+    if individual_files
+      folder_href = to_path.join("index.html").relative_path_from(relative_root)
+    end
+
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
       doc.li(class: "folder") {
-        doc.a(href: "#folder_#{@primary_key}") {
+        doc.a(href: folder_href) {
           doc.text @name
         }
 
         if (is_parent? or has_notes)
           doc.ul(class: "folder_list") {
             @child_folders.each do |child_folder|
-              doc << child_folder.generate_folder_hierarchy_html
+              doc << child_folder.generate_folder_hierarchy_html(individual_files)
             end
           }
         end
@@ -151,11 +164,7 @@ class AppleNotesFolder < AppleCloudKitRecord
     return builder.doc.root
   end
 
-  def generate_html
-
-    # Bail early if we can
-    return @html if @html
-
+  def generate_html(individual_files = false)
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
       doc.div {
         doc.h1 {
@@ -164,11 +173,20 @@ class AppleNotesFolder < AppleCloudKitRecord
           }
         }
 
+        if individual_files && is_parent?
+          doc.ul(class: "folder_list") {
+            @child_folders.each do |child_folder|
+              doc << child_folder.generate_folder_hierarchy_html(individual_files, to_path)
+            end
+          }
+        end
+
         doc.ul {
           # Now display whatever we ended up with
           sorted_notes.each do |note|
+            href = individual_files ? note.title_as_filename('.html') : "#note_#{note.note_id}"
             doc.li {
-              doc.a(href: "#note_#{note.note_id}") {
+              doc.a(href: href) {
                 doc.text "Note #{note.note_id}"
               }
 
@@ -177,14 +195,16 @@ class AppleNotesFolder < AppleCloudKitRecord
           end
         }
 
-        # Recursively genererate HTML for each child folder
-        @child_folders.each do |child_folder|
-          doc << child_folder.generate_html
+        if !individual_files
+          # Recursively genererate HTML for each child folder
+          @child_folders.each do |child_folder|
+            doc << child_folder.generate_html(individual_files)
+          end
         end
       }
     end
 
-    @html = builder.doc.root
+    builder.doc.root
   end
 
   ##
