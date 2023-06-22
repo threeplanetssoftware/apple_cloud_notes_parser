@@ -184,10 +184,10 @@ class AppleNotesFolder < AppleCloudKitRecord
         doc.ul {
           # Now display whatever we ended up with
           sorted_notes.each do |note|
-            href = individual_files ? note.title_as_filename('.html') : "#note_#{note.note_id}"
+            href = individual_files ? note.title_as_filename('.html') : "#note_#{note.unique_id}"
             doc.li {
               doc.a(href: href) {
-                doc.text "Note #{note.note_id}"
+                doc.text "Note #{note.unique_id}"
               }
 
               doc.text ": #{note.title}#{" (📌)" if note.is_pinned}"

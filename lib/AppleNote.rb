@@ -378,14 +378,23 @@ class AppleNote < AppleCloudKitRecord
     return to_return
   end
 
-  def title_as_filename(ext = '')
-    "#{@note_id} - #{@title.tr('/:', '_')}#{ext}"
-  end
-
   ## 
   # This method returns all the embedded objects in an AppleNote as an Array.
   def all_embedded_objects
     @embedded_objects + @embedded_objects_recursive
+  end
+
+  ##
+  # Unique ID for the note — prefer UUID if available, fall back to database ID
+  def unique_id
+    return @unique_id if defined?(@unique_id)
+    @unique_id = uuid.empty? ? note_id : uuid
+  end
+
+  ##
+  # Generate a file name for exporting this note to an HTML file
+  def title_as_filename(ext = '')
+    "#{unique_id} - #{title.tr('/:', '_')}#{ext}"
   end
 
   ##
@@ -398,8 +407,8 @@ class AppleNote < AppleCloudKitRecord
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
       doc.div {
         doc.h1 {
-          doc.a(id: "note_#{@note_id}") {
-            doc.text "Note #{@note_id}#{" (📌)" if @is_pinned}"
+          doc.a(id: "note_#{unique_id}") {
+            doc.text "Note #{unique_id}#{" (📌)" if @is_pinned}"
           }
         }
 
