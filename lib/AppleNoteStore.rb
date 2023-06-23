@@ -592,6 +592,10 @@ class AppleNoteStore
                                                row["ZSMARTFOLDERQUERYJSON"])
       end
 
+      if row["ZIDENTIFIER"]
+        tmp_folder.uuid = row["ZIDENTIFIER"]
+      end
+
       # Set whether the folder displays notes in numeric order, or by modification date
       tmp_folder.retain_order = @retain_order
       tmp_folder.sort_order = @folder_order[row["ZIDENTIFIER"]] if @folder_order[row["ZIDENTIFIER"]]

@@ -13,7 +13,8 @@ class AppleNotesFolder < AppleCloudKitRecord
                 :retain_order,
                 :sort_order,
                 :parent,
-                :parent_id
+                :parent_id,
+                :uuid
 
   ##
   # Creates a new AppleNotesFolder.
@@ -39,6 +40,8 @@ class AppleNotesFolder < AppleCloudKitRecord
 
     # Pre-bake the sort order to a nice low value
     @sort_order = (0 - Float::INFINITY)
+
+    @uuid = ""
 
     # Uncomment the below line if you want to see the folder names during creation
     #puts "Folder #{@primary_key} is called #{@name}"
@@ -100,7 +103,8 @@ class AppleNotesFolder < AppleCloudKitRecord
      "Cloudkit Participants", 
      "Parent Folder Primary Key", 
      "Parent Folder Name", 
-     "Smart Folder Query"]
+     "Smart Folder Query",
+     "UUID"]
   end
 
   ##
@@ -114,7 +118,7 @@ class AppleNotesFolder < AppleCloudKitRecord
       parent_name = @parent.name
     end
 
-    to_return = [@primary_key, @name, @notes.length, @account.primary_key, @account.name, participant_emails, parent_id, parent_name, ""]
+    to_return = [@primary_key, @name, @notes.length, @account.primary_key, @account.name, participant_emails, parent_id, parent_name, "", @uuid]
 
     return to_return
   end
@@ -139,8 +143,13 @@ class AppleNotesFolder < AppleCloudKitRecord
     return path
   end
 
+  def unique_id
+    return @unique_id if defined?(@unique_id)
+    @unique_id = uuid.empty? ? primary_key : uuid
+  end
+
   def generate_folder_hierarchy_html(individual_files = false, relative_root = '')
-    folder_href = "#folder_#{@primary_key}"
+    folder_href = "#folder_#{unique_id}"
     if individual_files
       folder_href = to_path.join("index.html").relative_path_from(relative_root)
     end
@@ -168,7 +177,7 @@ class AppleNotesFolder < AppleCloudKitRecord
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
       doc.div {
         doc.h1 {
-          doc.a(id: "folder_#{@primary_key}") {
+          doc.a(id: "folder_#{unique_id}") {
             doc.text "#{@account.name} - #{full_name}"
           }
         }
@@ -212,6 +221,7 @@ class AppleNotesFolder < AppleCloudKitRecord
   def prepare_json
     to_return = Hash.new()
     to_return[:primary_key] = @primary_key
+    to_return[:uuid] = @uuid
     to_return[:name] = @name
     to_return[:account_id] = @account.primary_key
     to_return[:account] = @account.name
