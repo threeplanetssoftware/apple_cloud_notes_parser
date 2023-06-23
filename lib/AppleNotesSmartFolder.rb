@@ -34,7 +34,7 @@ class AppleNotesSmartFolder < AppleNotesFolder
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
       doc.div {
         doc.h1 {
-          doc.a(id: "folder_#{@primary_key}") {
+          doc.a(id: "folder_#{unique_id}") {
             doc.text "#{@account.name} - #{full_name}"
           }
         }
