@@ -30,11 +30,11 @@ class AppleNotesSmartFolder < AppleNotesFolder
     return to_return
   end
 
-  def generate_html(_individual_files = false)
+  def generate_html(individual_files: false, use_uuid: false)
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
       doc.div {
         doc.h1 {
-          doc.a(id: "folder_#{unique_id}") {
+          doc.a(id: "folder_#{unique_id(use_uuid)}") {
             doc.text "#{@account.name} - #{full_name}"
           }
         }

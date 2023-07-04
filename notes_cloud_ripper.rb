@@ -23,6 +23,7 @@ target_directory = nil
 range_start = nil
 range_end = nil
 individual_files = false
+use_uuid = false
 
 #
 # Options Parser setup
@@ -106,6 +107,11 @@ end
 # Output individual HTML files for each note instead of one large file
 option_parser.on("--individual-files", "Output individual HTML files for each note, organized in folders mirroring the Notes folder structure.") do
   individual_files = true
+end
+
+# Prefer UUIDs instead of local database IDs
+option_parser.on("--uuid", "Use UUIDs in HTML output rather than local database IDs.") do
+  use_uuid = true
 end
 
 # Help information, only displayed if we haven't hit on other options
@@ -242,10 +248,10 @@ if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid
     if individual_files
       note_store_subdirectory = html_directory + "note_store#{backup_number}"
       note_store_subdirectory.mkpath
-      note_store.write_individual_html(note_store_subdirectory)
+      note_store.write_individual_html(note_store_subdirectory, use_uuid: use_uuid)
     else
       File.open(html_directory + "all_notes_#{backup_number}.html", "wb") do |file|
-        file.write(note_store.generate_html)
+        file.write(note_store.generate_html(use_uuid: use_uuid))
       end
     end
 

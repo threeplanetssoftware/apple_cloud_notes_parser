@@ -925,9 +925,11 @@ class AppleNoteStore
     }
   EOS
 
-  def generate_html
+  def generate_html(use_uuid: false)
     # Bail early if we can
-    return @html if @html
+    if @html && @html[use_uuid]
+      return @html[use_uuid]
+    end
 
     document = Nokogiri::HTML5::Document.new
     builder = Nokogiri::HTML::Builder.new({ encoding: "utf-8" }, document) do |doc|
@@ -939,18 +941,18 @@ class AppleNoteStore
 
         doc.body {
           @accounts.each do |key, account|
-            doc << account.generate_html
+            doc << account.generate_html(use_uuid: use_uuid)
           end
 
           @folders.each do |folder_id, folder|
             # Only kick out results if the folder isn't a child folder
-            doc << folder.generate_html if !folder.is_child?
+            doc << folder.generate_html(use_uuid: use_uuid) if !folder.is_child?
           end
 
           doc.div(class: "note-cards") {
             @notes.each do |note_id, note|
               doc.div(class: "note-card") {
-                doc << note.generate_html
+                doc << note.generate_html(use_uuid: use_uuid)
               }
             end
           }
@@ -958,13 +960,14 @@ class AppleNoteStore
       }
     end
 
-    @html = builder.doc
+    @html ||= {}
+    @html[use_uuid] = builder.doc
   end
 
-  def write_individual_html(backup_dir)
+  def write_individual_html(backup_dir, use_uuid: false)
     write_html_content(backup_dir.join("index.html"), "Notes") do |doc|
       @accounts.each do |key, account|
-        doc << account.generate_html(true)
+        doc << account.generate_html(individual_files: true, use_uuid: use_uuid)
       end
     end
 
@@ -972,12 +975,12 @@ class AppleNoteStore
       folder_path = backup_dir.join(folder.to_path)
       folder_path.mkpath
       write_html_content(folder_path.join("index.html"), folder.name) do |doc|
-        doc << folder.generate_html(true)
+        doc << folder.generate_html(individual_files: true, use_uuid: use_uuid)
       end
     end
 
     @notes.each do |note_id, note|
-      note_file_name = note.title_as_filename('.html')
+      note_file_name = note.title_as_filename('.html', use_uuid: use_uuid)
       note_path = if note.folder
                     backup_dir.join(note.folder.to_path, note_file_name)
                   else
@@ -985,7 +988,7 @@ class AppleNoteStore
                   end
       write_html_content(note_path, note.title) do |doc|
         doc.div(class: "note-card") {
-          doc << note.generate_html(true)
+          doc << note.generate_html(individual_files: true, use_uuid: use_uuid)
         }
       end
     end
