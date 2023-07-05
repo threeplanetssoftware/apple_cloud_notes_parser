@@ -68,6 +68,7 @@ class AppleNote < AppleCloudKitRecord
                 :database,
                 :decompressed_data,
                 :account,
+                :folder,
                 :backup,
                 :crypto_password,
                 :cloudkit_creator_record_id,
@@ -384,19 +385,39 @@ class AppleNote < AppleCloudKitRecord
   end
 
   ##
+  # Unique ID for the note — prefer UUID if available, fall back to database ID
+  def unique_id(use_uuid)
+    if use_uuid && !uuid.empty?
+      uuid
+    else
+      note_id
+    end
+  end
+
+  ##
+  # Generate a file name for exporting this note to an HTML file
+  def title_as_filename(ext = '', use_uuid: false)
+    file_title = title ? title.tr('/:', '_') : "Untitled"
+    "#{unique_id(use_uuid)} - #{file_title}#{ext}"
+  end
+
+  ##
   # This method generates HTML to represent this Note, its 
   # metadata, and its contents, if applicable. It does not generate 
   # full HTML, just enough for this note's card to be displayed.
-  def generate_html
+  def generate_html(individual_files: false, use_uuid: false)
+    params = [individual_files, use_uuid]
+    if @html && @html[params]
+      return @html[params]
+    end
 
-    # Bail quickly if we've ever taken the time to build this before
-    return @html if @html
+    folder_href = individual_files ? "index.html" : "#folder_#{@folder.unique_id(use_uuid)}"
 
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
       doc.div {
         doc.h1 {
-          doc.a(id: "note_#{@note_id}") {
-            doc.text "Note #{@note_id}#{" (📌)" if @is_pinned}"
+          doc.a(id: "note_#{unique_id(use_uuid)}") {
+            doc.text "Note #{unique_id(use_uuid)}#{" (📌)" if @is_pinned}"
           }
         }
 
@@ -415,7 +436,7 @@ class AppleNote < AppleCloudKitRecord
           }
 
           doc.text " "
-          doc.a(href: "#folder_#{@folder.primary_key}") {
+          doc.a(href: folder_href) {
             doc.text @folder.name
           }
         }
@@ -508,7 +529,8 @@ class AppleNote < AppleCloudKitRecord
       }
     end
 
-    @html = builder.doc.root
+    @html ||= {}
+    @html[params] = builder.doc.root
   end
 
   ##

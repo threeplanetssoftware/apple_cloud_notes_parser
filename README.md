@@ -91,7 +91,9 @@ The options that are currently supported are:
 8. `--show-password-successes`: Tells the program to display to the console which passwords generated decrypts at the end.
 9. `--range-start DATE`: Set the start date of the date range to extract. Must use YYYY-MM-DD format, defaults to 1970-01-01.
 10. `--range-end DATE`: Set the end date of the date range to extract. Must use YYYY-MM-DD format, defaults to [tomorrow].
-11. `-h | --help`: Prints the usage information.
+11. `--individual-files`: Output individual HTML files for each note, organized in folders mirroring the Notes folder structure.
+12. `--uuid`: Use UUIDs in HTML output rather than local database IDs.
+13. `-h | --help`: Prints the usage information.
 
 ## How It Works
 
@@ -163,6 +165,10 @@ This means that pinned notes will appear before unpinned notes and notes within 
 The order of note content at the bottom of the page will retain database order, by the note's ID (i.e. if Note 14 will come after Note 13 and before Note 15, regardless of which folders they are in). 
 Soon the folder names themselves will also reflect the ordering as it appears in Apple Notes. 
 
+If the `--individual-files` option is passed, then the HTML output will be produced as individual files for each note, organized in folders that mirror the Notes folder hierarchy. This can be useful for comparing successive exports to see which notes have changed.
+
+If the `--uuid` option is passed, then the HTML output will refer to notes by their UUID (taken from `ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER`) rather than the integer ID used in the local database. These UUIDs should be consistent across devices synced with iCloud, whereas the integer IDs will be specific to each device.
+
 This program will produce four CSV files summarizing the information stored in `[location of this program]/output/[date of run]/csv`: `note_store_accounts.csv`, `note_store_embedded_objects.csv`, `note_store_folders.csv`, and `note_store_notes.sqlite`. 
 It will also produce an HTML dump of the notes to reflect the text and table formatting which may be meaningful in `[location of this program]/output/[date of run]/html`. 
 Finally, it will produce a JSON dump for each of the NoteStore files, summarizing the accounts, folders, and notes within that NoteStore file.
@@ -229,6 +235,7 @@ The JSON output of `AppleNotesFolder` is as follows.
 ``` json
 {
   "primary_key": "[integer folder z_pk]",
+  "uuid": "[folder uuid from ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER]",
   "name": "[folder name]",
   "account_id": "[integer z_pk for the account this belongs to]",
   "account": "[account name]",

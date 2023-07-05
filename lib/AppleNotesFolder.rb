@@ -13,7 +13,8 @@ class AppleNotesFolder < AppleCloudKitRecord
                 :retain_order,
                 :sort_order,
                 :parent,
-                :parent_id
+                :parent_id,
+                :uuid
 
   ##
   # Creates a new AppleNotesFolder.
@@ -39,6 +40,8 @@ class AppleNotesFolder < AppleCloudKitRecord
 
     # Pre-bake the sort order to a nice low value
     @sort_order = (0 - Float::INFINITY)
+
+    @uuid = ""
 
     # Uncomment the below line if you want to see the folder names during creation
     #puts "Folder #{@primary_key} is called #{@name}"
@@ -100,7 +103,8 @@ class AppleNotesFolder < AppleCloudKitRecord
      "Cloudkit Participants", 
      "Parent Folder Primary Key", 
      "Parent Folder Name", 
-     "Smart Folder Query"]
+     "Smart Folder Query",
+     "UUID"]
   end
 
   ##
@@ -114,7 +118,7 @@ class AppleNotesFolder < AppleCloudKitRecord
       parent_name = @parent.name
     end
 
-    to_return = [@primary_key, @name, @notes.length, @account.primary_key, @account.name, participant_emails, parent_id, parent_name, ""]
+    to_return = [@primary_key, @name, @notes.length, @account.primary_key, @account.name, participant_emails, parent_id, parent_name, "", @uuid]
 
     return to_return
   end
@@ -131,17 +135,38 @@ class AppleNotesFolder < AppleCloudKitRecord
     @notes.sort_by { |note| [note.is_pinned ? 1 : 0, note.modify_time] }.reverse
   end
 
-  def generate_folder_hierarchy_html
+  def to_path
+    path = Pathname.new(@name.tr('/:', '_'))
+    if @parent
+      return @parent.to_path.join(path)
+    end
+    return path
+  end
+
+  def unique_id(use_uuid)
+    if use_uuid && !uuid.empty?
+      uuid
+    else
+      primary_key
+    end
+  end
+
+  def generate_folder_hierarchy_html(individual_files: false, use_uuid: false, relative_root: '')
+    folder_href = "#folder_#{unique_id(use_uuid)}"
+    if individual_files
+      folder_href = to_path.join("index.html").relative_path_from(relative_root)
+    end
+
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
       doc.li(class: "folder") {
-        doc.a(href: "#folder_#{@primary_key}") {
+        doc.a(href: folder_href) {
           doc.text @name
         }
 
         if (is_parent? or has_notes)
           doc.ul(class: "folder_list") {
             @child_folders.each do |child_folder|
-              doc << child_folder.generate_folder_hierarchy_html
+              doc << child_folder.generate_folder_hierarchy_html(individual_files: individual_files, use_uuid: use_uuid, relative_root: relative_root)
             end
           }
         end
@@ -151,25 +176,34 @@ class AppleNotesFolder < AppleCloudKitRecord
     return builder.doc.root
   end
 
-  def generate_html
-
-    # Bail early if we can
-    return @html if @html
+  def generate_html(individual_files: false, use_uuid: false)
+    if @html && @html[individual_files]
+      return @html[individual_files]
+    end
 
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
       doc.div {
         doc.h1 {
-          doc.a(id: "folder_#{@primary_key}") {
+          doc.a(id: "folder_#{unique_id(use_uuid)}") {
             doc.text "#{@account.name} - #{full_name}"
           }
         }
 
+        if individual_files && is_parent?
+          doc.ul(class: "folder_list") {
+            @child_folders.each do |child_folder|
+              doc << child_folder.generate_folder_hierarchy_html(individual_files: individual_files, use_uuid: use_uuid, relative_root: to_path)
+            end
+          }
+        end
+
         doc.ul {
           # Now display whatever we ended up with
           sorted_notes.each do |note|
+            href = individual_files ? note.title_as_filename('.html', use_uuid: use_uuid) : "#note_#{note.unique_id(use_uuid)}"
             doc.li {
-              doc.a(href: "#note_#{note.note_id}") {
-                doc.text "Note #{note.note_id}"
+              doc.a(href: href) {
+                doc.text "Note #{note.unique_id(use_uuid)}"
               }
 
               doc.text ": #{note.title}#{" (📌)" if note.is_pinned}"
@@ -177,14 +211,17 @@ class AppleNotesFolder < AppleCloudKitRecord
           end
         }
 
-        # Recursively genererate HTML for each child folder
-        @child_folders.each do |child_folder|
-          doc << child_folder.generate_html
+        if !individual_files
+          # Recursively genererate HTML for each child folder
+          @child_folders.each do |child_folder|
+            doc << child_folder.generate_html(individual_files: individual_files, use_uuid: use_uuid)
+          end
         end
       }
     end
 
-    @html = builder.doc.root
+    @html ||= {}
+    @html[individual_files] = builder.doc.root
   end
 
   ##
@@ -192,6 +229,7 @@ class AppleNotesFolder < AppleCloudKitRecord
   def prepare_json
     to_return = Hash.new()
     to_return[:primary_key] = @primary_key
+    to_return[:uuid] = @uuid
     to_return[:name] = @name
     to_return[:account_id] = @account.primary_key
     to_return[:account] = @account.name

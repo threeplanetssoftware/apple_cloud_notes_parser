@@ -136,10 +136,11 @@ class AppleNotesAccount < AppleCloudKitRecord
 
   ##
   # This method generates HTML to display on the overall output.
-  def generate_html
-    
-    # Bail early if we can
-    return @html if @html
+  def generate_html(individual_files: false, use_uuid: false)
+    params = [individual_files, use_uuid]
+    if @html && @html[params]
+      return @html[params]
+    end
 
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
       doc.div {
@@ -196,14 +197,15 @@ class AppleNotesAccount < AppleCloudKitRecord
 
           doc.ul {
             sorted_folders.each do |folder|
-              doc << folder.generate_folder_hierarchy_html if !folder.is_child?
+              doc << folder.generate_folder_hierarchy_html(individual_files: individual_files, use_uuid: use_uuid) if !folder.is_child?
             end
           }
         }
       }
     end
 
-    @html = builder.doc.root
+    @html ||= {}
+    @html[params] = builder.doc.root
   end
 
   ##
