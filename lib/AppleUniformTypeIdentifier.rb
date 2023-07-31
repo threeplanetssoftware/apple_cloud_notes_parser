@@ -103,8 +103,9 @@ class AppleUniformTypeIdentifier
   # This method returns true if the UTI conforms to public.image
   def conforms_to_image
     return false if bad_uti?
-    return true if @uti == "com.adobe.photoshop-image"
     return true if @uti == "com.adobe.illustrator.ai-image"
+    return true if @uti == "com.adobe.photoshop-image"
+    return true if @uti == "com.adobe.raw-image"
     return true if @uti == "com.apple.icns"
     return true if @uti == "com.apple.macpaint-image"
     return true if @uti == "com.apple.pict"
