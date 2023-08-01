@@ -1,6 +1,6 @@
 ---
 name: ZTYPEUTI Addition
-about: Use this template to request the addition of a new ZTYPEUTI. Commonly used if you received a message like "[UTI] is unrecognized ZTYPEUTI, please submit a bug report to this project's GitHub repo to report this"
+about: Use this template to request the addition of a new ZTYPEUTI. Commonly used if you received a message like "[UTI] is unrecognized ZTYPEUTI..."
 title: "[UTI to add] is Unrecognized ZTYPEUTI"
 labels: ''
 assignees: ''
