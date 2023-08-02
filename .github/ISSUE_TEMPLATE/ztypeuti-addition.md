@@ -1,6 +1,7 @@
 ---
 name: ZTYPEUTI Addition
-about: Use this template to request the addition of a new ZTYPEUTI. Commonly used if you received a message like "[UTI] is unrecognized ZTYPEUTI..."
+about: Use this template to request the addition of a new ZTYPEUTI. Commonly used
+  if you received a message like "[UTI] is unrecognized ZTYPEUTI..."
 title: "[UTI to add] is Unrecognized ZTYPEUTI"
 labels: ''
 assignees: ''
