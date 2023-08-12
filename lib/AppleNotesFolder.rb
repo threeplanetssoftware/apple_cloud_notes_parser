@@ -135,17 +135,30 @@ class AppleNotesFolder < AppleCloudKitRecord
     @notes.sort_by { |note| [note.is_pinned ? 1 : 0, note.modify_time] }.reverse
   end
 
-  def to_path
-    clean_folder_name = @name.tr('/:', '_')
+  ## 
+  # Returns a name with things removed that might allow for poorly placed files
+  def clean_name
+    @name.tr('/:', '_')
+  end
 
+  def to_path
     # If this folder has a parent, we do NOT want to embed the account name every time
     if @parent
-      return @parent.to_path.join(Pathname.new("#{clean_folder_name}"))
+      return @parent.to_path.join(Pathname.new("#{clean_name}"))
     end
 
     # If we get here, the folder is a root folder and we DO want to preface it with the account namespace
-    clean_account_name = @account.name.tr('/:', '_')
-    return Pathname.new("#{clean_account_name}-#{clean_folder_name}")
+    return Pathname.new("#{@account.clean_name}-#{clean_name}")
+  end
+
+  def to_uri
+    # If this folder has a parent, we do NOT want to embed the account name every time
+    if @parent
+      return @parent.to_uri.join(Pathname.new(CGI.escapeURIComponent(clean_name)))
+    end
+
+    # If we get here, the folder is a root folder and we DO want to preface it with the account namespace
+    return Pathname.new(CGI.escapeURIComponent("#{@account.clean_name}-#{clean_name}"))
   end
 
   def unique_id(use_uuid)
@@ -159,7 +172,7 @@ class AppleNotesFolder < AppleCloudKitRecord
   def generate_folder_hierarchy_html(individual_files: false, use_uuid: false, relative_root: '')
     folder_href = "#folder_#{unique_id(use_uuid)}"
     if individual_files
-      folder_href = CGI.escapeURIComponent(to_path.join("index.html").relative_path_from(relative_root).to_s)
+      folder_href = to_uri.join("index.html").relative_path_from(relative_root)
     end
 
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
@@ -207,7 +220,7 @@ class AppleNotesFolder < AppleCloudKitRecord
           sorted_notes.each do |note|
             href = "#note_#{note.unique_id(use_uuid)}"
             if individual_files
-              href = CGI.escapeURIComponent(Pathname.new(to_path + note.title_as_filename('.html', use_uuid: use_uuid)).to_s)
+              href = CGI.escapeURIComponent(note.title_as_filename('.html', use_uuid: use_uuid))
             end
             doc.li {
               doc.a(href: href) {

@@ -65,6 +65,12 @@ class AppleNotesAccount < AppleCloudKitRecord
   end
 
   ## 
+  # Returns a name with things removed that might allow for poorly placed files
+  def clean_name
+    @name.tr('/:', '_')
+  end
+
+  ## 
   # This function takes a String +password+.
   # It is unclear how or if this password matters right now.
   def add_password(password)
