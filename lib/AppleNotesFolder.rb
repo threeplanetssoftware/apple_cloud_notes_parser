@@ -136,11 +136,16 @@ class AppleNotesFolder < AppleCloudKitRecord
   end
 
   def to_path
-    path = Pathname.new(@name.tr('/:', '_'))
+    clean_folder_name = @name.tr('/:', '_')
+
+    # If this folder has a parent, we do NOT want to embed the account name every time
     if @parent
-      return @parent.to_path.join(path)
+      return @parent.to_path.join(Pathname.new("#{clean_folder_name}"))
     end
-    return path
+
+    # If we get here, the folder is a root folder and we DO want to preface it with the account namespace
+    clean_account_name = @account.name.tr('/:', '_')
+    return Pathname.new("#{clean_account_name}-#{clean_folder_name}")
   end
 
   def unique_id(use_uuid)
@@ -154,7 +159,7 @@ class AppleNotesFolder < AppleCloudKitRecord
   def generate_folder_hierarchy_html(individual_files: false, use_uuid: false, relative_root: '')
     folder_href = "#folder_#{unique_id(use_uuid)}"
     if individual_files
-      folder_href = to_path.join("index.html").relative_path_from(relative_root)
+      folder_href = CGI.escapeURIComponent(to_path.join("index.html").relative_path_from(relative_root).to_s)
     end
 
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
@@ -200,7 +205,10 @@ class AppleNotesFolder < AppleCloudKitRecord
         doc.ul {
           # Now display whatever we ended up with
           sorted_notes.each do |note|
-            href = individual_files ? note.title_as_filename('.html', use_uuid: use_uuid) : "#note_#{note.unique_id(use_uuid)}"
+            href = "#note_#{note.unique_id(use_uuid)}"
+            if individual_files
+              href = CGI.escapeURIComponent(Pathname.new(to_path + note.title_as_filename('.html', use_uuid: use_uuid)).to_s)
+            end
             doc.li {
               doc.a(href: href) {
                 doc.text "Note #{note.unique_id(use_uuid)}"

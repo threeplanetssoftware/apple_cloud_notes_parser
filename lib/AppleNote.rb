@@ -411,7 +411,10 @@ class AppleNote < AppleCloudKitRecord
       return @html[params]
     end
 
-    folder_href = individual_files ? "index.html" : "#folder_#{@folder.unique_id(use_uuid)}"
+    folder_href = "#folder_#{@folder.unique_id(use_uuid)}"
+    if individual_files
+      folder_href = CGI.escapeURIComponent(Pathname.new(@folder.to_path + "index.html").to_s)
+    end
 
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
       doc.div {
