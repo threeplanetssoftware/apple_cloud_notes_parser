@@ -458,17 +458,18 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
 
   ##
   # This method generates the HTML to be embedded into an AppleNote's HTML.
-  def generate_html
+  def generate_html(individual_files=false)
     return self.to_s
   end
 
   ##
   # This method generates the HTML to be embedded into an AppleNote's HTML for objects that use thumbnails.
-  def generate_html_with_images
-    return @thumbnails.first.generate_html if @thumbnails.length > 0
+  def generate_html_with_images(individual_files=false)
+    return @thumbnails.first.generate_html(individual_files) if @thumbnails.length > 0
     if @reference_location
+      root = @note.folder.to_relative_root(individual_files)
       builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
-        doc.img(src: "../#{@reference_location}")
+        doc.img(src: "#{root}#{@reference_location}")
       end
 
       return builder.doc.root
@@ -479,10 +480,11 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
 
   ##
   # This method generates the HTML to be embedded into an AppleNote's HTML for objects that are just downloadable.
-  def generate_html_with_link(type="Media")
+  def generate_html_with_link(type="Media", individual_files=false)
     if @reference_location
+      root = @note.folder.to_relative_root(individual_files)
       builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
-        doc.a(href: "../#{@reference_location}") {
+        doc.a(href: "#{root}#{@reference_location}") {
           doc.text "#{type} #{@filename}"
         }
       end

@@ -83,11 +83,12 @@ class AppleNotesEmbeddedPublicURL < AppleNotesEmbeddedObject
 
   ##
   # This method generates the HTML necessary to display the image inline.
-  def generate_html
+  def generate_html(individual_files=false)
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
+      root = @note.folder.to_relative_root(individual_files)
       doc.span {
         if (@thumbnails.length > 0 and @thumbnails.first.reference_location)
-          doc.img(src: "../#{@thumbnails.first.reference_location}")
+          doc.img(src: "#{root}#{@thumbnails.first.reference_location}")
         end
 
         doc.a(href: @url) {

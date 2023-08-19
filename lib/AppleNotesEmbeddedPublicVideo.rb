@@ -85,8 +85,8 @@ class AppleNotesEmbeddedPublicVideo < AppleNotesEmbeddedObject
 
   ##
   # This method generates the HTML necessary to display the image inline.
-  def generate_html
-    generate_html_with_images
+  def generate_html(individual_files=false)
+    generate_html_with_images(individual_files)
   end
 
 end

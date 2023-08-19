@@ -126,11 +126,11 @@ class AppleNotesEmbeddedGallery < AppleNotesEmbeddedObject
 
   ##
   # This method generates the HTML necessary to display the image inline.
-  def generate_html
+  def generate_html(individual_files=false)
     to_return = ""
 
     @child_objects.each do |child_object|
-      to_return += child_object.generate_html
+      to_return += child_object.generate_html(individual_files)
     end
 
     return to_return

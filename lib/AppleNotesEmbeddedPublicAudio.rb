@@ -85,8 +85,8 @@ class AppleNotesEmbeddedPublicAudio < AppleNotesEmbeddedObject
 
   ##
   # This method generates the HTML necessary to display the image inline.
-  def generate_html
-    generate_html_with_link("Audio")
+  def generate_html(individual_files=false)
+    generate_html_with_link("Audio", individual_files)
   end
 
 end

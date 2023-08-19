@@ -321,7 +321,7 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
   # This method generates the HTML necessary to display the table. 
   # For display purposes, if a cell would be completely empty, it is 
   # displayed as having one space in it.
-  def generate_html
+  def generate_html(individual_files=false)
 
     # Return our to_string function if we aren't reconstructed yet
     return self.to_s if (!@reconstructed_table_html or @reconstructed_table_html.length == 0)

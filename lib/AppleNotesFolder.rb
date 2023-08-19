@@ -141,6 +141,12 @@ class AppleNotesFolder < AppleCloudKitRecord
     @name.tr('/:', '_')
   end
 
+  def to_relative_root(individual_files=false)
+    return "../" if !individual_files
+    return (@parent.to_relative_root + "../") if @parent
+    return "../../../"
+  end
+
   def to_path
     # If this folder has a parent, we do NOT want to embed the account name every time
     if @parent

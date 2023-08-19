@@ -523,7 +523,7 @@ class AppleNote < AppleCloudKitRecord
             end
 
             if @notestore.version > AppleNoteStore::IOS_VERSION_9
-              doc << generate_html_text
+              doc << generate_html_text(individual_files)
             end
           elsif @encrypted_data
             doc.text "{Contents not decrypted}"
@@ -540,7 +540,7 @@ class AppleNote < AppleCloudKitRecord
   # This helper function takes a MergableDataProto or NoteStoreProto as +document_proto+ and 
   # a Hash of AppleNotesEmbeddedObjects as +embedded_objects+. It returns a String containing 
   # appropriate HTML for the document.
-  def self.htmlify_document(document_proto, embedded_objects)
+  def self.htmlify_document(document_proto, embedded_objects, individual_files=false)
     doc = Nokogiri::HTML5::Document.parse("", nil, "utf-8")
     node = doc.at_css("body")
 
@@ -592,7 +592,7 @@ class AppleNote < AppleCloudKitRecord
       if note_part.attachment_info
 
         if embedded_objects[embedded_object_index]
-          node << embedded_objects[embedded_object_index].generate_html
+          node << embedded_objects[embedded_object_index].generate_html(individual_files)
         else
           node << Nokogiri::XML::Text.new("[Object missing, this is common for deleted notes]", node.document)
         end
@@ -636,7 +636,7 @@ class AppleNote < AppleCloudKitRecord
 
   ##
   # This function generates the HTML text to represent an overall AppleNote
-  def generate_html_text
+  def generate_html_text(individual_files=false)
     # Bail out if we don't have anything to decode
     return html if !@decompressed_data
 
@@ -650,7 +650,7 @@ class AppleNote < AppleCloudKitRecord
     return html if !tmp_note_store_proto
   
     # Now using a function designed specifically for turning attribute runs into HTML from anyy source  
-    html = AppleNote.htmlify_document(tmp_note_store_proto, @embedded_objects)
+    html = AppleNote.htmlify_document(tmp_note_store_proto, @embedded_objects, individual_files)
     return html
   end
 

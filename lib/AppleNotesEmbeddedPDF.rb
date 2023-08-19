@@ -61,8 +61,8 @@ class AppleNotesEmbeddedPDF < AppleNotesEmbeddedObject
 
   ##
   # This method generates the HTML necessary to display the file download link.
-  def generate_html
-    generate_html_with_link("PDF")
+  def generate_html(individual_files=false)
+    generate_html_with_link("PDF", individual_files)
   end
 
 end

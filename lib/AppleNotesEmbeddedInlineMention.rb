@@ -37,7 +37,7 @@ class AppleNotesEmbeddedInlineMention < AppleNotesEmbeddedInlineAttachment
 
   ##
   # This method generates the HTML to be embedded into an AppleNote's HTML.
-  def generate_html
+  def generate_html(individual_files=false)
     return self.to_s
   end
 
