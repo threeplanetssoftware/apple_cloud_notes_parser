@@ -143,7 +143,7 @@ class AppleNotesFolder < AppleCloudKitRecord
 
   def to_relative_root(individual_files=false)
     return "../" if !individual_files
-    return (@parent.to_relative_root + "../") if @parent
+    return (@parent.to_relative_root(individual_files) + "../") if @parent
     return "../../../"
   end
 
