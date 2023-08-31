@@ -94,6 +94,7 @@ class AppleUniformTypeIdentifier
     return true if @uti == "com.microsoft.excel.xls"
     return true if @uti == "com.microsoft.powerpoint.ppt"
     return true if @uti == "net.openvpn.formats.ovpn"
+    return true if @uti == "org.idpf.epub-container"
     return true if @uti == "org.oasis-open.opendocument.text"
     return true if @uti == "org.openxmlformats.wordprocessingml.document"
     return false
