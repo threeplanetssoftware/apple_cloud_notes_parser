@@ -23,6 +23,7 @@ class AppleNoteStore
                 :range_start,
                 :range_end
 
+  IOS_VERSION_17 = 17
   IOS_VERSION_16 = 16
   IOS_VERSION_15 = 15
   IOS_VERSION_14 = 14
@@ -82,6 +83,11 @@ class AppleNoteStore
     # If ZICNOTEDATA has no columns, this is a legacy copy
     if zicnotedata_columns.length == 0
       return IOS_LEGACY_VERSION
+    end
+
+    # It appears ZGENERATION showed up in iOS 17's updates
+    if ziccloudsyncingobject_columns.include?("ZGENERATION: VARCHAR")
+      return IOS_VERSION_17
     end
 
     # It appears ZACCOUNT6 - ZACCOUNT8 showed up in iOS 16's updates
