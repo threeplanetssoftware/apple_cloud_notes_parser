@@ -285,6 +285,13 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                                                                            note,
                                                                            row["ZALTTEXT"],
                                                                            row["ZTOKENCONTENTIDENTIFIER"])
+            elsif tmp_uti.uti == "com.apple.notes.inlinetextattachment.link"
+              tmp_embedded_object = AppleNotesEmbeddedInlineLink.new(row["Z_PK"],
+                                                                        row["ZIDENTIFIER"],
+                                                                        row["ZTYPEUTI1"],
+                                                                        note,
+                                                                        row["ZALTTEXT"],
+                                                                        row["ZTOKENCONTENTIDENTIFIER"])
             else
               puts "#{row["ZTYPEUTI1"]} is unrecognized ZTYPEUTI1, please submit a bug report to this project's GitHub repo to report this: https://github.com/threeplanetssoftware/apple_cloud_notes_parser/issues"
               logger.debug("#{row["ZTYPEUTI1"]} is unrecognized ZTYPEUTI1, check ZICCLOUDSYNCINGOBJECT Z_PK: #{row["Z_PK"]}")
