@@ -50,10 +50,11 @@ class AttributeRun
     same_link = (link == other_attribute_run.link)
     same_color = (color == other_attribute_run.color)
     same_attachment_info = (attachment_info == other_attribute_run.attachment_info)
+    same_block_quote = (is_block_quote? == other_attribute_run.is_block_quote?)
 
     no_attachment_info = !attachment_info # We don't want to get so greedy with attachments
 
-    return (same_paragraph and same_font and same_font_weight and same_underlined and same_strikethrough and same_superscript and same_link and same_color and same_attachment_info and no_attachment_info)
+    return (same_paragraph and same_font and same_font_weight and same_underlined and same_strikethrough and same_superscript and same_link and same_color and same_attachment_info and no_attachment_info and same_block_quote)
   end
 
   ##
@@ -83,6 +84,9 @@ class AttributeRun
 
     # If the indent levels are different, then the styles are different.
     return false if (other_attribute_run.paragraph_style.indent_amount != paragraph_style.indent_amount)
+
+    # If the block-quotedness are different, then the styles are different.
+    return false if (other_attribute_run.paragraph_style.block_quote != paragraph_style.block_quote)
 
     # If both are checkboxes, but they belong to different checklist UUIDs,
     # then the styles are different.
@@ -133,6 +137,12 @@ class AttributeRun
   # Helper function to tell if a given AttributeRun is an AppleNote::STYLE_TYPE_DASHED_LIST.
   def is_dashed_list?
     return (has_style_type and paragraph_style.style_type == AppleNote::STYLE_TYPE_DASHED_LIST)
+  end
+
+  ##
+  # Helper function to tell if a given AttributeRun is an AppleNote::STYLE_TYPE_BLOCK_QUOTE.
+  def is_block_quote?
+    return (has_style_type and paragraph_style.block_quote == AppleNote::STYLE_TYPE_BLOCK_QUOTE)
   end
 
   ##
@@ -200,6 +210,11 @@ class AttributeRun
         end
         open_html_tag("i")
       end
+    end
+
+    # Add in block quote
+    if is_block_quote?
+      open_html_tag("blockquote")
     end
 
     # Add in underlined

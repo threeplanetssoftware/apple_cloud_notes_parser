@@ -31,6 +31,7 @@ message ParagraphStyle {
     optional int32 alignment = 2;
     optional int32 indent_amount = 4;
     optional Checklist checklist = 5;
+    optional int32 block_quote = 8;
 }
 
 // Represents a checklist item

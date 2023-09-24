@@ -53,6 +53,7 @@ types = {
     # 3: unknown?
     4: ("varint", "Indent Number"),
     5: ("paragraph_todo", "Todo"),
+    8: ("varint", "Block Quote"),
   },
 
   "enum style_enum": { #
