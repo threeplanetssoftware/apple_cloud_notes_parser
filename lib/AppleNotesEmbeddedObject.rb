@@ -180,8 +180,11 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
   ##
   # This handles a striaght forward mapping of UUID and filename
   def get_media_filepath_with_uuid_and_filename
+    zgeneration = get_zgeneration_for_object
+    zgeneration = "#{zgeneration}/" if zgeneration.length > 0
+
     return "#{@note.account.account_folder}Media/#{get_media_uuid}/#{get_media_uuid}" if @is_password_protected
-    "#{@note.account.account_folder}Media/#{get_media_uuid}/#{@filename}"
+    return "#{@note.account.account_folder}Media/#{get_media_uuid}/#{zgeneration}#{@filename}"
   end
 
   ##
@@ -203,6 +206,26 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                         "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
                         row["ZMEDIA"]) do |media_row|
         return media_row["ZFILENAME"]
+      end
+    end 
+  end
+
+  ##
+  # This fetches the appropriate "ZGENERATOR" column for iOS 17+ filepaths
+  def get_zgeneration_for_object
+    # Bail early if we are below iOS 17 so we don't chuck an error on the query
+    return "" if @note.notestore.version < AppleNoteStore::IOS_VERSION_17
+
+    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZMEDIA " +
+                      "FROM ZICCLOUDSYNCINGOBJECT " +
+                      "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
+                      @uuid) do |row|
+      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZGENERATION, ZICCLOUDSYNCINGOBJECT.ZGENERATION1 " +
+                        "FROM ZICCLOUDSYNCINGOBJECT " +
+                        "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
+                        row["ZMEDIA"]) do |media_row|
+        return media_row["ZGENERATION"] if media_row["ZGENERATION"]
+        return media_row["ZGENERATION1"] if media_row["ZGENERATION1"]
       end
     end 
   end

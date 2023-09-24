@@ -91,17 +91,46 @@ class AppleNotesEmbeddedDrawing < AppleNotesEmbeddedObject
   end
 
   ##
-  # This method returns the +filepath+ of this object. 
-  # This is computed based on the assumed default storage location.
-  def get_media_filepath
-    "#{@note.account.account_folder}FallbackImages/#{@filename}"
+  # This method fetches the appropriate ZFALLBACKGENERATION string to compute
+  # media location for iOS 17 and later.
+  def get_zgeneration_for_fallback_image
+    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZFALLBACKIMAGEGENERATION " +
+                      "FROM ZICCLOUDSYNCINGOBJECT " +
+                      "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
+                      @uuid) do |row|
+      return row["ZFALLBACKIMAGEGENERATION"]
+    end
   end
 
   ##
-  # This is created as a JPEG using the UUID as the filename.
+  # This method returns the +filepath+ of this object. 
+  # This is computed based on the assumed default storage location.
+  def get_media_filepath
+    zgeneration = get_zgeneration_for_fallback_image
+    zgeneration = "#{@uuid}/#{zgeneration}/" if zgeneration.length > 0
+
+    return "#{@note.account.account_folder}FallbackImages/#{zgeneration}#{@filename}"
+  end
+
+  ##
+  # Determine filename based on iOS version
   def get_media_filename
+    return get_media_filename_ios17 if @note.notestore.version >= AppleNoteStore::IOS_VERSION_17
+    return get_media_filename_ios16_and_prior
+  end
+
+  ##
+  # Prior to iOS 17, this was made with the object's UUID and the JPG extension.
+  def get_media_filename_ios16_and_prior
     return "#{@uuid}.jpg.encrypted" if @is_password_protected
     return "#{@uuid}.jpg"
+  end
+
+  ##
+  # Starting with iOS 17 this is created as a PNG using the "FallbackImage.png" as the filename.
+  def get_media_filename_ios17
+    return "FallbackImage.png.encrypted" if @is_password_protected
+    return "FallbackImage.png"
   end
 
   ##
