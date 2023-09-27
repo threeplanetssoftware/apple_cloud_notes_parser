@@ -77,23 +77,15 @@ class AppleNotesEmbeddedDrawing < AppleNotesEmbeddedObject
   # and reading the ZICCOUDSYNCINGOBJECT.ZIDENTIFIER of the row identified by that number 
   # in the ZICCLOUDSYNCINGOBJECT.Z_PK field.
   def get_media_uuid
-    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZMEDIA " +
-                      "FROM ZICCLOUDSYNCINGOBJECT " +
-                      "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
-                      @uuid) do |row|
-      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER " +
-                        "FROM ZICCLOUDSYNCINGOBJECT " +
-                        "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
-                        row["ZMEDIA"]) do |media_row|
-        return media_row["ZIDENTIFIER"]
-      end
-    end
+    return get_media_uuid_from_zidentifer(@uuid)
   end
 
   ##
   # This method fetches the appropriate ZFALLBACKGENERATION string to compute
   # media location for iOS 17 and later.
   def get_zgeneration_for_fallback_image
+    return "" if @note.notestore.version < AppleNoteStore::IOS_VERSION_17
+
     @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZFALLBACKIMAGEGENERATION " +
                       "FROM ZICCLOUDSYNCINGOBJECT " +
                       "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",

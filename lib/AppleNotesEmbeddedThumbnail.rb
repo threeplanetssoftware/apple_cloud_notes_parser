@@ -53,7 +53,28 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   # This method returns the +filepath+ of this object. 
   # This is computed based on the assumed default storage location.
   def get_media_filepath
-    "#{@note.account.account_folder}Previews/#{@filename}"
+    return get_media_filepath_ios16_and_earlier if @note.notestore.version < AppleNoteStore::IOS_VERSION_17
+    return get_media_filepath_ios17
+  end
+
+  ##
+  # This method returns the +filepath+ of this object. 
+  # This is computed based on the assumed default storage location.
+  def get_media_filepath_ios16_and_earlier
+    return "#{@note.account.account_folder}Previews/#{@uuid}.#{get_thumbnail_extension}.encrypted" if @is_password_protected
+    return "#{@note.account.account_folder}Previews/#{@uuid}.#{get_thumbnail_extension}"
+  end
+
+  ##
+  # This method returns the +filepath+ of this object. 
+  # This is computed based on the assumed default storage location.
+  def get_media_filepath_ios17
+    zgeneration = get_zgeneration_for_thumbnail
+    zgeneration = "#{@uuid}/#{zgeneration}/" if zgeneration and zgeneration.length > 0
+
+    return "#{@note.account.account_folder}Previews/#{@uuid}.png.encrypted" if @is_password_protected
+    return "#{@note.account.account_folder}Previews/#{@uuid}.#{get_thumbnail_extension}" if !zgeneration
+    return "#{@note.account.account_folder}Previews/#{zgeneration}#{@filename}"
   end
 
   ##
@@ -61,15 +82,63 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   # .png (apparently created by com.apple.notes.gallery) or .jpg (rest) 
   # Encrypted thumbnails just have .encrypted added to the end. 
   def get_media_filename
-    return "#{@uuid}.#{get_thumbnail_extension}.encrypted" if @is_password_protected
-    return "#{@uuid}.#{get_thumbnail_extension}"
+    return get_media_filename_ios17 if @note.notestore.version >= AppleNoteStore::IOS_VERSION_17
+    return get_media_filename_ios16_and_earlier
   end
 
+  ##
+  # Prior to iOS 17, it is just the UUID. These are either 
+  # .png (apparently created by com.apple.notes.gallery) or .jpg (rest) 
+  # Encrypted thumbnails just have .encrypted added to the end. 
+  def get_media_filename_ios16_and_earlier
+    return "#{@uuid}.#{get_thumbnail_extension_ios16_and_earlier}.encrypted" if @is_password_protected
+    return "#{@uuid}.#{get_thumbnail_extension_ios16_and_earlier}"
+  end
+
+  ##
+  # As of iOS 17, these appear to be called Preview.png if there is a zgeneration.
+  def get_media_filename_ios17
+    zgeneration = get_zgeneration_for_thumbnail
+
+    return "#{@uuid}.png.encrypted" if @is_password_protected
+    return "Preview.png" if zgeneration
+    return "#{@uuid}.#{get_thumbnail_extension_ios17}"
+  end  
+
+  ##
+  # This method fetches the appropriate ZFALLBACKGENERATION string to compute
+  # media location for iOS 17 and later.
+  def get_zgeneration_for_thumbnail
+    return nil if @note.notestore.version < AppleNoteStore::IOS_VERSION_17
+    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZGENERATION " +
+                      "FROM ZICCLOUDSYNCINGOBJECT " +
+                      "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
+                      @uuid) do |row|
+      return row["ZGENERATION"]
+    end
+  end
 
   ##
   # This method returns the thumbnail's extension. These are either 
   # .jpg (apparently created by com.apple.notes.gallery) or .png (rest).
   def get_thumbnail_extension
+    return get_thumbnail_extension_ios17 if @note.notestore.version >= AppleNoteStore::IOS_VERSION_17
+    return get_thumbnail_extension_ios16_and_earlier
+  end
+
+  ##
+  # This method returns the thumbnail's extension. This is apparently png for iOS 
+  # 17 and later.
+  def get_thumbnail_extension_ios17
+    return "jpeg" if (@parent.type == "com.apple.notes.gallery")
+    return "jpeg" if (@parent.parent and @parent.parent.type == "com.apple.notes.gallery")
+    return "png"
+  end
+
+  ##
+  # This method returns the thumbnail's extension. These are either 
+  # .jpg (apparently created by com.apple.notes.gallery) or .png (rest) for iOS 16 and earlier.
+  def get_thumbnail_extension_ios16_and_earlier
     return "jpg" if (@parent.type == "com.apple.notes.gallery")
     return "jpg" if (@parent.parent and @parent.parent.type == "com.apple.notes.gallery")
     return "png"

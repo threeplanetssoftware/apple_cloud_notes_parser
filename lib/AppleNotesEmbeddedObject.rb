@@ -91,12 +91,6 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     end
 
     @crypto_password = @note.crypto_password
-    #@logger.debug("#{self.class} #{@uuid}: Added crypto password #{@crypto_password}")
-    #@logger.debug("#{self.class} #{@uuid}: Added crypto iv #{@crypto_iv.unpack("H*")}")
-    #@logger.debug("#{self.class} #{@uuid}: Added crypto tag #{@crypto_tag.unpack("H*")}")
-    #@logger.debug("#{self.class} #{@uuid}: Added crypto salt #{@crypto_salt.unpack("H*")}")
-    #@logger.debug("#{self.class} #{@uuid}: Added crypto iterations #{@crypto_iterations}")
-    #@logger.debug("#{self.class} #{@uuid}: Added crypto wrapped key #{@crypto_key.unpack("H*")}")
   end
 
   ##
@@ -156,17 +150,20 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
 
   ##
   # Handily pulls the UUID of media from ZIDENTIFIER of the ZMEDIA row
-  def get_media_uuid_from_zidentifier
-    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZMEDIA " +
+  def get_media_uuid_from_zidentifier(zidentifier=@uuid)
+    zmedia = get_zmedia_from_zidentifier(zidentifier)
+    return get_zidentifier_from_z_pk(zmedia)
+  end
+
+  ##
+  # This method fetches the ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER column for 
+  # a row identified by Integer z_pk.
+  def get_zidentifier_from_z_pk(z_pk)
+    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER " +
                       "FROM ZICCLOUDSYNCINGOBJECT " +
-                      "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
-                      @uuid) do |row|
-      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER " +
-                        "FROM ZICCLOUDSYNCINGOBJECT " +
-                        "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
-                        row["ZMEDIA"]) do |media_row|
-        return media_row["ZIDENTIFIER"]
-      end
+                      "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
+                      z_pk) do |row|
+      return row["ZIDENTIFIER"]
     end
   end
 
@@ -196,38 +193,63 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
 
   ##
   # This handles how the media filename is pulled for most "data" objects
-  def get_media_filename_from_zfilename
+  def get_media_filename_from_zfilename(zidentifier=@uuid)
+    z_pk = get_zmedia_from_zidentifier(zidentifier)
+    return get_media_filename_for_row(z_pk)
+  end
+
+  ##
+  # This method returns the ZFILENAME column for a given row identified by 
+  # Integer z_pk.
+  def get_media_filename_for_row(z_pk)
+    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZFILENAME " +
+                      "FROM ZICCLOUDSYNCINGOBJECT " +
+                      "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
+                      z_pk) do |media_row|
+      return media_row["ZFILENAME"]
+    end
+  end
+
+  ##
+  # This method returns the ZICCLOUDSYNCINGOBJECT.ZMEDIA column for a given row identified by 
+  # String ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER. This represents the ZICCLOUDSYNCINGOBJECT.Z_PK of
+  # another row.
+  def get_zmedia_from_zidentifier(zidentifier=@uuid)
     @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZMEDIA " +
                       "FROM ZICCLOUDSYNCINGOBJECT " +
                       "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
-                      @uuid) do |row|
-      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZFILENAME " +
-                        "FROM ZICCLOUDSYNCINGOBJECT " +
-                        "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
-                        row["ZMEDIA"]) do |media_row|
-        return media_row["ZFILENAME"]
-      end
+                      zidentifier) do |row|
+      return row["ZMEDIA"]
     end 
   end
 
   ##
-  # This fetches the appropriate "ZGENERATOR" column for iOS 17+ filepaths
-  def get_zgeneration_for_object
+  # 
+  def get_zgeneration_for_object(zidentifier=@uuid)
+    zmedia = get_zmedia_from_zidentifier(zidentifier)
+    return get_zgeneration_for_row(zmedia)
+  end
+
+  ##
+  # This method returns an array of all the "ZGENERATION" columns for a given row 
+  # identified by Integer z_pk.
+  def get_zgeneration_for_row(z_pk)
     # Bail early if we are below iOS 17 so we don't chuck an error on the query
     return "" if @note.notestore.version < AppleNoteStore::IOS_VERSION_17
 
-    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZMEDIA " +
+    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZGENERATION, ZICCLOUDSYNCINGOBJECT.ZGENERATION1, " +
+                      "ZICCLOUDSYNCINGOBJECT.ZFALLBACKIMAGEGENERATION, ZICCLOUDSYNCINGOBJECT.ZFALLBACKPDFGENERATION, " + 
+                      "ZICCLOUDSYNCINGOBJECT.ZPAPERBUNDLEGENERATION " + 
                       "FROM ZICCLOUDSYNCINGOBJECT " +
-                      "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
-                      @uuid) do |row|
-      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZGENERATION, ZICCLOUDSYNCINGOBJECT.ZGENERATION1 " +
-                        "FROM ZICCLOUDSYNCINGOBJECT " +
-                        "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
-                        row["ZMEDIA"]) do |media_row|
-        return media_row["ZGENERATION"] if media_row["ZGENERATION"]
-        return media_row["ZGENERATION1"] if media_row["ZGENERATION1"]
-      end
-    end 
+                      "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
+                      z_pk) do |media_row|
+      return media_row["ZGENERATION"] if media_row["ZGENERATION"]
+      return media_row["ZGENERATION1"] if media_row["ZGENERATION1"]
+      return media_row["ZFALLBACKIMAGEGENERATION"] if media_row["ZFALLBACKIMAGEGENERATION"]
+      return media_row["ZFALLBACKPDFGENERATION"] if media_row["ZFALLBACKPDFGENERATION"]
+      return media_row["ZPAPERBUNDLEGENERATION"] if media_row["ZPAPERBUNDLEGENERATION"]
+      return ""
+    end
   end
 
   ##
