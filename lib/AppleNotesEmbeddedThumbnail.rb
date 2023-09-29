@@ -72,7 +72,7 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
     zgeneration = get_zgeneration_for_thumbnail
     zgeneration = "#{@uuid}/#{zgeneration}/" if zgeneration and zgeneration.length > 0
 
-    return "#{@note.account.account_folder}Previews/#{@uuid}.png.encrypted" if @is_password_protected
+    return "#{@note.account.account_folder}Previews/#{@uuid}.#{get_thumbnail_extension}.encrypted" if @is_password_protected
     return "#{@note.account.account_folder}Previews/#{@uuid}.#{get_thumbnail_extension}" if !zgeneration
     return "#{@note.account.account_folder}Previews/#{zgeneration}#{@filename}"
   end
@@ -154,7 +154,6 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
           doc.img(src: "#{root}#{@reference_location}")
         }
       end
-
       return builder.doc.root
     end
 

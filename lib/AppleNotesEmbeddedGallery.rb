@@ -127,13 +127,15 @@ class AppleNotesEmbeddedGallery < AppleNotesEmbeddedObject
   ##
   # This method generates the HTML necessary to display the image inline.
   def generate_html(individual_files=false)
-    to_return = ""
-
-    @child_objects.each do |child_object|
-      to_return += child_object.generate_html(individual_files)
+    builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
+      doc.div {
+        @child_objects.each do |child_object|
+          doc << child_object.generate_html(individual_files)
+        end
+      }
     end
 
-    return to_return
+    return builder.doc.root
   end
 
 end

@@ -15,7 +15,8 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                 :filename,
                 :backup_location,
                 :parent,
-                :conforms_to
+                :conforms_to,
+                :thumbnails
 
   ##
   # Creates a new AppleNotesEmbeddedObject. 
@@ -180,7 +181,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     zgeneration = get_zgeneration_for_object
     zgeneration = "#{zgeneration}/" if zgeneration.length > 0
 
-    return "#{@note.account.account_folder}Media/#{get_media_uuid}/#{get_media_uuid}" if @is_password_protected
+    return "#{@note.account.account_folder}Media/#{get_media_uuid}/#{zgeneration}#{get_media_uuid}" if @is_password_protected
     return "#{@note.account.account_folder}Media/#{get_media_uuid}/#{zgeneration}#{@filename}"
   end
 

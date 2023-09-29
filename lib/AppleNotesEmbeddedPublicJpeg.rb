@@ -69,12 +69,6 @@ class AppleNotesEmbeddedPublicJpeg < AppleNotesEmbeddedObject
     end
 
     @crypto_password = @note.crypto_password
-    #@logger.debug("#{self.class} #{@uuid}: Added crypto password #{@crypto_password}")
-    #@logger.debug("#{self.class} #{@uuid}: Added crypto iv #{@crypto_iv.unpack("H*")}")
-    #@logger.debug("#{self.class} #{@uuid}: Added crypto tag #{@crypto_tag.unpack("H*")}")
-    #@logger.debug("#{self.class} #{@uuid}: Added crypto salt #{@crypto_salt.unpack("H*")}")
-    #@logger.debug("#{self.class} #{@uuid}: Added crypto iterations #{@crypto_iterations}")
-    #@logger.debug("#{self.class} #{@uuid}: Added crypto wrapped key #{@crypto_key.unpack("H*")}")
   end
 
   ##
