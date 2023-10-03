@@ -99,7 +99,7 @@ class AppleNotesEmbeddedDrawing < AppleNotesEmbeddedObject
   # This is computed based on the assumed default storage location.
   def get_media_filepath
     zgeneration = get_zgeneration_for_fallback_image
-    zgeneration = "#{@uuid}/#{zgeneration}/" if zgeneration.length > 0
+    zgeneration = "#{@uuid}/#{zgeneration}/" if (zgeneration and zgeneration.length > 0)
 
     return "#{@note.account.account_folder}FallbackImages/#{zgeneration}#{@filename}"
   end

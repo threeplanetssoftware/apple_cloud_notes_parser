@@ -179,7 +179,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
   # This handles a striaght forward mapping of UUID and filename
   def get_media_filepath_with_uuid_and_filename
     zgeneration = get_zgeneration_for_object
-    zgeneration = "#{zgeneration}/" if zgeneration.length > 0
+    zgeneration = "#{zgeneration}/" if (zgeneration and zgeneration.length > 0)
 
     return "#{@note.account.account_folder}Media/#{get_media_uuid}/#{zgeneration}#{get_media_uuid}" if @is_password_protected
     return "#{@note.account.account_folder}Media/#{get_media_uuid}/#{zgeneration}#{@filename}"

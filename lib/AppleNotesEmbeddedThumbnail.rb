@@ -70,7 +70,7 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   # This is computed based on the assumed default storage location.
   def get_media_filepath_ios17
     zgeneration = get_zgeneration_for_thumbnail
-    zgeneration = "#{@uuid}/#{zgeneration}/" if zgeneration and zgeneration.length > 0
+    zgeneration = "#{@uuid}/#{zgeneration}/" if (zgeneration and zgeneration.length > 0)
 
     return "#{@note.account.account_folder}Previews/#{@uuid}.#{get_thumbnail_extension}.encrypted" if @is_password_protected
     return "#{@note.account.account_folder}Previews/#{@uuid}.#{get_thumbnail_extension}" if !zgeneration
