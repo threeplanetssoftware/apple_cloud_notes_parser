@@ -109,6 +109,7 @@ class AppleUniformTypeIdentifier
     return true if @uti == "com.adobe.raw-image"
     return true if @uti == "com.apple.icns"
     return true if @uti == "com.apple.macpaint-image"
+    return true if @uti == "com.apple.paper.doc.scan"
     return true if @uti == "com.apple.pict"
     return true if @uti == "com.apple.quicktime-image"
     return true if @uti == "com.apple.notes.sketch"
