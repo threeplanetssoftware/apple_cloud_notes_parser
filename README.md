@@ -329,6 +329,7 @@ This program requires the following Ruby gems which can be installed by running 
 6. aes_key_wrap
 7. keyed_archive
 8. nokogiri
+9. cgi (0.3.3 or newer)
 
 ## Installation
 
