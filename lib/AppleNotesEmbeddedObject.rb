@@ -16,7 +16,8 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                 :backup_location,
                 :parent,
                 :conforms_to,
-                :thumbnails
+                :thumbnails,
+                :note
 
   ##
   # Creates a new AppleNotesEmbeddedObject. 
@@ -409,6 +410,13 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                                                                 row["ZTYPEUTI"],
                                                                 note,
                                                                 backup)
+            tmp_embedded_object.conforms_to = "gallery"
+          elsif tmp_uti.uti == "com.apple.paper.doc.scan"
+            tmp_embedded_object = AppleNotesEmbeddedPaperDocScan.new(row["Z_PK"],
+                                                                     row["ZIDENTIFIER"],
+                                                                     row["ZTYPEUTI"],
+                                                                     note,
+                                                                     backup)
             tmp_embedded_object.conforms_to = "gallery"
           elsif tmp_uti.uti == "com.apple.notes.table"
             tmp_embedded_object = AppleNotesEmbeddedTable.new(row["Z_PK"],
