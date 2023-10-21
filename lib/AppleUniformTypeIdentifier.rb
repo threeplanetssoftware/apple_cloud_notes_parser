@@ -63,6 +63,7 @@ class AppleUniformTypeIdentifier
     return true if @uti == "public.aiff-audio"
     return true if @uti == "public.midi-audio"
     return true if @uti == "public.mp3"
+    return true if @uti == "org.xiph.ogg-audio"
     return false
   end
 
