@@ -890,6 +890,10 @@ class AppleNoteStore
     ul.dashed {
       list-style-type: '- ';
     }
+    blockquote.block-quote {
+      border-left: 3px solid #bdbdbd;
+      padding-left: 0.4rem;
+    }
     .checklist {
       position: relative;
       list-style: none;
