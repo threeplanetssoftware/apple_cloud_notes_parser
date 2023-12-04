@@ -11,6 +11,20 @@ class ParagraphStyle
 
     return (same_style_type and same_alignment and same_indent and same_checklist)
   end
+
+  def normalized_indent_amount
+    indent = indent_amount&.to_i
+
+    # The special "block quote" type doesn't have its own `indent_amount` set
+    # at the root level (but it does for nested indents). So in order to
+    # leverage the rest of our indent/blockquote logic, treat the special
+    # "block quote" types as though it were indented.
+    if block_quote == AppleNote::STYLE_TYPE_BLOCK_QUOTE
+      indent += 1
+    end
+
+    indent
+  end
 end
 
 class Color
@@ -212,11 +226,6 @@ class AttributeRun
       end
     end
 
-    # Add in block quote
-    if is_block_quote?
-      open_html_tag("blockquote")
-    end
-
     # Add in underlined
     if underlined == 1
       open_html_tag("u")
@@ -345,15 +354,23 @@ class AttributeRun
       # <blockquote> tag to perform the indenting. The exception is if the text
       # is monospaced, in which case, there are explicit space characters that
       # provide the indentation.
-      if paragraph_style&.indent_amount.to_i > 0 && @active_html_node.node_name != "pre"
+      if paragraph_style&.normalized_indent_amount.to_i > 0 && @active_html_node.node_name != "pre"
         tag_name = "blockquote"
+
+        # For the special block quote styles, add a CSS class to distinguish
+        # this from blockquotes tags used only for indents. Only apply this to
+        # the first level, since Notes only styles these differently at the
+        # first level (nested levels inside are treated as normal indents).
+        if is_block_quote? && paragraph_style&.normalized_indent_amount.to_i == 1
+          tag_attrs = { class: "block-quote" }
+        end
       end
     end
 
     # Open up the indentation tag if we've determined one is necessary.
     if tag_name
-      indent_amount = paragraph_style&.indent_amount.to_i
-      previous_indent_amount = previous_run&.paragraph_style&.indent_amount.to_i
+      indent_amount = paragraph_style&.normalized_indent_amount.to_i
+      previous_indent_amount = previous_run&.paragraph_style&.normalized_indent_amount.to_i
 
       # If this is the same style as the previous indent, or if the indentation
       # is nested more deeply, then we need to look for the previous list
