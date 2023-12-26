@@ -606,19 +606,10 @@ class AppleNote < AppleCloudKitRecord
       else # We must have text to parse
 
         # Add in the slice of text represented by this run
-        slice_to_add = note_text.slice(current_index, note_part.length)
+        array_to_add = note_text.grapheme_clusters[current_index, note_part.length]
+        slice_to_add = ""
+        slice_to_add = array_to_add.join if (array_to_add and array_to_add.length > 0)
 
-        # Apple seems to be making Emojis and some other characters two characters
-        # this breaks stuff. This is a really hacky solution.
-        double_characters = 0
-        slice_to_add.each_codepoint do |codepoint|
-          double_characters += 1 if codepoint > 65535
-        end
-
-        if double_characters > 0
-          slice_to_add = note_text.slice(current_index, note_part.length - double_characters)
-        end
-       
         # Calculate what the previous and next attribute runs are 
         previous_run = nil
         previous_run = condensed_attribute_runs[attribute_run_index - 1] if attribute_run_index > 0
@@ -629,7 +620,7 @@ class AppleNote < AppleCloudKitRecord
         note_part.generate_html(slice_to_add, node)
 
         # Increment our counter to be sure we don't loop infinitely
-        current_index += (note_part.length - double_characters)
+        current_index += (note_part.length)
 
       end
 
