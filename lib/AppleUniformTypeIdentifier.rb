@@ -122,6 +122,7 @@ class AppleUniformTypeIdentifier
     return true if @uti == "com.truevision.tga-image"
     return true if @uti == "public.camera-raw-image"
     return true if @uti == "public.fax"
+    return true if @uti == "public.heic"
     return true if @uti == "public.jpeg"
     return true if @uti == "public.jpeg-2000"
     return true if @uti == "public.png"
