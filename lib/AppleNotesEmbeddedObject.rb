@@ -37,6 +37,8 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     @filepath = ""
     @filename = ""
     @backup_location = nil
+    @user_title = get_media_zusertitle_for_row
+
 
     # Zero out cryptographic settings
     @crypto_iv = nil
@@ -209,6 +211,18 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                       "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
                       z_pk) do |media_row|
       return media_row["ZFILENAME"]
+    end
+  end
+
+  ##
+  # This method returns the ZUSERTITLE column for a given row identified by 
+  # Integer z_pk. This represents the name a user gave an object, such as an image.
+  def get_media_zusertitle_for_row(z_pk=@primary_key)
+    @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZUSERTITLE " +
+                      "FROM ZICCLOUDSYNCINGOBJECT " +
+                      "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
+                      z_pk) do |media_row|
+      return media_row["ZUSERTITLE"]
     end
   end
 
@@ -486,7 +500,8 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
      "Object Type",
      "Object Filename",
      "Object Filepath on Phone",
-     "Object Filepath on Computer"]
+     "Object Filepath on Computer",
+     "Object User Title"]
   end
 
   ##
@@ -502,7 +517,8 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                    @type,
                    @filename,
                    @filepath,
-                   @backup_location]]
+                   @backup_location,
+                   @user_title]]
 
     # Add in any child objects
     @child_objects.each do |child_object|
@@ -569,6 +585,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     to_return[:filename] = @filename if (@filename != "")
     to_return[:filepath] = @filepath if (@filepath != "")
     to_return[:backup_location] = @backup_location if @backup_location
+    to_return[:user_title] = @user_title
     to_return[:is_password_protected] = @is_password_protected
     to_return[:html] = generate_html
 

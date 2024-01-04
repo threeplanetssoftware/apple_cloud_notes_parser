@@ -293,6 +293,7 @@ The JSON output of `AppleNotesEmbeddedObject` is as follows.
   "filename": "[filename of the object, if applicable]",
   "filepath": "[filepath of the object, including filename, if applicable]",
   "backup_location": "[Filepath of the original backup location, if applicable]",
+  "user_title": "[The alternate filename given by the user, if applicable]",
   "is_password_protected": "[boolean, whether password protected or not]",
   "html": "[generated HTML for the object]",
   "thumbnails": [
