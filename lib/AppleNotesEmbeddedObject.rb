@@ -546,7 +546,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     if @reference_location
       root = @note.folder.to_relative_root(individual_files)
       builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
-        doc.img(src: "#{root}#{@reference_location}")
+        doc.img(src: "#{root}#{@reference_location}").attr("data-apple-notes-zidentifier" => "#{@uuid}")
       end
 
       return builder.doc.root
@@ -563,7 +563,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
       builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
         doc.a(href: "#{root}#{@reference_location}") {
           doc.text "#{type} #{@filename}"
-        }
+        }.attr("data-apple-notes-zidentifier" => "#{@uuid}")
       end
 
       return builder.doc.root

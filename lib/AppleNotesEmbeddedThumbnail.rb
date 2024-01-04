@@ -152,7 +152,7 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
       builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
         doc.a(href: "#{root}#{@parent.reference_location}") {
           doc.img(src: "#{root}#{@reference_location}")
-        }
+        }.attr("data-apple-notes-zidentifier" => "#{@parent.uuid}")
       end
       return builder.doc.root
     end
