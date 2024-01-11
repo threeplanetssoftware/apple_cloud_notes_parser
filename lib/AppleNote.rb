@@ -434,7 +434,13 @@ class AppleNote < AppleCloudKitRecord
           }
 
           doc.text " "
-          doc.text @account.name
+          if individual_files
+            doc.a(href: "#{@folder.to_account_root}index.html") {
+              doc.text @account.name
+            }
+          else
+            doc.text @account.name
+          end
         }
 
         doc.div {
@@ -443,9 +449,7 @@ class AppleNote < AppleCloudKitRecord
           }
 
           doc.text " "
-          doc.a(href: folder_href) {
-            doc.text @folder.name
-          }
+          doc << @folder.full_name_with_links(individual_files: individual_files, use_uuid: use_uuid)
         }
 
         doc.div {

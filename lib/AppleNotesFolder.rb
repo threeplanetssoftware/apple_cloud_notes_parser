@@ -128,6 +128,31 @@ class AppleNotesFolder < AppleCloudKitRecord
     return "#{@parent.full_name} -> #{@name}"
   end
 
+  #
+  # This method prepares the folder name, as displayed in HTML, with links 
+  # to each of its parents via a recursive approach. 
+  def full_name_with_links(individual_files: false, use_uuid: false, relative_root: to_uri)
+
+    if individual_files
+      folder_href = to_uri.join("index.html").relative_path_from(relative_root)
+    end
+
+    builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
+
+      doc.span {
+        if is_child?
+          doc << @parent.full_name_with_links(individual_files: individual_files, use_uuid: use_uuid, relative_root: relative_root)
+          doc.text " -> "
+        end
+        doc.a(href: folder_href) {
+          doc.text @name
+        }
+      }
+    end
+
+    return builder.doc.root
+  end
+
   ##
   # This method returns an Array of AppleNote objects in the appropriate order based on current sort settings.
   def sorted_notes
@@ -147,6 +172,18 @@ class AppleNotesFolder < AppleCloudKitRecord
     return "../../../"
   end
 
+  #
+  # This method computes the path to get to the account root folder. It only 
+  # has meaning when using the --individual-files switch at runtime.
+  def to_account_root(individual_files=false)
+    return "../" if !individual_files
+    return (@parent.to_account_root(individual_files) + "../") if @parent
+    return "../"
+  end
+
+  # 
+  # This method is used to generate the filepath on disk for a folder, if the 
+  # --individual-files switch is passed at run time.
   def to_path
     # If this folder has a parent, we do NOT want to embed the account name every time
     if @parent
@@ -157,6 +194,9 @@ class AppleNotesFolder < AppleCloudKitRecord
     return Pathname.new("#{@account.clean_name}-#{clean_name}")
   end
 
+  #
+  # This method is used to generate the actual clickable URI to get to a specific folder 
+  # if the --individual-files switch is passed at runtime
   def to_uri
     # If this folder has a parent, we do NOT want to embed the account name every time
     if @parent
@@ -208,9 +248,20 @@ class AppleNotesFolder < AppleCloudKitRecord
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
       doc.div {
         doc.h1 {
-          doc.a(id: "folder_#{unique_id(use_uuid)}") {
-            doc.text "#{@account.name} - #{full_name}"
-          }
+
+          if individual_files
+            # If we're kicking out individual files, we need a way to browse the file structure
+            doc.a(href: "#{to_account_root(individual_files)}index.html") {
+              doc.text "#{@account.name}"
+            }
+            doc.text " -> "
+            doc << full_name_with_links(individual_files: individual_files, use_uuid: use_uuid)
+          else
+            # If we have one big long output, we don't need to generate individual links, just add anchors
+            doc.a(id: "folder_#{unique_id(use_uuid)}") {
+              doc.text "#{@account.name} - #{full_name}"
+            }
+          end
         }
 
         if individual_files && is_parent?
