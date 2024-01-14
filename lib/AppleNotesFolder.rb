@@ -14,6 +14,7 @@ class AppleNotesFolder < AppleCloudKitRecord
                 :sort_order,
                 :parent,
                 :parent_id,
+                :parent_uuid,
                 :uuid
 
   ##
@@ -35,8 +36,9 @@ class AppleNotesFolder < AppleCloudKitRecord
     @child_folders = Array.new()
 
     # By default we have no parent folder
-    @parent = nil
-    @parent_id = nil
+    @parent = nil # Expects an AppleFolder object
+    @parent_id = nil # Expects a z_pk value for a folder
+    @parent_uuid = nil # Expects the zidentifier value for a folder
 
     # Pre-bake the sort order to a nice low value
     @sort_order = (0 - Float::INFINITY)
@@ -83,7 +85,7 @@ class AppleNotesFolder < AppleCloudKitRecord
   ##
   # This is a helper function to identify child folders that need their parent set
   def is_orphan?
-    return (@parent_id != nil and @parent == nil)
+    return (@parent == nil and (@parent_id != nil or @parent_uuid != nil))
   end
 
   ##

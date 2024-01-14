@@ -342,6 +342,15 @@ class AppleNoteStore
   end
 
   ##
+  # This method looks up an AppleNotesFolder based on the given +folder_uuid+. 
+  # ID should be a String that represents the ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER of the folder.
+  def get_folder_by_uuid(folder_uuid)
+    @folders.each_value do |folder|
+      return folder if folder.uuid == folder_uuid
+    end
+  end
+
+  ##
   # This method looks up an AppleNote based on the given +note_id+. 
   # ID should be an Integer that represents the ZICNOTEDATA.ZNOTE of the note.
   def get_note(note_id)
@@ -530,7 +539,9 @@ class AppleNoteStore
     # Loop over all folders to do some clean up
     @folders.each_pair do |key, folder|
       if folder.is_orphan?
-        tmp_parent_folder = get_folder(folder.parent_id)
+        tmp_parent_folder = get_folder(folder.parent_id) if folder.parent_id
+        tmp_parent_folder = get_folder_by_uuid(folder.parent_uuid) if folder.parent_uuid
+        @logger.debug("Rip Folder: Found parent UUID #{folder.parent_uuid} for folder (#{folder.name}) in ZSERVERRECORD data")
         tmp_parent_folder.add_child(folder)
         @logger.debug("Rip Folder: Added folder #{folder.full_name} as child to #{tmp_parent_folder.name}")
       end
@@ -606,6 +617,12 @@ class AppleNoteStore
       tmp_folder.retain_order = @retain_order
       tmp_folder.sort_order = @folder_order[row["ZIDENTIFIER"]] if @folder_order[row["ZIDENTIFIER"]]
 
+      # Remember folder heirarchy
+      if row["ZPARENT"]
+        tmp_parent_folder_id = row["ZPARENT"]
+        tmp_folder.parent_id = tmp_parent_folder_id
+      end
+
       # Add server-side data, if relevant
       tmp_folder.add_cloudkit_server_record_data(row[server_record_column]) if row[server_record_column]
 
@@ -619,12 +636,6 @@ class AppleNoteStore
       end
 
       @logger.debug("Rip Folder: Created folder #{tmp_folder.name}")
-
-      # Remember folder heirarchy
-      if row["ZPARENT"]
-        tmp_parent_folder_id = row["ZPARENT"]
-        tmp_folder.parent_id = tmp_parent_folder_id
-      end
  
       # Whether child or not, we add it to the overall tracker so we can look up by folder ID.
       # We'll clean up on output by testing to see if a folder has a parent.

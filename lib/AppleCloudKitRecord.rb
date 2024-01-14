@@ -81,6 +81,13 @@ class AppleCloudKitRecord
       @cloudkit_last_modified_device = unpacked_top["ModifiedByDevice"]
       @cloudkit_creator_record_id = unpacked_top["CreatorUserRecordID"]["RecordName"]
       @cloudkit_modifier_record_id = unpacked_top["LastModifiedUserRecordID"]["RecordName"]
+
+      # Sometimes folders don't have their parent reflected in the ZPARENT column and instead
+      # are reflected in this field. Let's set the parent_uuid field and let AppleNoteStore 
+      # play cleanup later.
+      if unpacked_top["RecordType"] == "Folder" and unpacked_top["ParentReference"]
+        @parent_uuid = unpacked_top["ParentReference"]["recordID"]["RecordName"]
+      end
     end
   end
 
