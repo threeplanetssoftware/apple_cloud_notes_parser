@@ -28,7 +28,7 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
 
     # Find where on this computer that file is stored
     @backup_location = @backup.get_real_file_path(@filepath)
-    
+
     # Copy the file to our output directory if we can
     @reference_location = @backup.back_up_file(@filepath, 
                                                @filename, 
@@ -101,7 +101,7 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
     zgeneration = get_zgeneration_for_thumbnail
 
     return "#{@uuid}.png.encrypted" if @is_password_protected
-    return "Preview.png" if zgeneration
+    return "Preview.#{get_thumbnail_extension_ios17}" if zgeneration
     return "#{@uuid}.#{get_thumbnail_extension_ios17}"
   end  
 
