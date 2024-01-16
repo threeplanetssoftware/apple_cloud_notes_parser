@@ -78,6 +78,7 @@ class AppleBackup
   # instantiate the appropriate child (such as AppleBackupHashed).
   def valid?
     @logger.error("Returning 'invalid' as no specific type of backup was specified")
+    raise "AppleBackup cannot stand on its own"
     return false
   end
 
@@ -116,6 +117,7 @@ class AppleBackup
   # will override this to provide the correct location. 
   def get_real_file_path(filename)
     @logger.error("Returning nil for get_real_file_path as no specific type of backup was specified")
+    raise "Cannot return file_path for AppleBackup"
     return nil
   end
 
@@ -187,11 +189,38 @@ class AppleBackup
   # This method takes a FilePath +file+ and checks the first 15 bytes 
   # to see if there is a SQLite magic number at the start. Not perfect, but good enough.
   def is_sqlite?(file)
-    to_test = ""
     File.open(file, 'rb') do |file_handle|
-      to_test = file_handle.gets(nil, 15)
+      return true if file_handle.gets(nil, 15) == "SQLite format 3"
     end
-    return /^SQLite format 3/.match(to_test)
+
+    return false
+  end
+
+  ##
+  # This method takes a FilePath +file+ and checks to make sure the list of tables looks 
+  # a bit like what we expect from a NoteStore.
+  def has_correct_columns?(file)
+    database = SQLite3::Database.new(file.to_s, {results_as_hash: true})
+    results = database.execute("PRAGMA table_list;")
+
+    legacy_columns = ['ZACCOUNT', 'ZNOTE', 'ZNOTEBODY', 'ZSTORE']
+    modern_columns = ['ACHANGE', 'ZICCLOUDSYNCINGOBJECT','ZICLOCATION', 'ZICNOTEDATA']
+    results.each do |result|
+      legacy_columns.delete(result["name"])
+      modern_columns.delete(result["name"])
+    end
+
+    # This should be an iOS 9+ database
+    if modern_columns.length == 0
+      return true
+    end
+
+    # This is a legacy database
+    if legacy_columns.length == 0
+      return true
+    end
+
+    return false
   end
 
   ##

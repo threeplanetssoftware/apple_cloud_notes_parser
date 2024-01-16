@@ -43,7 +43,7 @@ class AppleBackupFile < AppleBackup
   # This method returns true if it is a value backup of the specified type. For the SINGLE_FILE_BACKUP_TYPE this means 
   # that the +root_folder+ given is the NoteStore.sqlite directly. 
   def valid?
-    return (@root_folder.file? and is_sqlite?(@root_folder))
+    return (@root_folder.file? and is_sqlite?(@root_folder) and has_correct_columns?(@root_folder))
   end
 
   ##
