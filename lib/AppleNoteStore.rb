@@ -65,7 +65,8 @@ class AppleNoteStore
   # This method does a set of database calls to try to guess the version of Apple Notes we are ripping. 
   # It tries to structure the checks to bail out as each specific version is recognized and then assume we are not it.
   # Helpful changelogs: 
-  # 16 (): No need for separate password to lock notes
+  # 17 (https://support.apple.com/en-us/HT213781): Tons of under-the-hood tweaks
+  # 16 (https://support.apple.com/en-us/HT213407): No need for separate password to lock notes
   # 15 (https://support.apple.com/en-us/HT212788): Hashtags, mentions
   # 14 (https://support.apple.com/en-us/HT211808): Better scanning
   # 13 (https://support.apple.com/en-us/HT210393): Added checklists and shared folders, better search, and gallery 
