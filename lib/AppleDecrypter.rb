@@ -38,6 +38,7 @@ class AppleDecrypter
 
       puts "Added #{@passwords.length} passwords to the AppleDecrypter from #{password_file}"
     end
+    return @passwords.length
   end
 
   ##
