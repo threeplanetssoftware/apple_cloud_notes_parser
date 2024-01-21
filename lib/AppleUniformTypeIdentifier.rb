@@ -1,6 +1,3 @@
-require 'keyed_archive'
-require 'sqlite3'
-
 ##
 # This class represents a uniform type identifier which Apple uses
 # to identify the type of materials being described. Apple documents 
