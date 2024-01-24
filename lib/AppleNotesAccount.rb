@@ -67,7 +67,7 @@ class AppleNotesAccount < AppleCloudKitRecord
   ## 
   # Returns a name with things removed that might allow for poorly placed files
   def clean_name
-    @name.tr('/:', '_')
+    @name.tr('/:\\', '_')
   end
 
   ## 

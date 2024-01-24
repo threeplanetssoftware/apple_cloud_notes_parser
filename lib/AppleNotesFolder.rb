@@ -165,7 +165,7 @@ class AppleNotesFolder < AppleCloudKitRecord
   ## 
   # Returns a name with things removed that might allow for poorly placed files
   def clean_name
-    @name.tr('/:', '_')
+    @name.tr('/:\\', '_')
   end
 
   def to_relative_root(individual_files=false)
