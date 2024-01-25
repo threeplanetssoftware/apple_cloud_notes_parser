@@ -243,8 +243,9 @@ class AppleNotesFolder < AppleCloudKitRecord
   end
 
   def generate_html(individual_files: false, use_uuid: false)
-    if @html && @html[individual_files]
-      return @html[individual_files]
+    params = [individual_files, use_uuid]
+    if @html && @html[params]
+      return @html[params]
     end
 
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
@@ -301,7 +302,7 @@ class AppleNotesFolder < AppleCloudKitRecord
     end
 
     @html ||= {}
-    @html[individual_files] = builder.doc.root
+    @html[params] = builder.doc.root
   end
 
   ##
