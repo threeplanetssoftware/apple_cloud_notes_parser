@@ -95,7 +95,8 @@ class AppleNotesFolder < AppleCloudKitRecord
   end
 
   ##
-  # This class method spits out an Array containing the CSV headers needed to describe all of these objects
+  # This class method spits out an Array containing the CSV headers needed to describe all of these objects. 
+  # If you update this, PLEASE make sure you update the following definition as well. 
   def self.to_csv_headers
     ["Folder Primary Key", 
      "Folder Name", 
@@ -107,6 +108,12 @@ class AppleNotesFolder < AppleCloudKitRecord
      "Parent Folder Name", 
      "Smart Folder Query",
      "UUID"]
+  end
+
+  ##
+  # This class method points to which column the Smart Folder query should go in.
+  def self.csv_smart_folder_query_column
+    return 8
   end
 
   ##

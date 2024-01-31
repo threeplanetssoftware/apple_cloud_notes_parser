@@ -25,7 +25,7 @@ class AppleNotesSmartFolder < AppleNotesFolder
   def to_csv
     # Get the parent's CSV and overwrite the query field
     to_return = super()
-    to_return[8] = @query
+    to_return[AppleNotesFolder.csv_smart_folder_query_column] = @query
 
     return to_return
   end
