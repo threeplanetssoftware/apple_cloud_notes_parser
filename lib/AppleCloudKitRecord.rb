@@ -27,6 +27,7 @@ class AppleCloudKitRecord
   def add_cloudkit_sharing_data(cloudkit_data)
     keyed_archive = KeyedArchive.new(:data => cloudkit_data)
     unpacked_top = keyed_archive.unpacked_top()
+    total_added = 0
     if unpacked_top
       unpacked_top["Participants"]["NS.objects"].each do |participant|
 
@@ -64,9 +65,11 @@ class AppleCloudKitRecord
 
           # Add them to this object
           @share_participants.push(tmp_participant)
+          total_added += 1
         end
       end
     end
+    total_added
   end
 
   ##
