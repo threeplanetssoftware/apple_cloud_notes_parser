@@ -72,6 +72,17 @@ class AppleBackup
     end
   end
   
+  ##
+  # This method handles creating and adding a new AppleNoteStore. 
+  # it expects a Pathname +location+ for the location of the NoteStore.sqlite 
+  # database and an Integer +version+ representing the version of the AppleNoteStore.
+  def create_and_add_notestore(location, version)
+    tmp_notestore = AppleNoteStore.new(location, version)
+    tmp_notestore.backup=(self)
+    @note_stores.push(tmp_notestore)
+    @logger.debug("Guessed Notes Version: #{version}")
+    puts "Guessed Notes Version: #{version}"
+  end
 
   ##
   # No backup on its own is valid, it must be a abckup type that is recognized. In those cases, 

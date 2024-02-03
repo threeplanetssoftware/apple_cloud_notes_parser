@@ -36,8 +36,8 @@ class AppleBackupPhysical < AppleBackup
       legacy_note_version = AppleNoteStore.guess_ios_version(@note_store_legacy_location)
 
       # Create the AppleNoteStore objects
-      @note_stores.push(AppleNoteStore.new(@note_store_modern_location, self, modern_note_version))
-      @note_stores.push(AppleNoteStore.new(@note_store_legacy_location, self, legacy_note_version))
+      create_and_add_notestore(@note_store_modern_location, modern_note_version)
+      create_and_add_notestore(@note_store_legacy_location, legacy_note_version)
     end
   end
 

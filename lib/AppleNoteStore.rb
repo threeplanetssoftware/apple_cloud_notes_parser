@@ -40,13 +40,11 @@ class AppleNoteStore
   # database itself. Uses that to create a SQLite3::Database object to query into it. Immediately 
   # creates an Array to hold the +notes+, an Array to hold the +folders+ and an Array to hold 
   # the +accounts+. Then it calls +rip_accounts+ and +rip_folders+ to populate them. Also 
-  # expects an AppleBackup +backup+ object to interact with finding files of interest and an 
-  # Integer +version+ to know what type it is.
-  def initialize(file_path, backup, version)
+  # expects an Integer +version+ to know what type it is.
+  def initialize(file_path, version)
     @file_path = file_path
-    @backup = backup
-    @database = SQLite3::Database.new(@file_path.to_s, {results_as_hash: true})
-    @logger = @backup.logger
+    @database = nil
+    @logger = Logger.new(STDOUT)
     @version = version
     @notes = Hash.new()
     @folders = Hash.new()
@@ -55,10 +53,32 @@ class AppleNoteStore
     @cloud_kit_participants = Hash.new()
     @retain_order = false
     @html = nil
-    puts "Guessed Notes Version: #{@version}"
+    @range_start = 0
+    @range_end = Time.now.to_i
+  end
+
+  ##
+  # This method sets the AppleBackup this AppleNoteStore belongs to. It
+  # expects an AppleBackup +backup+ and uses that backup to set the date 
+  # range and logger variables.
+  def backup=(backup)
+    @backup = backup
+    @logger = @backup.logger
     @range_start = @backup.range_start
     @range_end = @backup.range_end
-    @logger.debug("Guessed Notes Version: #{@version}")
+  end
+
+  ##
+  # This method opens the AppleNoteStore's database.
+  def open
+    return if @database
+    @database = SQLite3::Database.new(@file_path.to_s, {results_as_hash: true})
+  end
+
+  ## 
+  # This method nicely closes the database handle.
+  def close
+    @database.close if @database
   end
 
   ##
@@ -131,13 +151,13 @@ class AppleNoteStore
   def self.get_database_tables(database_to_check)
     to_return = Array.new
 
-    @database = SQLite3::Database.new(database_to_check.to_s, {results_as_hash: true})
+    database = SQLite3::Database.new(database_to_check.to_s, {results_as_hash: true})
 
-    @database.execute("SELECT name FROM sqlite_master WHERE type='table'") do |row|
+    database.execute("SELECT name FROM sqlite_master WHERE type='table'") do |row|
       to_return.push(row["name"])
     end
 
-    @database.close
+    database.close
 
     return to_return
   end
@@ -175,23 +195,17 @@ class AppleNoteStore
   def self.get_database_table_columns(database_to_check, table)
     to_return = Array.new
 
-    @database = SQLite3::Database.new(database_to_check.to_s, {results_as_hash: true})
+    database = SQLite3::Database.new(database_to_check.to_s, {results_as_hash: true})
 
     # Need to ensure we're sorting everywhere possible to keep things in order
-    @database.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name=? ORDER BY name ASC", table) do |row|
+    database.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name=? ORDER BY name ASC", table) do |row|
       to_return = to_return + rip_columns_from_sql(row["sql"]).sort
     end
 
-    @database.close
+    database.close
 
     # Return back an MD5 hash of the Array, sorted and joined
     return to_return
-  end
-
-  ## 
-  # This method nicely closes the database handle.
-  def close
-    @database.close if @database
   end
 
   ##
@@ -212,6 +226,7 @@ class AppleNoteStore
   ##
   # This method kicks off the parsing of all the objects
   def rip_all_objects
+    open
     rip_accounts()
     rip_folders()
     rip_notes()

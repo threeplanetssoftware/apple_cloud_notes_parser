@@ -35,7 +35,7 @@ class AppleBackupFile < AppleBackup
       FileUtils.mv(@note_store_temporary_location, note_store_new_location)
 
       # Create the AppleNoteStore object
-      @note_stores.push(AppleNoteStore.new(@note_store_modern_location, self, note_version))
+      create_and_add_notestore(@note_store_modern_location, note_version)
     end
   end
 
