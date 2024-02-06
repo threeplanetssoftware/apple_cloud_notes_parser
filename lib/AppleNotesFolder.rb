@@ -143,17 +143,33 @@ class AppleNotesFolder < AppleCloudKitRecord
   def full_name_with_links(individual_files: false, use_uuid: false, relative_root: to_uri)
 
     if individual_files
-      folder_href = to_uri.join("index.html").relative_path_from(relative_root)
     end
 
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
 
+      current_node = self
+      parents = Array.new
       doc.span {
-        if is_child?
-          doc << @parent.full_name_with_links(individual_files: individual_files, use_uuid: use_uuid, relative_root: relative_root)
+        while current_node.is_child?
+          current_node = current_node.parent
+          parents.push current_node
+        end
+        parents.reverse.each do |parent|
+          tmp_folder = parent.anchor_link(use_uuid: use_uuid)
+          if individual_files
+            tmp_folder = parent.to_uri.join("index.html").relative_path_from(relative_root)
+          end
+          doc.a(href: tmp_folder) {
+            doc.text parent.name
+          }
           doc.text " -> "
         end
-        doc.a(href: folder_href) {
+
+        tmp_folder = anchor_link(use_uuid: use_uuid)
+        if individual_files
+          tmp_folder = relative_root.join("index.html").relative_path_from(relative_root)
+        end
+        doc.a(href: tmp_folder) {
           doc.text @name
         }
       }
@@ -217,15 +233,21 @@ class AppleNotesFolder < AppleCloudKitRecord
   end
 
   def unique_id(use_uuid)
-    if use_uuid && !uuid.empty?
-      uuid
+    if use_uuid && !@uuid.empty?
+      @uuid
     else
-      primary_key
+      @primary_key
     end
   end
 
+  ## 
+  # This method generates a link to the anchor used if individual files are not desired.
+  def anchor_link(use_uuid: false)
+    "#folder_#{unique_id(use_uuid)}"
+  end
+
   def generate_folder_hierarchy_html(individual_files: false, use_uuid: false, relative_root: '')
-    folder_href = "#folder_#{unique_id(use_uuid)}"
+    folder_href = anchor_link(use_uuid: use_uuid)
     if individual_files
       folder_href = to_uri.join("index.html").relative_path_from(relative_root)
     end
