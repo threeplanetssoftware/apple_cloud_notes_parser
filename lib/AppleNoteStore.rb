@@ -333,6 +333,14 @@ class AppleNoteStore
   end
 
   ##
+  # This method takes a String +record_id+ to determine if the particular cloudkit 
+  # record is known. It returns an AppleCloudKitParticipant object, or False.
+  def cloud_kit_record_known?(record_id)
+    return false if !@cloud_kit_participants.include?(record_id)    
+    return @cloud_kit_participants[record_id]
+  end
+
+  ##
   # This method looks up an AppleNotesAccount based on the given +account_id+. 
   # ID should be an Integer that represents the ZICCLOUDSYNCINGOBJECT.Z_PK of the account.
   def get_account(account_id)
@@ -797,8 +805,11 @@ class AppleNoteStore
                                row[creation_date_field], 
                                row["ZMODIFICATIONDATE1"],
                                tmp_account,
-                               tmp_folder,
-                               self)
+                               tmp_folder)
+
+      # Set the note's version
+      tmp_note.version=(@version)
+      tmp_note.notestore=(self)
 
       # Set the pinned status
       if row["ZISPINNED"] == 1
@@ -814,7 +825,9 @@ class AppleNoteStore
       tmp_folder.add_note(tmp_note) if tmp_folder
 
       # Add server-side data, if relevant
-      tmp_note.add_cloudkit_server_record_data(row[server_record_column]) if row[server_record_column]
+      if row[server_record_column]
+        tmp_note.add_cloudkit_server_record_data(row[server_record_column])
+      end
 
       if(row[server_share_column]) 
         tmp_note.add_cloudkit_sharing_data(row[server_share_column])
@@ -868,6 +881,7 @@ class AppleNoteStore
       # Only add the note if we have both a folder and account for it, otherwise things blow up
       if tmp_account and tmp_folder
         @notes[tmp_note.note_id] = tmp_note
+        tmp_note.process_note
       else
         @logger.error("Rip Note: Skipping note #{tmp_note.note_id} due to a missing account.") if !tmp_account
         @logger.error("Rip Note: Skipping note #{tmp_note.note_id} due to a missing folder.") if !tmp_folder

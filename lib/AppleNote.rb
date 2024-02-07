@@ -89,7 +89,7 @@ class AppleNote < AppleCloudKitRecord
   # an AppleNotesAccount +account+ representing the owning account, an AppleNotesFolder +folder+ representing the holding folder, 
   # and an AppleNoteStore +notestore+ representing the actual NoteStore
   # representing the full backup.
-  def initialize(z_pk, znote, ztitle, zdata, creation_time, modify_time, account, folder, notestore)
+  def initialize(z_pk, znote, ztitle, zdata, creation_time, modify_time, account, folder)
     super()
     # Initialize some other variables while we're here
     @plaintext = nil
@@ -118,25 +118,42 @@ class AppleNote < AppleCloudKitRecord
     @modify_time = convert_core_time(modify_time)
     @account = account
     @folder = folder
-    @notestore = notestore
-    @database = @notestore.database
-    @backup = @notestore.backup
-    @logger = @backup.logger
+    @notestore = nil
+    @database = nil
+    @backup = nil
+    @logger = Logger.new(STDOUT)
     @uuid = ""
+    @version = AppleNoteStore::IOS_VERSION_UNKNOWN # Default to unknown, override this with version=
 
     # Handle pinning, added in iOS 11
     @is_pinned = false
 
     # Cache HTML once generated, useful for multiple outputs that all want the HTML
     @html = nil
+  end
 
+  ##
+  # This method adds an AppleNoteStore object as a parent reference. 
+  # It expects an AppleNoteStore +notestore+. 
+  def notestore=(notestore)
+    @notestore = notestore
+    @database = @notestore.database
+    @backup = @notestore.backup
+    @logger = @backup.logger
+  end
+
+  ##
+  # This method handles processing the AppleNote's text. 
+  # For legacy notes that is fairly straightforward and for 
+  # modern notes that means decompressing and parsing the protobuf.
+  def process_note
     # Treat legacy stuff different
-    if @notestore.version == AppleNoteStore::IOS_LEGACY_VERSION
+    if @version == AppleNoteStore::IOS_LEGACY_VERSION
       @plaintext = @compressed_data
       @compressed_data = nil
     else
       # Unpack what we can
-      @is_compressed = is_gzip(zdata) 
+      @is_compressed = is_gzip(@compressed_data) 
       decompress_data if @is_compressed
       extract_plaintext if @decompressed_data
       replace_embedded_objects if @plaintext
@@ -144,11 +161,15 @@ class AppleNote < AppleCloudKitRecord
   end
 
   ##
+  # This method sets the Note's version. It expects an Integer +version+.
+  def version=(version)
+    @version = version
+  end
+
+  ##
   # This method returns the appropriate version for the AppleNote. 
-  # It does this by checking the AppleNoteStore +@notestore+ and returning that.
   def version
-    return @notestore.version if @notestore
-    return AppleNoteStore::IOS_VERSION_UNKNOWN
+    @version
   end
 
   ##
@@ -287,8 +308,9 @@ class AppleNote < AppleCloudKitRecord
 
   ##
   # This function checks if specified +data+ is a GZip object by matching the first two bytes.
-  def is_gzip(data) 
-    /^\x1F\x8B/n.match(data) != nil
+  def is_gzip(data)
+    return false if !data.is_a?(String)
+    return data.force_encoding("US-ASCII").start_with?("\x1F\x8B".force_encoding("US-ASCII"))
   end
 
   ##
@@ -392,7 +414,7 @@ class AppleNote < AppleCloudKitRecord
   # Unique ID for the note — prefer UUID if available, fall back to database ID
   def unique_id(use_uuid)
     if use_uuid && !uuid.empty?
-      uuid
+      @uuid
     else
       note_id
     end
@@ -479,25 +501,27 @@ class AppleNote < AppleCloudKitRecord
           doc.text @modify_time
         }
 
-        if cloud_kit_record_known?(@cloudkit_creator_record_id, @notestore.cloud_kit_participants)
+        tmp_cloudkit_creator = @notestore.cloud_kit_record_known?(@cloudkit_creator_record_id) if @notestore
+        if tmp_cloudkit_creator
           doc.div {
             doc.b {
               doc.text "CloudKit Creator:"
             }
 
             doc.text " "
-            doc.text @notestore.cloud_kit_participants[@cloudkit_creator_record_id].email
+            doc.text tmp_cloudkit_creator.email
           }
         end
 
-        if cloud_kit_record_known?(@cloudkit_modifier_record_id, @notestore.cloud_kit_participants)
+        tmp_cloudkit_modifier = @notestore.cloud_kit_record_known?(@cloudkit_modifier_record_id) if @notestore
+        if tmp_cloudkit_modifier
           doc.div {
             doc.b {
               doc.text "CloudKit Last Modified User:"
             }
 
             doc.text " "
-            doc.text @notestore.cloud_kit_participants[@cloudkit_modifier_record_id].email
+            doc.text tmp_cloudkit_modifier.email
           }
         end
 
@@ -526,11 +550,11 @@ class AppleNote < AppleCloudKitRecord
         doc.div(class: "note-content") {
           # Handle the text to insert, only if we have plaintext to run
           if @plaintext
-            if @notestore.version == AppleNoteStore::IOS_LEGACY_VERSION
+            if @version == AppleNoteStore::IOS_LEGACY_VERSION
               doc.text plaintext
             end
 
-            if @notestore.version > AppleNoteStore::IOS_VERSION_9
+            if @version > AppleNoteStore::IOS_VERSION_9
               doc << generate_html_text(individual_files)
             end
           elsif @encrypted_data

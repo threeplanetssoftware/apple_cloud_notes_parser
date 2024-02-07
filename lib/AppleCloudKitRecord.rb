@@ -95,10 +95,15 @@ class AppleCloudKitRecord
   end
 
   ##
-  # This method takes a String +record_id+ and a Hash +cloud_kit_participants+ to determine if 
-  # the particular cloudkit record is known
-  def cloud_kit_record_known?(record_id, cloud_kit_participants)
-    return (record_id != nil and cloud_kit_participants != nil and cloud_kit_participants[record_id] != nil)
+  # This method takes a String +record_id+ to determine if the particular cloudkit 
+  # record is known. It returns an AppleCloudKitParticipant object, or False.
+  def cloud_kit_record_known?(record_id)
+    @share_participants.each do |participant|
+      return participant if participant.record_id.eql?(record_id)
+    end
+    return false
   end
+
+  
 
 end
