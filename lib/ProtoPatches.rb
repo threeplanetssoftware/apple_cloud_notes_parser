@@ -293,7 +293,7 @@ class AttributeRun
           @active_html_node.add_child(Nokogiri::XML::Node.new("br", @active_html_node.document))
         end
       else
-        add_text_style_html(line)
+        add_text_style_html(line) if line.length > 0
       end
     end
   end
