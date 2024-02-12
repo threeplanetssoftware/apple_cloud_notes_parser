@@ -156,7 +156,7 @@ class AppleNote < AppleCloudKitRecord
       @is_compressed = is_gzip(@compressed_data) 
       decompress_data if @is_compressed
       extract_plaintext if @decompressed_data
-      replace_embedded_objects if @plaintext
+      replace_embedded_objects if (@plaintext and @database)
     end
   end
 
@@ -377,7 +377,7 @@ class AppleNote < AppleCloudKitRecord
       @compressed_data = decrypt_result[:plaintext]
       decompress_data
       extract_plaintext if @decompressed_data
-      replace_embedded_objects if @plaintext
+      replace_embedded_objects if (@plaintext and @database)
     end
 
     return (plaintext != false)
