@@ -47,7 +47,7 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
 
     # This will hold the table's direction, it defaults to left-to-right, will be changed during rebuild_table if needed
     @table_direction = LEFT_TO_RIGHT_DIRECTION
-    rebuild_table
+    #rebuild_table
   end
 
   ##
@@ -57,7 +57,10 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
   def to_s
     string_to_add = " with cells: "
     @reconstructed_table.each do |row|
-      string_to_add += "\n\t#{row}"
+      string_to_add += "\n"
+      row.each do |column|
+        string_to_add += "\t#{column}"
+      end
     end
     super + string_to_add
   end
@@ -75,9 +78,8 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
   # empty strings.
   def initialize_table
     @total_rows.times do |row|
-      row_array = Array.new(@total_columns, "")
-      @reconstructed_table.push(row_array)
-      @reconstructed_table_html.push(row_array)
+      @reconstructed_table.push(Array.new(@total_columns, ""))
+      @reconstructed_table_html.push(Array.new(@total_columns, ""))
     end
   end
 
@@ -206,6 +208,7 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
     end
   end
 
+
   ##
   # This method rebuilds the embedded table. It extracts the gzipped data, gunzips it, and builds a 
   # MergableDataProto from the result. It then loops over each of the key, type, and UUID items 
@@ -214,61 +217,15 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
   # and calls parse_table on it.
   def rebuild_table
 
-    gzipped_data = nil
-
-    # Set the appropriate column to find the data in
-    mergeable_column = "ZMERGEABLEDATA1"
-    mergeable_column = "ZMERGEABLEDATA" if @note.version < AppleNoteStore::IOS_VERSION_13
-
-    # If this Table is password protected, fetch the mergeable data from the 
-    # ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON column and decrypt it. 
-    if @is_password_protected
-      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON, ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD " +
-                        "FROM ZICCLOUDSYNCINGOBJECT " +
-                        "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
-                        @uuid) do |row|
-
-        encrypted_values = row["ZENCRYPTEDVALUESJSON"]
-
-        if row["ZUNAPPLIEDENCRYPTEDRECORD"]
-          keyed_archive = KeyedArchive.new(:data => row["ZUNAPPLIEDENCRYPTEDRECORD"])
-          unpacked_top = keyed_archive.unpacked_top()
-          ns_keys = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.keys"]
-          ns_values = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.objects"]
-          encrypted_values = ns_values[ns_keys.index("EncryptedValues")]
-        end
-
-        decrypt_result = @backup.decrypter.decrypt_with_password(@crypto_password,
-                                                                 @crypto_salt,
-                                                                 @crypto_iterations,
-                                                                 @crypto_key,
-                                                                 @crypto_iv,
-                                                                 @crypto_tag,
-                                                                 encrypted_values,
-                                                                 "AppleNotesEmbeddedTable #{@uuid}")
-        parsed_json = JSON.parse(decrypt_result[:plaintext])
-        gzipped_data = Base64.decode64(parsed_json["mergeableData"])
-      end
-
-    # Otherwise, pull from the ZICCLOUDSYNCINGOBJECT.ZMERGEABLEDATA column
-    else
-
-      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.#{mergeable_column} " +
-                        "FROM ZICCLOUDSYNCINGOBJECT " +
-                        "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
-                        @uuid) do |row|
-
-        # Extract the blob
-        gzipped_data = row[mergeable_column]
-
-      end
+    if !@gzipped_data
+      @gzipped_data = fetch_mergeable_data_by_uuid(@uuid)
     end
 
-    if gzipped_data and gzipped_data.length > 0
+    if @gzipped_data and @gzipped_data.length > 0
   
       # Inflate the GZip
       zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
-      mergeable_data = zlib_inflater.inflate(gzipped_data)
+      mergeable_data = zlib_inflater.inflate(@gzipped_data)
 
       # Read the protobuff
       mergabledata_proto = MergableDataProto.decode(mergeable_data)
@@ -310,9 +267,8 @@ class AppleNotesEmbeddedTable < AppleNotesEmbeddedObject
           parse_table(mergeable_data_object_entry)
         end
       end
-
     else
-      @logger.error("Table #{@uuid}: Failed to find gzipped data to rebuild the table, check the #{mergeable_column} column for this UUID: \"SELECT hex(#{mergeable_column}) FROM ZICCLOUDSYNCINGOBJECT WHERE ZIDENTIFIER='#{@uuid}';\"")
+      # May want to catch this scenario
     end
 
   end

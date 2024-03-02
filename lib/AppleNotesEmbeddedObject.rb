@@ -30,6 +30,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     @type = uti
     @conforms_to = uti
     @note = note
+    @version = @note.version
     @is_password_protected = @note.is_password_protected
     @backup = @note.backup
     @database = @note.database
@@ -53,6 +54,9 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     end
 
     @logger.debug("Note #{@note.note_id}: Created a new Embedded Object of type #{@type}")
+
+    # Variable to hold ZMERGEABLEDATA objects
+    @gzipped_data = nil
   
     # Create an Array to hold Thumbnails and add them
     @thumbnails = Array.new
@@ -60,6 +64,24 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
 
     # Create an Array to hold child objects, such as for a gallery
     @child_objects = Array.new
+  end
+
+  ##
+  # This method sets the note that the object belongs to. It expects an AppleNote +note+.
+  def note=(note)
+    @note = note
+    @version = @note.version
+    @is_password_protected = @note.is_password_protected
+    @backup = @note.backup
+    @logger = @backup.logger
+    @database = @note.database
+  end
+
+  ##
+  # This method sets the version of the object. Typically this will be done directly from 
+  # setting the note. It expects an Integer +version+
+  def version=(version)
+    @version = version
   end
 
   ##
@@ -95,6 +117,67 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     end
 
     @crypto_password = @note.crypto_password
+  end
+
+  ##
+  # This method fetches the gzipped ZMERGEABLE data from the database. It expects a String +uuid+ which defaults to the 
+  # object's UUID. It returns the gzipped data as a String. 
+  def fetch_mergeable_data_by_uuid(uuid = @uuid)
+    gzipped_data = nil
+
+    # Set the appropriate column to find the data in
+    mergeable_column = "ZMERGEABLEDATA1"
+    mergeable_column = "ZMERGEABLEDATA" if @version < AppleNoteStore::IOS_VERSION_13
+
+    # If this object is password protected, fetch the mergeable data from the 
+    # ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON column and decrypt it. 
+    if @is_password_protected
+      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON, ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD " +
+                        "FROM ZICCLOUDSYNCINGOBJECT " +
+                        "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
+                        uuid) do |row|
+
+        encrypted_values = row["ZENCRYPTEDVALUESJSON"]
+
+        if row["ZUNAPPLIEDENCRYPTEDRECORD"]
+          keyed_archive = KeyedArchive.new(:data => row["ZUNAPPLIEDENCRYPTEDRECORD"])
+          unpacked_top = keyed_archive.unpacked_top()
+          ns_keys = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.keys"]
+          ns_values = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.objects"]
+          encrypted_values = ns_values[ns_keys.index("EncryptedValues")]
+        end
+
+        decrypt_result = @backup.decrypter.decrypt_with_password(@crypto_password,
+                                                                 @crypto_salt,
+                                                                 @crypto_iterations,
+                                                                 @crypto_key,
+                                                                 @crypto_iv,
+                                                                 @crypto_tag,
+                                                                 encrypted_values,
+                                                                 "{self.class} #{uuid}")
+        parsed_json = JSON.parse(decrypt_result[:plaintext])
+        gzipped_data = Base64.decode64(parsed_json["mergeableData"])
+      end
+
+    # Otherwise, pull from the ZICCLOUDSYNCINGOBJECT.ZMERGEABLEDATA column
+    else
+
+      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.#{mergeable_column} " +
+                        "FROM ZICCLOUDSYNCINGOBJECT " +
+                        "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
+                        uuid) do |row|
+
+        # Extract the blob
+        gzipped_data = row[mergeable_column]
+
+      end
+    end
+
+    if !gzipped_data
+      @logger.error("{self.class} #{@uuid}: Failed to find gzipped data to rebuild the object, check the #{mergeable_column} column for this UUID: \"SELECT hex(#{mergeable_column}) FROM ZICCLOUDSYNCINGOBJECT WHERE ZIDENTIFIER='#{@uuid}';\"")
+    end
+
+    return gzipped_data
   end
 
   ##
@@ -438,6 +521,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                                                               row["ZTYPEUTI"],
                                                               note)
             tmp_embedded_object.conforms_to = "table"
+            tmp_embedded_object.rebuild_table
           elsif tmp_uti.uti == "com.apple.drawing.2" or tmp_uti.uti == "com.apple.drawing" or tmp_uti.uti == "com.apple.paper"
             tmp_embedded_object = AppleNotesEmbeddedDrawing.new(row["Z_PK"],
                                                                 row["ZIDENTIFIER"],
