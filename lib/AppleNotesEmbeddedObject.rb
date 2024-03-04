@@ -438,7 +438,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                                                                         row["ZTOKENCONTENTIDENTIFIER"])
             else
               puts "#{row["ZTYPEUTI1"]} is unrecognized ZTYPEUTI1, please submit a bug report to this project's GitHub repo to report this: https://github.com/threeplanetssoftware/apple_cloud_notes_parser/issues"
-              logger.debug("#{row["ZTYPEUTI1"]} is unrecognized ZTYPEUTI1, check ZICCLOUDSYNCINGOBJECT Z_PK: #{row["Z_PK"]}")
+              logger.debug("Note #{note.note_id}: #{row["ZTYPEUTI1"]} is unrecognized ZTYPEUTI1, check ZICCLOUDSYNCINGOBJECT Z_PK: #{row["Z_PK"]}")
               tmp_embedded_object = AppleNotesEmbeddedInlineAttachment.new(row["Z_PK"],
                                                                            row["ZIDENTIFIER"],
                                                                            row["ZTYPEUTI1"],
@@ -549,7 +549,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                                                                row["ZTYPEUTI"],
                                                                note)
             puts "#{row["ZTYPEUTI"]} is unrecognized ZTYPEUTI, please submit a bug report to this project's GitHub repo to report this: https://github.com/threeplanetssoftware/apple_cloud_notes_parser/issues"
-            logger.debug("#{row["ZTYPEUTI"]} is unrecognized ZTYPEUTI, check ZICCLOUDSYNCINGOBJECT Z_PK: #{row["Z_PK"]}")
+            logger.debug("Note #{note.note_id}: #{row["ZTYPEUTI"]} is unrecognized ZTYPEUTI, check ZICCLOUDSYNCINGOBJECT Z_PK: #{row["Z_PK"]}")
           end
         
           # Set a string on the object to remember what it conforms to
