@@ -565,9 +565,13 @@ class AppleNoteStore
       if folder.is_orphan?
         tmp_parent_folder = get_folder(folder.parent_id) if folder.parent_id
         tmp_parent_folder = get_folder_by_uuid(folder.parent_uuid) if folder.parent_uuid
-        @logger.debug("Rip Folder: Found parent UUID #{folder.parent_uuid} for folder (#{folder.name}) in ZSERVERRECORD data")
-        tmp_parent_folder.add_child(folder)
-        @logger.debug("Rip Folder: Added folder #{folder.full_name} as child to #{tmp_parent_folder.name}")
+        @logger.debug("Rip Folder: Identified parent UUID #{folder.parent_uuid} for Folder #{folder.primary_key} (#{folder.name}) in ZSERVERRECORD data")
+        if tmp_parent_folder
+          tmp_parent_folder.add_child(folder) 
+          @logger.debug("Rip Folder: Added folder #{folder.primary_key} (#{folder.full_name}) as child to #{tmp_parent_folder.name}")
+        else
+          @logger.debug("Rip Folder: Could not find parent folder for Folder #{folder.primary_key}")
+        end
       end
 
       @logger.debug("Rip Folders final array: #{key} corresponds to #{folder.name}")
