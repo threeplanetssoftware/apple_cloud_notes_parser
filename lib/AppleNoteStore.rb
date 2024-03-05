@@ -372,6 +372,7 @@ class AppleNoteStore
     @folders.each_value do |folder|
       return folder if folder.uuid == folder_uuid
     end
+    return nil
   end
 
   ##
