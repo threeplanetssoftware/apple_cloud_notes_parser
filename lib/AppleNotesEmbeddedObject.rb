@@ -488,7 +488,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                                                                  row["ZTYPEUTI"],
                                                                  note,
                                                                  backup)
-          elsif tmp_uti.uti == "com.adobe.pdf"
+          elsif tmp_uti.uti == "com.adobe.pdf" or tmp_uti.uti == "com.apple.paper.doc.pdf"
             tmp_embedded_object = AppleNotesEmbeddedPDF.new(row["Z_PK"],
                                                             row["ZIDENTIFIER"],
                                                             row["ZTYPEUTI"],
