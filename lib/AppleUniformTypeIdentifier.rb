@@ -86,11 +86,13 @@ class AppleUniformTypeIdentifier
   # This method returns true if the UTI conforms to public.data objets that are likely documents
   def conforms_to_document
     return false if bad_uti?
+    return true if @uti == "com.apple.iwork.numbers.sffnumbers"
     return true if @uti == "com.apple.log"
     return true if @uti == "com.apple.rtfd"
     return true if @uti == "com.microsoft.word.doc"
     return true if @uti == "com.microsoft.excel.xls"
     return true if @uti == "com.microsoft.powerpoint.ppt"
+    return true if @uti == "com.netscape.javascript-source"
     return true if @uti == "net.openvpn.formats.ovpn"
     return true if @uti == "org.idpf.epub-container"
     return true if @uti == "org.oasis-open.opendocument.text"
