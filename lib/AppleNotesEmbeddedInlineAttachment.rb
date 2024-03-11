@@ -48,8 +48,13 @@ class AppleNotesEmbeddedInlineAttachment < AppleCloudKitRecord
   def self.to_csv_headers
     ["Object Primary Key", 
      "Note ID",
+     "Parent Object ID",
      "Object UUID", 
      "Object Type",
+     "Object Filename",
+     "Object Filepath on Phone",
+     "Object Filepath on Computer",
+     "Object User Title",
      "Object Alt Text",
      "Object Token Identifier"]
   end
@@ -62,8 +67,13 @@ class AppleNotesEmbeddedInlineAttachment < AppleCloudKitRecord
   def to_csv
     to_return =[[@primary_key, 
                    @note.note_id,
-                   @uuid, 
+                   "", # Placeholder for parent ID
+                   @uuid,
                    @type,
+                   "", # Placeholder for filename
+                   "", # Placeholder for filepath on phone
+                   "", # Placeholder for filepath on computer
+                   "", # Placeholder for user title
                    @alt_text,
                    @token_identifier]]
 

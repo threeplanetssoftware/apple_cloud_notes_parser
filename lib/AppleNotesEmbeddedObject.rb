@@ -585,7 +585,9 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
      "Object Filename",
      "Object Filepath on Phone",
      "Object Filepath on Computer",
-     "Object User Title"]
+     "Object User Title",
+     "Object Alt Text",
+     "Object Token Identifier"]
   end
 
   ##
@@ -602,7 +604,10 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                    @filename,
                    @filepath,
                    @backup_location,
-                   @user_title]]
+                   @user_title,
+                   "", # Used by InlineAttachments
+                   ""  # Used by InlineAttachments
+                   ]]
 
     # Add in any child objects
     @child_objects.each do |child_object|
