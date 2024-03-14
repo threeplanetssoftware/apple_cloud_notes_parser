@@ -267,8 +267,10 @@ class AttributeRun
       open_html_tag("a", { href: link, target: "_blank" })
     end
 
-    @active_html_node.add_child(Nokogiri::XML::Text.new(text_to_insert, @active_html_node.document))
-
+    if text_to_insert and text_to_insert.length > 0 
+      @active_html_node.add_child(Nokogiri::XML::Text.new(text_to_insert.delete("\u0000"), @active_html_node.document))
+    end
+    
     @active_html_node = original_active_html_node
   end
 
