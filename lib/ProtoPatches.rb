@@ -267,6 +267,8 @@ class AttributeRun
       open_html_tag("a", { href: link, target: "_blank" })
     end
 
+    # Change any null characters into the appropriate Unicode symbol indicating one existed.
+    text_to_insert.gsub!("\u0000", "\u2400")
     @active_html_node.add_child(Nokogiri::XML::Text.new(text_to_insert, @active_html_node.document))
 
     @active_html_node = original_active_html_node
