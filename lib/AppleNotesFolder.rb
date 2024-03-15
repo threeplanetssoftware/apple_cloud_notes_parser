@@ -140,26 +140,29 @@ class AppleNotesFolder < AppleCloudKitRecord
   #
   # This method prepares the folder name, as displayed in HTML, with links 
   # to each of its parents via a recursive approach. 
-  def full_name_with_links(individual_files: false, use_uuid: false, relative_root: to_uri)
-
-    if individual_files
-    end
+  def full_name_with_links(individual_files: false, use_uuid: false, relative_root: to_uri, include_id: false)
 
     builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
 
       current_node = self
       parents = Array.new
       doc.span {
+
+        # Build the list of folders we need to traverse
         while current_node.is_child?
           current_node = current_node.parent
           parents.push current_node
         end
+
+        # traverse the list, creating a link for each
         parents.reverse.each do |parent|
           tmp_folder = parent.anchor_link(use_uuid: use_uuid)
           if individual_files
             tmp_folder = parent.to_uri.join("index.html").relative_path_from(relative_root)
           end
-          doc.a(href: tmp_folder) {
+          options = {href: tmp_folder}
+          options[:id] = "folder_#{parent.unique_id(use_uuid)}" if include_id
+          doc.a(options) {
             doc.text parent.name
           }
           doc.text " -> "
@@ -169,7 +172,9 @@ class AppleNotesFolder < AppleCloudKitRecord
         if individual_files
           tmp_folder = relative_root.join("index.html").relative_path_from(relative_root)
         end
-        doc.a(href: tmp_folder) {
+        options = {href: tmp_folder}
+        options[:id] = "folder_#{unique_id(use_uuid)}" if include_id
+        doc.a(options) {
           doc.text @name
         }
       }
@@ -287,7 +292,7 @@ class AppleNotesFolder < AppleCloudKitRecord
               doc.text "#{@account.name}"
             }
             doc.text " -> "
-            doc << full_name_with_links(individual_files: individual_files, use_uuid: use_uuid)
+            doc << full_name_with_links(individual_files: individual_files, use_uuid: use_uuid, include_id: true)
           else
             # If we have one big long output, we don't need to generate individual links, just add anchors
             doc.a(id: "folder_#{unique_id(use_uuid)}") {

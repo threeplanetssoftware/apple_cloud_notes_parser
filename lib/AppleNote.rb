@@ -471,7 +471,7 @@ class AppleNote < AppleCloudKitRecord
           }
 
           doc.text " "
-          doc << @folder.full_name_with_links(individual_files: individual_files, use_uuid: use_uuid)
+          doc << @folder.full_name_with_links(individual_files: individual_files, use_uuid: use_uuid, include_id: false)
         }
 
         doc.div {
