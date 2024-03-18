@@ -29,17 +29,27 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     @uuid = uuid
     @type = uti
     @conforms_to = uti
-    @note = note
-    @version = @note.version
-    @is_password_protected = @note.is_password_protected
-    @backup = @note.backup
-    @database = @note.database
-    @logger = @backup.logger
+
+    # Set variables to defaults to be overridden later
+    @version = AppleNoteStore::IOS_VERSION_UNKNOWN
+    @is_password_protected = false
+    @backup = nil
+    @database = nil
+    @logger = Logger.new(STDOUT)
+
+    @user_title = ""
     @filepath = ""
     @filename = ""
     @backup_location = nil
-    @user_title = get_media_zusertitle_for_row
 
+    # Variable to hold ZMERGEABLEDATA objects
+    @gzipped_data = nil
+  
+    # Create an Array to hold Thumbnails
+    @thumbnails = Array.new
+
+    # Create an Array to hold child objects, such as for a gallery
+    @child_objects = Array.new
 
     # Zero out cryptographic settings
     @crypto_iv = nil
@@ -49,21 +59,13 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     @crypto_iterations = nil
     @crypto_password = nil
 
-    if @is_password_protected
-      add_cryptographic_settings
-    end
+    # Override the variables if we were given a note
+    self.note=(note) if note
 
-    @logger.debug("Note #{@note.note_id}: Created a new Embedded Object of type #{@type}")
+    log_string = "Created a new Embedded Object of type #{@type}"
+    log_string = "Note #{@note.note_id}: #{log_string}" if @note
 
-    # Variable to hold ZMERGEABLEDATA objects
-    @gzipped_data = nil
-  
-    # Create an Array to hold Thumbnails and add them
-    @thumbnails = Array.new
-    search_and_add_thumbnails
-
-    # Create an Array to hold child objects, such as for a gallery
-    @child_objects = Array.new
+    @logger.debug(log_string)
   end
 
   ##
@@ -75,6 +77,11 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     @backup = @note.backup
     @logger = @backup.logger
     @database = @note.database
+    @user_title = get_media_zusertitle_for_row
+    if @is_password_protected
+      add_cryptographic_settings
+    end
+    search_and_add_thumbnails
   end
 
   ##
@@ -631,7 +638,13 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
   ##
   # This method generates the HTML to be embedded into an AppleNote's HTML for objects that use thumbnails.
   def generate_html_with_images(individual_files=false)
-    return @thumbnails.first.generate_html(individual_files) if @thumbnails.length > 0
+
+    # If we have thumbnails, return the first one with a reference location
+    @thumbnails.each do |thumbnail|
+      return thumbnail.generate_html(individual_files) if thumbnail.reference_location
+    end
+
+    # If we don't have a thumbnail with a reference location, use ours
     if @reference_location
       root = @note.folder.to_relative_root(individual_files)
       builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
@@ -641,6 +654,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
       return builder.doc.root
     end
 
+    # If we get to here, neither our thumbnails, nor we had a reference location
     return "{#{type} missing due to not having a file reference location}"
   end
 

@@ -24,10 +24,20 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
     @parent = parent
     @filename = get_media_filename
     @filepath = get_media_filepath
-    @backup = backup
+    @backup = backup 
+    @zgeneration = get_zgeneration_for_thumbnail
 
     # Find where on this computer that file is stored
+    back_up_file if (@backup and @filepath.length > 0 and @filename.length > 0)
+  end
+
+  ##
+  # This method handles setting the relevant +@backup_location+ variable
+  # and then backing up the file, if it exists.
+  def back_up_file
+    return if (!@backup or !@filepath or @filepath.length == 0)
     @backup_location = @backup.get_real_file_path(@filepath)
+    @logger.debug("Embedded Thumbnail #{@uuid}: \n\tExpected Filepath: '#{@filepath}' (length: #{@filepath.length}), \n\tExpected location: '#{@backup_location}', \n\tOrphaned Parent: #{@parent}")
 
     # Copy the file to our output directory if we can
     @reference_location = @backup.back_up_file(@filepath, 
@@ -43,6 +53,16 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   end
 
   ##
+  # This method sets the thumbnail's Note object. It expects an AppleNote +note+
+  # and immediately calls AppleNotesEmbeddedObjects note= function before firing 
+  # the thumbnail's get_zgeneration_for_thumbnail.
+  def note=(note)
+    super(note)
+    @zgeneration = get_zgeneration_for_thumbnail
+    back_up_file
+  end
+
+  ##
   # This method just returns a readable String for the object. 
   # Adds to the AppleNotesEmbeddedObject.to_s by pointing to where the media is.
   def to_s
@@ -53,37 +73,47 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   # This method returns the +filepath+ of this object. 
   # This is computed based on the assumed default storage location.
   def get_media_filepath
-    return get_media_filepath_ios16_and_earlier if @note.notestore.version < AppleNoteStore::IOS_VERSION_17
+    return get_media_filepath_ios16_and_earlier if @version < AppleNoteStore::IOS_VERSION_17
     return get_media_filepath_ios17
   end
 
   ##
   # This method returns the +filepath+ of this object. 
   # This is computed based on the assumed default storage location.
+  # Examples of valid iOS 16 paths:
+  # Accounts/{account_uuid}/Previews/{parent_uuid}-1-192x144-0.png
+  # Accounts/{account_uuid}/Previews/{parent_uuid}-1-768x768-0.png.encrypted
+  # Accounts/{account_uuid}/Previews/{parent_uuid}-1-216x384-0-oriented.png
+  # Accounts/{account_uuid}/Previews/{parent_uuid}-1-144x192-0.jpg
+  # Accounts/{account_uuid}/Previews/{parent_uuid}-1-288x384-0.jpg.encrypted
   def get_media_filepath_ios16_and_earlier
-    return "#{@note.account.account_folder}Previews/#{@uuid}.#{get_thumbnail_extension}.encrypted" if @is_password_protected
-    return "#{@note.account.account_folder}Previews/#{@uuid}.#{get_thumbnail_extension}"
+    return "[Unknown Account]/Previews/#{@filename}" if !@note
+    return "#{@note.account.account_folder}Previews/#{@filename}"
   end
 
   ##
   # This method returns the +filepath+ of this object. 
   # This is computed based on the assumed default storage location.
+  # Examples of valid iOS 17 paths:
+  # Accounts/{account_uuid}/Previews/{parent_uuid}-1-272x384-0.png
+  # Accounts/{account_uuid}/Previews/{parent_uuid}-1-768x768-0.png.encrypted
+  # Accounts/{account_uuid}/Previews/{parent_uuid}-1-192x144-0/{zgeneration}/Preview.png
+  # Accounts/{account_uuid}/Previews/{parent_uuid}-1-2384x3360-0/{zgeneration}/OrientedPreview.jpeg
   def get_media_filepath_ios17
-    zgeneration = get_zgeneration_for_thumbnail
-    zgeneration = "#{@uuid}/#{zgeneration}/" if (zgeneration and zgeneration.length > 0)
+    zgeneration_string = ""
+    zgeneration_string = "#{@uuid}/#{@zgeneration}/" if (@zgeneration and @zgeneration.length > 0)
 
-    return "#{@note.account.account_folder}Previews/#{@uuid}.#{get_thumbnail_extension}.encrypted" if @is_password_protected
-    return "#{@note.account.account_folder}Previews/#{@uuid}.#{get_thumbnail_extension}" if !zgeneration
-    return "#{@note.account.account_folder}Previews/#{zgeneration}#{@filename}"
+    return "[Unknown Account]/Previews/#{@filename}" if !@note
+    return "#{@note.account.account_folder}Previews/#{zgeneration_string}#{@filename}"
   end
 
   ##
   # As these are created by Notes, it is just the UUID. These are either 
-  # .png (apparently created by com.apple.notes.gallery) or .jpg (rest) 
+  # .png (apparently created by com.apple.notes.gallery) or .jpeg/.jpg (rest) 
   # Encrypted thumbnails just have .encrypted added to the end. 
   def get_media_filename
-    return get_media_filename_ios17 if @note.notestore.version >= AppleNoteStore::IOS_VERSION_17
-    return get_media_filename_ios16_and_earlier
+    return get_media_filename_ios16_and_earlier if @version < AppleNoteStore::IOS_VERSION_17
+    return get_media_filename_ios17
   end
 
   ##
@@ -96,12 +126,18 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   end
 
   ##
-  # As of iOS 17, these appear to be called Preview.png if there is a zgeneration.
+  # As of iOS 17, these appear to be called Preview.png if there is a zgeneration. 
+  # Examples of valid paths:
+  # Accounts/{account_uuid}/Previews/{parent_uuid}-1-768x768-0.png.encrypted
+  # Accounts/{account_uuid}/Previews/{parent_uuid}-1-2384x3360-0/{zgeneration}/OrientedPreview.jpeg
+  # Accounts/{account_uuid}/Previews/{parent_uuid}-1-192x144-0/{zgeneration}/Preview.png
+  # Accounts/{account_uuid}/Previews/{parent_uuid}-1-272x384-0.png
   def get_media_filename_ios17
-    zgeneration = get_zgeneration_for_thumbnail
+    #zgeneration = get_zgeneration_for_thumbnail
 
-    return "#{@uuid}.png.encrypted" if @is_password_protected
-    return "Preview.#{get_thumbnail_extension_ios17}" if zgeneration
+    #return "#{@uuid}.png.encrypted" if @is_password_protected
+    return "#{@uuid}.#{get_thumbnail_extension_ios17}.encrypted" if @is_password_protected
+    return "Preview.#{get_thumbnail_extension_ios17}" if @zgeneration
     return "#{@uuid}.#{get_thumbnail_extension_ios17}"
   end  
 
@@ -109,7 +145,7 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   # This method fetches the appropriate ZFALLBACKGENERATION string to compute
   # media location for iOS 17 and later.
   def get_zgeneration_for_thumbnail
-    return nil if @note.notestore.version < AppleNoteStore::IOS_VERSION_17
+    return nil if @version < AppleNoteStore::IOS_VERSION_17 or !@database
     @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZGENERATION " +
                       "FROM ZICCLOUDSYNCINGOBJECT " +
                       "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
@@ -122,16 +158,16 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   # This method returns the thumbnail's extension. These are either 
   # .jpg (apparently created by com.apple.notes.gallery) or .png (rest).
   def get_thumbnail_extension
-    return get_thumbnail_extension_ios17 if @note.notestore.version >= AppleNoteStore::IOS_VERSION_17
-    return get_thumbnail_extension_ios16_and_earlier
+    return get_thumbnail_extension_ios16_and_earlier if @version < AppleNoteStore::IOS_VERSION_17
+    return get_thumbnail_extension_ios17
   end
 
   ##
   # This method returns the thumbnail's extension. This is apparently png for iOS 
-  # 17 and later.
+  # 17 and later and jpeg for Galleries.
   def get_thumbnail_extension_ios17
-    return "jpeg" if (@parent.type == "com.apple.notes.gallery")
-    return "jpeg" if (@parent.parent and @parent.parent.type == "com.apple.notes.gallery")
+    return "jpeg" if (@parent and @parent.type == "com.apple.notes.gallery")
+    return "jpeg" if (@parent and @parent.parent and @parent.parent.type == "com.apple.notes.gallery")
     return "png"
   end
 
@@ -139,25 +175,31 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   # This method returns the thumbnail's extension. These are either 
   # .jpg (apparently created by com.apple.notes.gallery) or .png (rest) for iOS 16 and earlier.
   def get_thumbnail_extension_ios16_and_earlier
-    return "jpg" if (@parent.type == "com.apple.notes.gallery")
-    return "jpg" if (@parent.parent and @parent.parent.type == "com.apple.notes.gallery")
+    return "jpg" if (@parent and @parent.type == "com.apple.notes.gallery")
+    return "jpg" if (@parent and @parent.parent and @parent.parent.type == "com.apple.notes.gallery")
     return "png"
   end
 
   ##
   # This method generates the HTML necessary to display the image inline.
   def generate_html(individual_files)
-    if (@parent.reference_location and @reference_location)
+    if (@parent and @reference_location)
+
+      # We default to the thumbnail's location to link to...
+      href_target = @reference_location 
+      # ...but if possible, we use the parent's location to get the real file
+      href_target = @parent.reference_location if @parent.reference_location 
+
       root = @note.folder.to_relative_root(individual_files)
       builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
-        doc.a(href: "#{root}#{@parent.reference_location}") {
+        doc.a(href: "#{root}#{href_target}") {
           doc.img(src: "#{root}#{@reference_location}")
         }.attr("data-apple-notes-zidentifier" => "#{@parent.uuid}")
       end
       return builder.doc.root
     end
 
-    return "{Image missing due to not having file reference point}"
+    return "{Thumbnail missing due to not having file reference point}"
   end
 
   ##
