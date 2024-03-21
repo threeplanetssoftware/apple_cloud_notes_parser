@@ -31,7 +31,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     @conforms_to = uti
 
     # Set variables to defaults to be overridden later
-    @version = AppleNoteStore::IOS_VERSION_UNKNOWN
+    @version = AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_VERSION_UNKNOWN)
     @is_password_protected = false
     @backup = nil
     @database = nil
@@ -134,7 +134,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
 
     # Set the appropriate column to find the data in
     mergeable_column = "ZMERGEABLEDATA1"
-    mergeable_column = "ZMERGEABLEDATA" if @version < AppleNoteStore::IOS_VERSION_13
+    mergeable_column = "ZMERGEABLEDATA" if @version < AppleNoteStoreVersion::IOS_VERSION_13
 
     # If this object is password protected, fetch the mergeable data from the 
     # ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON column and decrypt it. 
@@ -341,7 +341,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
   # identified by Integer z_pk.
   def get_zgeneration_for_row(z_pk)
     # Bail early if we are below iOS 17 so we don't chuck an error on the query
-    return "" if @note.notestore.version < AppleNoteStore::IOS_VERSION_17
+    return "" if @note.notestore.version < AppleNoteStoreVersion::IOS_VERSION_17
 
     @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZGENERATION, ZICCLOUDSYNCINGOBJECT.ZGENERATION1, " +
                       "ZICCLOUDSYNCINGOBJECT.ZFALLBACKIMAGEGENERATION, ZICCLOUDSYNCINGOBJECT.ZFALLBACKPDFGENERATION, " + 
@@ -399,7 +399,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
         z_type_uti = "ZICCLOUDSYNCINGOBJECT.ZTYPEUTI, ZICCLOUDSYNCINGOBJECT.ZTYPEUTI1, ZICCLOUDSYNCINGOBJECT.ZALTTEXT, ZICCLOUDSYNCINGOBJECT.ZTOKENCONTENTIDENTIFIER"
 
         # For versions older than iOS 15
-        if notestore.version < AppleNoteStore::IOS_VERSION_15
+        if notestore.version < AppleNoteStoreVersion::IOS_VERSION_15
           z_type_uti = "ZICCLOUDSYNCINGOBJECT.ZTYPEUTI"
         end
 

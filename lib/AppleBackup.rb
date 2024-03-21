@@ -80,8 +80,8 @@ class AppleBackup
     tmp_notestore = AppleNoteStore.new(location, version)
     tmp_notestore.backup=(self)
     @note_stores.push(tmp_notestore)
-    @logger.debug("Guessed Notes Version: #{version}")
-    puts "Guessed Notes Version: #{version}"
+    @logger.debug("Guessed Notes Version: #{version.to_s}")
+    puts "Guessed Notes Version: #{version.to_s}"
   end
 
   ##

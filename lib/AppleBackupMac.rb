@@ -25,6 +25,7 @@ class AppleBackupMac < AppleBackup
       # Copy the modern NoteStore to our output directory
       copy_notes_database(@root_folder + "NoteStore.sqlite", @note_store_modern_location)
       modern_note_version = AppleNoteStore.guess_ios_version(@note_store_modern_location)
+      modern_note_version.platform=(AppleNoteStoreVersion::VERSION_PLATFORM_MAC)
 
       # Create the AppleNoteStore objects
       create_and_add_notestore(@note_store_modern_location, modern_note_version)

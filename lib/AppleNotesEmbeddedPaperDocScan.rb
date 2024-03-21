@@ -85,7 +85,7 @@ class AppleNotesEmbeddedPaperDocScan < AppleNotesEmbeddedObject
   # This method fetches the appropriate ZFALLBACKGENERATION string to compute
   # media location for iOS 17 and later.
   def get_zgeneration_for_fallback_pdf
-    return "" if @note.notestore.version < AppleNoteStore::IOS_VERSION_17
+    return "" if @note.notestore.version < AppleNoteStoreVersion::IOS_VERSION_17
 
     @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZFALLBACKPDFGENERATION " +
                       "FROM ZICCLOUDSYNCINGOBJECT " +
@@ -108,7 +108,7 @@ class AppleNotesEmbeddedPaperDocScan < AppleNotesEmbeddedObject
   ##
   # Determine filename based on iOS version
   def get_media_filename
-    return get_media_filename_ios17 if @note.notestore.version >= AppleNoteStore::IOS_VERSION_17
+    return get_media_filename_ios17 if @note.notestore.version >= AppleNoteStoreVersion::IOS_VERSION_17
     return get_media_filename_ios16_and_prior
   end
 

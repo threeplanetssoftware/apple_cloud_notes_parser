@@ -123,7 +123,7 @@ class AppleNote < AppleCloudKitRecord
     @backup = nil
     @logger = Logger.new(STDOUT)
     @uuid = ""
-    @version = AppleNoteStore::IOS_VERSION_UNKNOWN # Default to unknown, override this with version=
+    @version = AppleNoteStoreVersion.new # Default to unknown, override this with version=
 
     # Handle pinning, added in iOS 11
     @is_pinned = false
@@ -148,7 +148,7 @@ class AppleNote < AppleCloudKitRecord
   # modern notes that means decompressing and parsing the protobuf.
   def process_note
     # Treat legacy stuff different
-    if @version == AppleNoteStore::IOS_LEGACY_VERSION
+    if @version.legacy?
       @plaintext = @compressed_data
       @compressed_data = nil
     else
@@ -550,11 +550,11 @@ class AppleNote < AppleCloudKitRecord
         doc.div(class: "note-content") {
           # Handle the text to insert, only if we have plaintext to run
           if @plaintext
-            if @version == AppleNoteStore::IOS_LEGACY_VERSION
+            if @version.legacy?
               doc.text plaintext
             end
 
-            if @version > AppleNoteStore::IOS_VERSION_9
+            if @version.modern?
               doc << generate_html_text(individual_files)
             end
           elsif @encrypted_data

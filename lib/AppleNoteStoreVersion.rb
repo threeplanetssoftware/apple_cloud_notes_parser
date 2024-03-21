@@ -1,4 +1,4 @@
-class AppleNoteStoreVersion
+class AppleNoteStoreVersion include Comparable
 
   attr_accessor :version_number,
                 :platform
@@ -23,23 +23,31 @@ class AppleNoteStoreVersion
     @version_number = version_number
   end
 
-  def >(other)
-    return @version_number > other.version_number
-  end
-
-  def <(other)
-    return @version_number < other.version_number
-  end
-
-  def ==(other)
-    return @version_number == other.version_number
-  end
-
   def <=>(other)
-    return @version_number <=> other.version_number
+    return @version_number <=> other if other.is_a? Integer
+    return @version_number <=> other.version_number if other.is_a? AppleNoteStoreVersion
+    return nil
+  end
+
+  def legacy?
+    return @version_number == IOS_LEGACY_VERSION
+  end
+
+  def modern?
+    return @version_number > IOS_LEGACY_VERSION
+  end
+
+  def unknown?
+    return @version_number < 0
   end
 
   def same_platform(other)
     return @platform == other.platform
+  end
+
+  def to_s
+    to_return = "#{@version_number}"
+    to_return += " on Mac" if @platform == VERSION_PLATFORM_MAC
+    return to_return
   end
 end

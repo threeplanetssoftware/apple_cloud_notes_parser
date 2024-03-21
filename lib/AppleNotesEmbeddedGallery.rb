@@ -75,7 +75,7 @@ class AppleNotesEmbeddedGallery < AppleNotesEmbeddedObject
     else
       # Set the appropriate column to find the data in
       mergeable_column = "ZMERGEABLEDATA1"
-      mergeable_column = "ZMERGEABLEDATA" if @note.version < AppleNoteStore::IOS_VERSION_13
+      mergeable_column = "ZMERGEABLEDATA" if @note.version < AppleNoteStoreVersion::IOS_VERSION_13
 
       @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.#{mergeable_column} " +
                         "FROM ZICCLOUDSYNCINGOBJECT " +

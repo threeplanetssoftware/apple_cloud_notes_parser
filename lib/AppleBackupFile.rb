@@ -28,8 +28,8 @@ class AppleBackupFile < AppleBackup
       note_version = AppleNoteStore.guess_ios_version(@note_store_temporary_location)
 
       # Move that to the right name, based on the version
-      note_store_new_location = @note_store_modern_location if note_version >= AppleNoteStore::IOS_VERSION_9
-      note_store_new_location = @note_store_legacy_location if note_version == AppleNoteStore::IOS_LEGACY_VERSION
+      note_store_new_location = @note_store_modern_location if note_version.modern?
+      note_store_new_location = @note_store_legacy_location if note_version.legacy?
 
       # Rename the file to be the right database
       FileUtils.mv(@note_store_temporary_location, note_store_new_location)

@@ -73,7 +73,7 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   # This method returns the +filepath+ of this object. 
   # This is computed based on the assumed default storage location.
   def get_media_filepath
-    return get_media_filepath_ios16_and_earlier if @version < AppleNoteStore::IOS_VERSION_17
+    return get_media_filepath_ios16_and_earlier if @version < AppleNoteStoreVersion::IOS_VERSION_17
     return get_media_filepath_ios17
   end
 
@@ -112,7 +112,7 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   # .png (apparently created by com.apple.notes.gallery) or .jpeg/.jpg (rest) 
   # Encrypted thumbnails just have .encrypted added to the end. 
   def get_media_filename
-    return get_media_filename_ios16_and_earlier if @version < AppleNoteStore::IOS_VERSION_17
+    return get_media_filename_ios16_and_earlier if @version < AppleNoteStoreVersion::IOS_VERSION_17
     return get_media_filename_ios17
   end
 
@@ -145,7 +145,7 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   # This method fetches the appropriate ZFALLBACKGENERATION string to compute
   # media location for iOS 17 and later.
   def get_zgeneration_for_thumbnail
-    return nil if @version < AppleNoteStore::IOS_VERSION_17 or !@database
+    return nil if @version < AppleNoteStoreVersion::IOS_VERSION_17 or !@database
     @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZGENERATION " +
                       "FROM ZICCLOUDSYNCINGOBJECT " +
                       "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
@@ -158,7 +158,7 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   # This method returns the thumbnail's extension. These are either 
   # .jpg (apparently created by com.apple.notes.gallery) or .png (rest).
   def get_thumbnail_extension
-    return get_thumbnail_extension_ios16_and_earlier if @version < AppleNoteStore::IOS_VERSION_17
+    return get_thumbnail_extension_ios16_and_earlier if @version < AppleNoteStoreVersion::IOS_VERSION_17
     return get_thumbnail_extension_ios17
   end
 

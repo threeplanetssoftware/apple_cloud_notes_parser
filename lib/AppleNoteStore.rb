@@ -5,6 +5,7 @@ require_relative 'AppleNote.rb'
 require_relative 'AppleNotesAccount.rb'
 require_relative 'AppleNotesFolder.rb'
 require_relative 'AppleNotesSmartFolder.rb'
+require_relative 'AppleNoteStoreVersion.rb'
 
 ##
 # This class represents an Apple NoteStore file. It tries to handle the hard work of taking 
@@ -22,18 +23,6 @@ class AppleNoteStore
                 :retain_order,
                 :range_start,
                 :range_end
-
-  IOS_VERSION_17 = 17
-  IOS_VERSION_16 = 16
-  IOS_VERSION_15 = 15
-  IOS_VERSION_14 = 14
-  IOS_VERSION_13 = 13
-  IOS_VERSION_12 = 12
-  IOS_VERSION_11 = 11
-  IOS_VERSION_10 = 10
-  IOS_VERSION_9 = 9
-  IOS_LEGACY_VERSION = 8
-  IOS_VERSION_UNKNOWN = -1
 
   ##
   # Creates a new AppleNoteStore. Expects a FilePath +file_path+ to the NoteStore.sqlite
@@ -103,46 +92,46 @@ class AppleNoteStore
 
     # If ZICNOTEDATA has no columns, this is a legacy copy
     if zicnotedata_columns.length == 0
-      return IOS_LEGACY_VERSION
+      return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_LEGACY_VERSION)
     end
 
     # It appears ZGENERATION showed up in iOS 17's updates
     if ziccloudsyncingobject_columns.include?("ZGENERATION: VARCHAR")
-      return IOS_VERSION_17
+      return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_VERSION_17)
     end
 
     # It appears ZACCOUNT6 - ZACCOUNT8 showed up in iOS 16's updates
     if ziccloudsyncingobject_columns.include?("ZACCOUNT6: INTEGER")
-      return IOS_VERSION_16
+      return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_VERSION_16)
     end
 
     # It appears ZACCOUNT5 showed up in iOS 15's updates
     if ziccloudsyncingobject_columns.include?("ZACCOUNT5: INTEGER")
-      return IOS_VERSION_15
+      return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_VERSION_15)
     end
 
     # It appears ZLASTOPENEDDATE showed up in iOS 14's updates
     if ziccloudsyncingobject_columns.include?("ZLASTOPENEDDATE: TIMESTAMP")
-      return IOS_VERSION_14
+      return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_VERSION_14)
     end
 
     # It appears ZACCOUNT4 showed up in iOS 13's updates, as it is tied to shared folders
     if ziccloudsyncingobject_columns.include?("ZACCOUNT4: INTEGER")
-      return IOS_VERSION_13
+      return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_VERSION_13)
     end
 
     # ZSERVERRECORDDATA showed up in iOS 12, prior to that it was just ZSERVERRECORD
     if ziccloudsyncingobject_columns.include?("ZSERVERRECORDDATA: BLOB")
-      return IOS_VERSION_12
+      return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_VERSION_12)
     end
 
     # This table was *likely* new in iOS 11, based on the name
     if database_tables.include?("Z_11NOTES")
-      return IOS_VERSION_11
+      return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_VERSION_11)
     end
 
     # When in doubt, return unknown
-    return IOS_VERSION_UNKNOWN
+    return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_VERSION_UNKNOWN)
   end
 
   ##
@@ -211,7 +200,7 @@ class AppleNoteStore
   ##
   # This method ensures that the SQLite3::Database is a valid iCloud version of Apple Notes.
   def valid_notes?
-    return true if @version >= IOS_LEGACY_VERSION # Easy out if we've already identified the version
+    return true if @version >= AppleNoteStoreVersion::IOS_LEGACY_VERSION # Easy out if we've already identified the version
 
     # Just because my fingerprinting isn't great yet, adding in a more manual check for the key tables we need
     expected_tables = ["ZICCLOUDSYNCINGOBJECT",
@@ -249,7 +238,7 @@ class AppleNoteStore
   # and then populates it with each note's plaintext.
   def add_plain_text_to_database
 
-    return if @version < IOS_VERSION_9 # Fail out if we're prior to the compressed data age
+    return if @version < AppleNoteStoreVersion::IOS_VERSION_9 # Fail out if we're prior to the compressed data age
 
     # Warn the user
     puts "Adding the ZICNOTEDATA.ZPLAINTEXT and ZICNOTEDATA.ZDECOMPRESSEDDATA columns, this takes a few seconds"
@@ -386,7 +375,7 @@ class AppleNoteStore
   # This function identifies all AppleNotesAccount potential 
   # objects in ZICCLOUDSYNCINGOBJECTS and calls +rip_account+ on each.
   def rip_accounts()
-    if @version >= IOS_VERSION_9
+    if @version.modern?
       @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.Z_PK " +
                         "FROM ZICCLOUDSYNCINGOBJECT " + 
                         "WHERE ZICCLOUDSYNCINGOBJECT.ZNAME IS NOT NULL") do |row|
@@ -394,7 +383,7 @@ class AppleNoteStore
       end 
     end
 
-    if @version == IOS_LEGACY_VERSION
+    if @version.legacy?
       @database.execute("SELECT ZACCOUNT.Z_PK FROM ZACCOUNT") do |row|
         rip_account(row["Z_PK"])
       end
@@ -416,15 +405,15 @@ class AppleNoteStore
 
     # Set the ZSERVERRECORD column to look at
     server_record_column = "ZSERVERRECORD"
-    server_record_column = server_record_column + "DATA" if @version >= IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+    server_record_column = server_record_column + "DATA" if @version >= AppleNoteStoreVersion::IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
     # Set the ZSERVERSHARE column to look at
     server_share_column = "ZSERVERSHARE"
-    server_share_column = server_share_column + "DATA" if @version >= IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+    server_share_column = server_share_column + "DATA" if @version >= AppleNoteStoreVersion::IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
     # Set the ZACCOUNTDATA column to look at
     account_data_column = "-1 as ZACCOUNTDATA"
-    account_data_column = "ZICCLOUDSYNCINGOBJECT.ZACCOUNTDATA" if @version >= IOS_VERSION_13 # This column appears to show up in iOS 12
+    account_data_column = "ZICCLOUDSYNCINGOBJECT.ZACCOUNTDATA" if @version >= AppleNoteStoreVersion::IOS_VERSION_13 # This column appears to show up in iOS 12
 
     @logger.debug("Rip Account: Using server_record_column of #{server_record_column}")
 
@@ -439,7 +428,7 @@ class AppleNoteStore
                    "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?"
     
     # Change the query for legacy IOS
-    if @version == IOS_LEGACY_VERSION
+    if @version.legacy?
       query_string = "SELECT ZACCOUNT.ZNAME, ZACCOUNT.Z_PK, " + 
                      "ZACCOUNT.ZACCOUNTIDENTIFIER as ZIDENTIFIER " + 
                      "FROM ZACCOUNT " + 
@@ -546,7 +535,7 @@ class AppleNoteStore
   # This function identifies all AppleNotesFolder potential 
   # objects in ZICCLOUDSYNCINGOBJECTS and calls +rip_folder+ on each.
   def rip_folders()
-    if @version >= IOS_VERSION_9
+    if @version.modern?
       @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.Z_PK " + 
                         "FROM ZICCLOUDSYNCINGOBJECT " + 
                         "WHERE ZICCLOUDSYNCINGOBJECT.ZTITLE2 IS NOT NULL") do |row|
@@ -555,7 +544,7 @@ class AppleNoteStore
     end
 
     # In legacy Notes the "folders" were "stores"
-    if @version == IOS_LEGACY_VERSION
+    if @version.legacy?
       @database.execute("SELECT ZSTORE.Z_PK FROM ZSTORE") do |row|
         rip_folder(row["Z_PK"])
       end
@@ -600,14 +589,14 @@ class AppleNoteStore
 
     # Set the ZSERVERRECORD column to look at
     server_record_column = "ZSERVERRECORD"
-    server_record_column = server_record_column + "DATA" if @version >= IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+    server_record_column = server_record_column + "DATA" if @version >= AppleNoteStoreVersion::IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
     # Set the ZSERVERSHARE column to look at
     server_share_column = "ZSERVERSHARE"
-    server_share_column = server_share_column + "DATA" if @version >= IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+    server_share_column = server_share_column + "DATA" if @version >= AppleNoteStoreVersion::IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
  
     smart_folder_query = "'' as ZSMARTFOLDERQUERYJSON"
-    smart_folder_query = "ZICCLOUDSYNCINGOBJECT.ZSMARTFOLDERQUERYJSON" if @version >= IOS_VERSION_15
+    smart_folder_query = "ZICCLOUDSYNCINGOBJECT.ZSMARTFOLDERQUERYJSON" if @version >= AppleNoteStoreVersion::IOS_VERSION_15
  
     query_string = "SELECT ZICCLOUDSYNCINGOBJECT.ZTITLE2, ZICCLOUDSYNCINGOBJECT.ZOWNER, " + 
                    "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.#{server_share_column}, " +
@@ -617,7 +606,7 @@ class AppleNoteStore
                    "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?"
 
     #Change things up for the legacy version
-    if @version == IOS_LEGACY_VERSION
+    if @version.legacy?
       query_string = "SELECT ZSTORE.Z_PK, ZSTORE.ZNAME as ZTITLE2, " +
                      "ZSTORE.ZACCOUNT as ZOWNER, '' as ZIDENTIFIER " +
                      "FROM ZSTORE " +
@@ -680,7 +669,7 @@ class AppleNoteStore
     range_start_core = (@range_start - 978307200)
     range_end_core = (@range_end - 978307200)
     @logger.debug("Rip Notes: Ripping notes between #{Time.at(range_start)} and #{Time.at(range_end)}")
-    if @version >= IOS_VERSION_9
+    if @version.modern?
       tmp_query = "SELECT ZICNOTEDATA.ZNOTE " + 
                   "FROM ZICNOTEDATA, ZICCLOUDSYNCINGOBJECT " + 
                   "WHERE ZICNOTEDATA.ZDATA NOT NULL AND ZICCLOUDSYNCINGOBJECT.Z_PK=ZICNOTEDATA.ZNOTE AND " + 
@@ -691,7 +680,7 @@ class AppleNoteStore
       end
     end
 
-    if @version == IOS_LEGACY_VERSION
+    if @version.legacy?
       @database.execute("SELECT ZNOTE.Z_PK FROM ZNOTE") do |row|
         self.rip_note(row["Z_PK"])
       end
@@ -710,11 +699,11 @@ class AppleNoteStore
 
     # Set the ZSERVERRECORD column to look at
     server_record_column = "ZSERVERRECORD"
-    server_record_column = server_record_column + "DATA" if @version >= IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+    server_record_column = server_record_column + "DATA" if @version >= AppleNoteStoreVersion::IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
     # Set the ZSERVERSHARE column to look at
     server_share_column = "ZSERVERSHARE"
-    server_share_column = server_share_column + "DATA" if @version >= IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
+    server_share_column = server_share_column + "DATA" if @version >= AppleNoteStoreVersion::IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
     folder_field = "ZFOLDER"
     account_field = "ZACCOUNT7"
@@ -722,17 +711,17 @@ class AppleNoteStore
     creation_date_field = "ZCREATIONDATE1"
  
     # In version 15, what is now in ZACCOUNT7 as of iOS 16 (the account ID) was in ZACCOUNT4
-    if @version == IOS_VERSION_15
+    if @version == AppleNoteStoreVersion::IOS_VERSION_15
       account_field = "ZACCOUNT4"
     end
 
     # In version 13 and 14, what is now in ZACCOUNT4 as of iOS 15 (the account ID) was in ZACCOUNT3
-    if @version < IOS_VERSION_15
+    if @version < AppleNoteStoreVersion::IOS_VERSION_15
       account_field = "ZACCOUNT3"
     end
 
     # In iOS 15 it appears ZCREATIONDATE1 moved to ZCREATIONDATE3 for notes
-    if @version > IOS_VERSION_14
+    if @version > AppleNoteStoreVersion::IOS_VERSION_14
       creation_date_field = "ZCREATIONDATE3"
     end
 
@@ -751,12 +740,12 @@ class AppleNoteStore
                    "WHERE ZICNOTEDATA.ZNOTE=? AND ZICCLOUDSYNCINGOBJECT.Z_PK=ZICNOTEDATA.ZNOTE"
 
     # In version 12, what is now in ZACCOUNT3 (the account ID) was in ZACCOUNT2
-    if @version == IOS_VERSION_12
+    if @version == AppleNoteStoreVersion::IOS_VERSION_12
       account_field = "ZACCOUNT2"
     end
 
     # In version 11, what is now in ZACCOUNT3 was in ZACCOUNT2 and the ZFOLDER field was in a completely separate table
-    if @version == IOS_VERSION_11
+    if @version == AppleNoteStoreVersion::IOS_VERSION_11
       query_string = "SELECT ZICNOTEDATA.Z_PK, ZICNOTEDATA.ZNOTE, " + 
                      "ZICNOTEDATA.ZCRYPTOINITIALIZATIONVECTOR, ZICNOTEDATA.ZCRYPTOTAG, " + 
                      "ZICNOTEDATA.ZDATA, ZICCLOUDSYNCINGOBJECT.ZCRYPTOVERIFIER, " + 
@@ -774,7 +763,7 @@ class AppleNoteStore
     end
 
     # In the legecy version, everything is different
-    if @version == IOS_LEGACY_VERSION
+    if @version.legacy?
       query_string = "SELECT ZNOTE.Z_PK, ZNOTE.ZCREATIONDATE as ZCREATIONDATE1, " + 
                      "ZNOTE.ZMODIFICATIONDATE as ZMODIFICATIONDATE1, ZNOTE.ZTITLE as ZTITLE1, " + 
                      "ZNOTEBODY.ZCONTENT as ZDATA, ZSTORE.Z_PK as ZFOLDER, ZSTORE.ZACCOUNT, " +
