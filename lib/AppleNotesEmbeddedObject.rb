@@ -405,7 +405,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
 
         tmp_query = "SELECT ZICCLOUDSYNCINGOBJECT.Z_PK, ZICCLOUDSYNCINGOBJECT.ZNOTE, " + 
                     "ZICCLOUDSYNCINGOBJECT.ZCREATIONDATE, ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE, " +
-                    "#{z_type_uti}, ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER " + 
+                    "#{z_type_uti}, ZSIZEHEIGHT, ZSIZEWIDTH, ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER " + 
                     "FROM ZICCLOUDSYNCINGOBJECT " +
                     "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?"
 
@@ -461,6 +461,8 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                                                                    note,
                                                                    backup,
                                                                    nil)
+            tmp_embedded_object.height = row["ZSIZEHEIGHT"]
+            tmp_embedded_object.width = row["ZSIZEWIDTH"]
           elsif tmp_uti.conforms_to_audiovisual 
             tmp_embedded_object = AppleNotesEmbeddedPublicVideo.new(row["Z_PK"],
                                                                     row["ZIDENTIFIER"],
@@ -630,6 +632,15 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
   end
 
   ##
+  # This method finds the first thumbnail size, regardless of if the thumbnail's
+  # reference location is real. Returns the answer as a Hash with keys 
+  # {width: xxx, height: yyy}.
+  def get_thumbnail_size
+    return nil if (!@thumbnails or @thumbnails.length == 0)
+    return {width: @thumbnails.first.width, height: @thumbnails.first.height}
+  end
+
+  ##
   # This method generates the HTML to be embedded into an AppleNote's HTML.
   def generate_html(individual_files=false)
     return self.to_s
@@ -647,8 +658,16 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     # If we don't have a thumbnail with a reference location, use ours
     if @reference_location
       root = @note.folder.to_relative_root(individual_files)
+      href_target = "#{root}#{@reference_location}"
       builder = Nokogiri::HTML::Builder.new(encoding: "utf-8") do |doc|
-        doc.img(src: "#{root}#{@reference_location}").attr("data-apple-notes-zidentifier" => "#{@uuid}")
+        thumbnail_size = get_thumbnail_size
+        doc.a(href: href_target) {
+          if thumbnail_size and thumbnail_size[:width] > 0
+            doc.img(src: href_target).attr("data-apple-notes-zidentifier" => "#{@uuid}").attr("width" => thumbnail_size[:width])
+          else
+            doc.img(src: href_target).attr("data-apple-notes-zidentifier" => "#{@uuid}")
+          end
+        }
       end
 
       return builder.doc.root

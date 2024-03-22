@@ -5,7 +5,9 @@ require_relative 'AppleNotesEmbeddedThumbnail.rb'
 # in an AppleNote. This means you either took a picture or selected one that was taken already.
 class AppleNotesEmbeddedPublicJpeg < AppleNotesEmbeddedObject
 
-  attr_accessor :reference_location
+  attr_accessor :reference_location,
+                :height,
+                :width
 
   ## 
   # Creates a new AppleNotesEmbeddedPublicJpeg object. 
@@ -23,6 +25,10 @@ class AppleNotesEmbeddedPublicJpeg < AppleNotesEmbeddedObject
 
     @filename = get_media_filename
     @filepath = get_media_filepath
+
+    # Default height and width variables
+    @height = 0
+    @width = 0
 
     # Find where on this computer that file is stored
     @backup_location = @backup.get_real_file_path(@filepath)
