@@ -93,14 +93,40 @@ class AppleNotesEmbeddedGallery < AppleNotesEmbeddedObject
       zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
       gunzipped_data = zlib_inflater.inflate(gzipped_data)
 
+      tmp_order = Hash.new
+      tmp_current_uuid = ''
+      tmp_current_order = ''
+
       # Read the protobuff
       mergabledata_proto = MergableDataProto.decode(gunzipped_data)
+
+      # Loop over the entries to pull out the UUIDs for each child, as well as their ordering information
       mergabledata_proto.mergable_data_object.mergeable_data_object_data.mergeable_data_object_entry.each do |mergeable_data_object_entry|
+
+        # This section holds an obvious UUID that matches the ZIDENTIFIER column
         if mergeable_data_object_entry.custom_map
-          create_child_from_uuid(mergeable_data_object_entry.custom_map.map_entry.first.value.string_value)
+          tmp_current_uuid = mergeable_data_object_entry.custom_map.map_entry.first.value.string_value
+        end
+
+        # This section holds what appears to be ordering information
+        if mergeable_data_object_entry.unknown_message
+          tmp_current_order = mergeable_data_object_entry.unknown_message.unknown_entry.unknown_int2
+        end
+
+        # If we ever have both the UUID and order, set them in the hash and clear them
+        if tmp_current_order != '' and tmp_current_uuid != ''
+          tmp_order[tmp_current_order] = tmp_current_uuid
+          tmp_current_uuid = ''
+          tmp_current_order = ''
         end
 
       end
+
+      # Loop over the Hash to put the images into the right order
+      tmp_order.keys.sort.each do |key|
+        create_child_from_uuid(tmp_order[key])
+      end
+
     end
     nil
   end
@@ -113,6 +139,7 @@ class AppleNotesEmbeddedGallery < AppleNotesEmbeddedObject
                       "ZICCLOUDSYNCINGOBJECT.ZTYPEUTI " + 
                       "FROM ZICCLOUDSYNCINGOBJECT " + 
                       "WHERE ZIDENTIFIER=?", uuid) do |row|
+      @logger.debug("Creating gallery child from #{row["Z_PK"]}: #{uuid}")
       tmp_child = AppleNotesEmbeddedPublicJpeg.new(row["Z_PK"],
                                                    row["ZIDENTIFIER"],
                                                    row["ZTYPEUTI"],
