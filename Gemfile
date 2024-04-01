@@ -1,14 +1,22 @@
 source "https://rubygems.org"
 
-gem 'aes_key_wrap', ">= 1.1.0"
-gem 'fileutils', ">= 1.4.0"
-gem 'google-protobuf', ">= 3.11.2"
-gem 'nokogiri', ">= 1.14.0"
-gem 'openssl', ">= 2.2.0"
-gem 'rake', ">= 10.5.0"
-gem 'sqlite3', ">= 1.4.0"
-gem 'zlib', ">= 1.1.0"
-gem 'keyed_archive', ">= 1.0.0"
-gem 'cgi',">= 0.3.3"
+# Gems owned by Ruby directly
+gem 'cgi',">= 0.3.3" # Ruby official
+gem 'fileutils', ">= 1.4.0" # Ruby official
+gem 'openssl', ">= 2.2.0" # Ruby official
+gem 'rake', ">= 10.5.0" # Ruby official
+gem 'zlib', ">= 1.1.0" # Ruby official
 
-ruby ">= 2.7" 
+# Gems owned by Google
+gem 'google-protobuf', ">= 3.11.2" # Google official
+
+# Gems owned by some "organization" on GitHub
+gem 'rspec' # Owned by rspec
+gem 'sqlite3', ">= 1.4.0" # Owned by SparkleMotion
+
+# Gems with multiple possible maintainers
+gem 'nokogiri', ">= 1.14.0" # Multiple maintainers
+gem 'keyed_archive', ">= 1.0.0" # Owned by me and one other
+
+# Gems with just one maintainer
+gem 'aes_key_wrap', ">= 1.1.0" # Single owner: @tomdalling
