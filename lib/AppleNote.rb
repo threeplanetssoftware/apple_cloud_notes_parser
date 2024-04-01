@@ -329,7 +329,12 @@ class AppleNote < AppleCloudKitRecord
     # Check for GZip magic number
     if is_gzip(@compressed_data)
       zlib_inflater = Zlib::Inflate.new(Zlib::MAX_WBITS + 16)
-      @decompressed_data = zlib_inflater.inflate(@compressed_data)
+      begin
+        @decompressed_data = zlib_inflater.inflate(@compressed_data)
+      rescue StandardError => error
+        # warn "\033[101m#{error}\033[m" # Prettified colors
+        @logger.error("AppleNote: Note #{@note_id} somehow tried to decompress something that was GZIP but had to rescue error: #{error}")
+      end
     else
       @logger.error("AppleNote: Note #{@note_id} somehow tried to decompress something that was not a GZIP")
     end

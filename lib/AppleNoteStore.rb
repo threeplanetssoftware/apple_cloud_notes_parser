@@ -676,7 +676,12 @@ class AppleNoteStore
                   "ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1 >= ? AND " + 
                   "ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1 <= ?"
       @database.execute(tmp_query, range_start_core, range_end_core) do |row|
-        self.rip_note(row["ZNOTE"])
+        begin
+          self.rip_note(row["ZNOTE"])
+        rescue StandardError => error
+          # warn "\033[101m#{e}\033[m"
+          @logger.error("AppleNoteStore: NoteStore tried to rip Note#{row["ZNOTE"]} but had to rescue error: #{error}")
+        end
       end
     end
 
