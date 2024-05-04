@@ -254,7 +254,7 @@ class AppleNoteStore
       @database.execute("UPDATE ZICNOTEDATA " + 
                         "SET ZPLAINTEXT=?, ZDECOMPRESSEDDATA=? " + 
                         "WHERE Z_PK=?",
-                        note.plaintext, note.decompressed_data, note.primary_key) if note.plaintext
+                        [note.plaintext, note.decompressed_data, note.primary_key]) if note.plaintext
     end
   end
 
@@ -675,7 +675,7 @@ class AppleNoteStore
                   "WHERE ZICNOTEDATA.ZDATA NOT NULL AND ZICCLOUDSYNCINGOBJECT.Z_PK=ZICNOTEDATA.ZNOTE AND " + 
                   "ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1 >= ? AND " + 
                   "ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1 <= ?"
-      @database.execute(tmp_query, range_start_core, range_end_core) do |row|
+      @database.execute(tmp_query, [range_start_core, range_end_core]) do |row|
         begin
           self.rip_note(row["ZNOTE"])
         rescue StandardError => error
