@@ -317,7 +317,7 @@ The JSON output of `AppleNotesEmbeddedObject` is as follows.
 
 ### Ruby Version
 
-This program requires Ruby version 2.7 or later.
+This program requires Ruby version 3.0 or later.
 
 ### Gems
 
@@ -336,7 +336,7 @@ This program requires the following Ruby gems which can be installed by running 
 
 Below are instructions, generally preferring the command line, for each of Linux, Mac, and Windows. The user can choose to use Git if they want to be able to keep up with changes, or just download the tool once, you do not need to do both. On each OS, you will want to:
 
-1. Install Ruby (at least version 2.7, preferably 3.0 or later), its development headers, and bundler if not already installed.
+1. Install Ruby (at least version 3.0), its development headers, and bundler if not already installed.
 2. Install development headers for SQLite3 if not already installed.
 3. Get this code
    1. Clone this repository with Git or
