@@ -3,7 +3,7 @@ source "https://rubygems.org"
 # Gems owned by Ruby directly
 gem 'cgi',"~> 0.3" # Ruby official
 gem 'fileutils', "~> 1.4" # Ruby official
-gem 'openssl', "~> 2.2" # Ruby official
+gem 'openssl', ">= 2.2" # Ruby official
 gem 'rake', "~> 13.2" # Ruby official
 gem 'zlib', "~> 1.1" # Ruby official
 
