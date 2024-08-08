@@ -4,16 +4,10 @@ By: Jon Baumann, [Ciofeca Forensics](https://www.ciofecaforensics.com)
 ## About
 
 This program is a parser for the current version of Apple Notes data syncable with iCloud as seen on Apple handsets in iOS 9 and later. 
-This program was made as an update to the [previous Perl script](https://github.com/threeplanetssoftware/apple_cloud_notes_parser) which did not well handle the protobufs used by Apple in Apple Notes. 
-That script and this program are needed because data that was stored in plaintext in the versions of Apple's Notes prior to iOS 9 in its `notes.sqlite` database is now gzipped before storage in the iCloud Notes database `NoteStore.sqlite` and the amount of embedded objects inside of Notes is far higher.
-While the data is not necessarily encrypted, although some is using the password feature, it is not as searchable to the examiner, given its compressed nature. 
-This program intends to make the plaintext stored in the note and its embedded attachments far more usable.
+This program is needed because Apple Notes data is stored in a series of protobufs and tables in the database and it is not always easy to piece them back together by hand. 
+This program intends to make it easy for Apple users to backup Apple Notes of their own and to expose as much of the Apple Notes information as possible for forensic examiners.
 
 This program was implemented in Ruby and currently requires Ruby 3.0 or newer.
-The classes underlying this represent all the necessary features to write other programs to interface with an Apple Notes backup, including exporting data to another format, or writing better search functions. 
-In addition, this program and its classes attempts to abstract away the work needed to understand the type of backup and how it stores files. 
-While examiners must understand those backups, this will provide its own internal interfaces for identifying where media files are kept. 
-For example, if the backup is from iTunes, this program will use the Manifest.db to identify the hashed name of the included file, and copy out/rename the image to the appropriate name, without the examiner having to do that manually.
 
 ## Features
 
@@ -27,6 +21,7 @@ This program will:
 6. ... from iTunes logical backups, physical backups, single files, and directly from Mac versions
 7. ... displaying tables as actual tables and ripping the embedded images from the backup and putting them into a folder with the other output files for review
 8. ... identifying the CloudKit participants involved in any shared items.
+9. ... producing well-structured JSON for automated backups
 
 ## Usage
 
