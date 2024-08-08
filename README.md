@@ -33,21 +33,40 @@ This program will:
 ### Base
 
 This program is run by Ruby on a command line, using either `rake` or `ruby`. 
-The easiest use is to drop your exported `NoteStore.sqlite` into the same directory as this program and then run `rake` (which is the same as running `ruby notes_cloud_ripper.rb --file NoteStore.sqlite`). 
+The easiest use is to drop your exported `NoteStore.sqlite` into the same directory as this program and then run `rake`:
 
-If you are more comfortable with the command line, you can point the program anywhere you would like on your computer and specify the type of backup you are looking at, such as: `ruby notes_cloud_ripper.rb --itunes-dir ~/.iTunes/backup1/` or `ruby notes_cloud_ripper.rb --file ~/.iTunes/backup1/4f/4f98687d8ab0d6d1a371110e6b7300f6e465bef2`. 
-The benefit of pointing at full backups is this program can pull files out of them as needed, such as drawings and pictures.
+```shell
+[notta@cuppa apple_cloud_notes_parser]$ rake
+/home/notta/.rvm/rubies/ruby-2.7.0/bin/ruby notes_cloud_ripper.rb --file NoteStore.sqlite
+
+Starting Apple Notes Parser at Thu Aug  8 06:33:21 2024
+Storing the results in ./output/2024_08_08-06_33_21
+
+Created a new AppleBackup from single file: NoteStore.sqlite
+Guessed Notes Version: 15
+Apple Decrypter: Attempting to decrypt objects without a password list set, check the -w option for more success
+Updated AppleNoteStore object with 108 AppleNotes in 26 folders belonging to 2 accounts.
+Adding the ZICNOTEDATA.ZPLAINTEXT and ZICNOTEDATA.ZDECOMPRESSEDDATA columns, this takes a few seconds
+
+Successfully finished at Thu Aug  8 06:33:22 2024
+```
+
+If you are more comfortable with the command line, you can point the program anywhere you would like on your computer and specify the type of backup you are looking at, see the Options section below for specifics.  
+The benefit of pointing at full backups is this program can pull embedded files out of the notes, such as drawings and pictures.
 
 ### Docker
 
 Thanks to @jareware, if you have [Docker installed already](https://docs.docker.com/get-docker/) you can run this program as a docker container.
 This is a great way to ensure you will not run into any dependancy issues or have to have Ruby installed. 
-Shell scripts have been provided in the `docker_scripts` folder which may help if they cover your use case. 
-Each of these uses the present working directory to create the output folder. 
- - `linux_run_file.sh`: This script will run the program on a NoteStore.sqlite file found in the present working directory (as if you ran `-f NoteStore.sqlite`).
- - `mac_run_file.sh`: This script will run the program on a NoteStore.sqlite file found in the present working directory (as if you ran `-f NoteStore.sqlite`).
- - `mac_run_itunes.sh`: This script will run the program on the local user's Mobile Backups(as if you used `--itunes ~/Library/Application\ Support/MobileSync/Backup/[your backup]`).
- - `mac_run_notes.sh`: This script will run the program on the local user's Apple Notes directory (as if you used `--mac ~/Library/Group\ Containers/group.com.apple.notes`).
+Shell scripts have been provided in the `docker_scripts` folder to cover the most common use cases. 
+Each of these uses the present working directory to create the output folder.
+ 
+|Script|Purpose|
+|------|-------|
+|linux\_run\_file.sh|This script will run the program on a NoteStore.sqlite file found in the present working directory (as if you ran `--file NoteStore.sqlite`).|
+|mac\_run\_file.sh|This script will run the program on a NoteStore.sqlite file found in the present working directory (as if you ran `--file NoteStore.sqlite`).|
+|mac\_run\_itunes.sh|This script will run the program on the local user's Mobile Backups(as if you used `--itunes ~/Library/Application\ Support/MobileSync/Backup/[your backup]`).|
+|mac\_run\_notes.sh|This script will run the program on the local user's Apple Notes directory (as if you used `--mac ~/Library/Group\ Containers/group.com.apple.notes`).|
 
 If you are more experienced with Docker, you can use the base image with any of the below options the same as if you ran the program with Ruby. 
 The basic command to use would be: 
@@ -67,33 +86,34 @@ docker run --rm \
   -v "$(pwd)":/data:ro \
   -v "$(pwd)"/output:/app/output \
   ghcr.io/threeplanetssoftware/apple_cloud_notes_parser \
-  -f /data/NoteStore.sqlite --one-output-folder
+  --file /data/NoteStore.sqlite --one-output-folder
 ```
 
 **Important Caveats**: 
  - While Docker can make things easier in some respects, it does so at the cost of additional complexity. It is harder to troubleshoot and adds more memory overhead.  It is my hope that the Docker image helps some use this program, but the first troubleshooting step that will be recommended is to use Ruby directly to see if that fixes the issue. 
  - The [base image](https://hub.docker.com/_/ruby/) that is used for the Docker container is published by Ruby. It relies on a Debian base layer and as of today has multiple "vulnerabilities" identified on Docker (i.e. packages that are out of date). Use the Docker container at your own risk and if you are uncomfortable with it, feel free to clone this repository and use Ruby to run it, instead. 
  - [MacOS permissions](https://docs.docker.com/desktop/mac/permission-requirements/) lead to read errors trying to mount the Notes and iTunes backups from elsewhere in the user's home folder. As a result, the shell scripts create a temporary folder in the present working directory and copy the relevant files into it. This is an ugly hack which will chew up extra disk space and time to perform the copy. If you dislike this tradeoff, feel free to clone this repository and use Ruby to run it, instead. 
- - Docker is a new feature for this program, there may be issues with the rollout. 
 
 ### Options
 
 The options that are currently supported are:
 
-1. `-f | --file FILE`: Tells the program to look only at a specific file that is identified. 
-2. `-g | --one-output-folder`: Tells the program to always overwrite the same folder `[output]/notes_rip`.
-2. `-i | --itunes-dir DIRECTORY`: Tells the program to look at an iTunes backup folder.
-3. `-m | --mac DIRECTORY`: Tells the program to look at a folder from a Mac.
-4. `-o | --output-dir DIRECTORY`: Changes the output folder from the default `./output` to the specified one.
-5. `-p | --physical DIRECTORY`: Tells the program to look at a physical backup folder.
-6. `-r | --retain-display-order`: Tells the program to display the HTML output in the order Apple Notes displays it, not the database's order. 
-7. `-w | --password-file FILE`: Tells the program which password list to use 
-8. `--show-password-successes`: Tells the program to display to the console which passwords generated decrypts at the end.
-9. `--range-start DATE`: Set the start date of the date range to extract. Must use YYYY-MM-DD format, defaults to 1970-01-01.
-10. `--range-end DATE`: Set the end date of the date range to extract. Must use YYYY-MM-DD format, defaults to [tomorrow].
-11. `--individual-files`: Output individual HTML files for each note, organized in folders mirroring the Notes folder structure.
-12. `--uuid`: Use UUIDs in HTML output rather than local database IDs.
-13. `-h | --help`: Prints the usage information.
+|Short Switch|Long Switch|Purpose|
+|------------|-----------|-------|
+|-i|--itunes-dir DIRECTORY|Root directory of an iTunes backup folder (i.e. where Manifest.db is). These normally have hashed filenames.|
+|-f|--file FILE|Single NoteStore.sqlite file.|
+|-g|--one-output-folder|Always write to the same output folder.|
+|-p|--physical DIRECTORY|Root directory of a physical backup (i.e. right above /private).|
+|-m|--mac DIRECTORY|Root directory of a Mac application (i.e. /Users/{username}/Library/Group Containers/group.com.apple.notes).|
+|-o|--output-dir DIRECTORY|Change the output directory from the default ./output|
+|-w|--password-file FILE|File with plaintext passwords, one per line.|
+|-r|--retain-display-order|Retain the display order for folders and notes, not the database's order.|
+||--show-password-successes|Toggle the display of password success ON.|
+||--range-start DATE|Set the start date of the date range to extract. Must use YYYY-MM-DD format, defaults to 1970-01-01.|
+||--range-end DATE|Set the end date of the date range to extract. Must use YYYY-MM-DD format, defaults to 2024-08-09.|
+||--individual-files|Output individual HTML files for each note, organized in folders mirroring the Notes folder structure.|
+||--uuid|Use UUIDs in HTML output rather than local database IDs.|
+|-h|--help|Print help information|
 
 ## How It Works
 
