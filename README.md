@@ -9,7 +9,7 @@ That script and this program are needed because data that was stored in plaintex
 While the data is not necessarily encrypted, although some is using the password feature, it is not as searchable to the examiner, given its compressed nature. 
 This program intends to make the plaintext stored in the note and its embedded attachments far more usable.
 
-This program was implemented in Ruby. 
+This program was implemented in Ruby and currently requires Ruby 3.0 or newer.
 The classes underlying this represent all the necessary features to write other programs to interface with an Apple Notes backup, including exporting data to another format, or writing better search functions. 
 In addition, this program and its classes attempts to abstract away the work needed to understand the type of backup and how it stores files. 
 While examiners must understand those backups, this will provide its own internal interfaces for identifying where media files are kept. 
@@ -197,31 +197,13 @@ See [this file](JSON.md) for the JSON's schema.
 Because Apple devices often have more than one version of Notes, it is important to note (pun intended) that all of the output is suffixed by a number, starting at 1, to identify which of the backups it corresponds to. 
 In all cases where more than one is found, care is taken to produce output that assigns the suffix of 1 for the modern version, and the suffix of 2 for the legacy version. 
 
-
-## Requirements
-
-### Ruby Version
-
-This program requires Ruby version 3.0 or later.
-
-### Gems
-
-This program requires the following Ruby gems which can be installed by running `bundle install` or `gem install [gemname]`:
-1. fileutils
-2. google-protobuf
-3. sqlite3
-4. zlib
-5. openssl
-6. aes_key_wrap
-7. keyed_archive
-8. nokogiri
-9. cgi (0.3.3 or newer)
-
 ## Installation
 
-Below are instructions, generally preferring the command line, for each of Linux, Mac, and Windows. The user can choose to use Git if they want to be able to keep up with changes, or just download the tool once, you do not need to do both. On each OS, you will want to:
+Below are the general instructions for installing this program, OS-specific steps can be found [here](Install.md). 
+The user can choose to use Git if they want to be able to keep up with changes, or just download the tool once, you do not need to do both. 
+On each OS, you will want to:
 
-1. Install Ruby (at least version 3.0), its development headers, and bundler if not already installed.
+1. Install Ruby, its development headers, and bundler if not already installed.
 2. Install development headers for SQLite3 if not already installed.
 3. Get this code
    1. Clone this repository with Git or
@@ -229,92 +211,6 @@ Below are instructions, generally preferring the command line, for each of Linux
 4. Enter the repository's directory.
 5. Use bundler to install the required gems.
 6. Run the program (see Usage section)!
-
-### Debian-based Linux (Debian, Ubuntu, Mint, etc)
-
-#### With Git (If you want to stay up to date)
-
-```bash
-sudo apt-get install build-essential libsqlite3-dev zlib1g-dev git ruby-full ruby-bundler
-git clone https://github.com/threeplanetssoftware/apple_cloud_notes_parser.git
-cd apple_cloud_notes_parser
-bundle install
-```
-
-#### Without Git (If you want to download it every now and then)
-
-```bash
-sudo apt-get install build-essential libsqlite3-dev zlib1g-dev git ruby-full ruby-bundler
-curl https://codeload.github.com/threeplanetssoftware/apple_cloud_notes_parser/zip/master -o apple_cloud_notes_parser.zip
-unzip apple_cloud_notes_parser.zip
-cd apple_cloud_notes_parser-master
-bundle install
-```
-### Red Hat-based Linux (Red Hat, CentOS, etc)
-
-#### With Git (If you want to stay up to date)
-
-```bash
-sudo yum groupinstall "Development Tools" 
-sudo yum install sqlite sqlite-devel zlib zlib-devel openssl openssl-devel ruby ruby-devel rubygem-bundler
-git clone https://github.com/threeplanetssoftware/apple_cloud_notes_parser.git
-cd apple_cloud_notes_parser
-bundle install
-sudo gem pristine sqlite3 zlib openssl aes_key_wrap keyed_archive
-```
-
-#### Without Git (If you want to download it every now and then)
-
-```bash
-sudo yum groupinstall "Development Tools" 
-sudo yum install sqlite sqlite-devel zlib zlib-devel openssl openssl-devel ruby ruby-devel rubygem-bundler
-curl https://codeload.github.com/threeplanetssoftware/apple_cloud_notes_parser/zip/master -o apple_cloud_notes_parser.zip
-unzip apple_cloud_notes_parser.zip
-cd apple_cloud_notes_parser-master
-bundle install
-sudo gem pristine sqlite3 zlib openssl aes_key_wrap keyed_archive
-```
-
-### macOS 
-
-#### With Git (If you want to stay up to date)
-
-```bash
-git clone https://github.com/threeplanetssoftware/apple_cloud_notes_parser.git
-cd apple_cloud_notes_parser
-bundle install
-```
-
-#### Without Git (If you want to download it every now and then)
-
-```bash
-curl https://codeload.github.com/threeplanetssoftware/apple_cloud_notes_parser/zip/master -o apple_cloud_notes_parser.zip
-unzip apple_cloud_notes_parser.zip
-cd apple_cloud_notes_parser-master
-bundle install
-```
-
-### Windows
-
-1. Download the 2.7.2 64-bit [RubyInstaller with DevKit](https://github.com/oneclick/rubyinstaller2/releases/download/RubyInstaller-2.7.2-1/rubyinstaller-2.7.2-1-x64.exe)
-2. Run RubyInstaller using default settings.
-3. Download the latest [SQLite amalgamation souce code](https://sqlite.org/2021/sqlite-amalgamation-3350200.zip) and [64-bit SQLite Precompiled DLL](https://sqlite.org/2021/sqlite-dll-win64-x64-3350200.zip)
-4. Install SQLite
-   1. Create a folder C:\sqlite
-   2. Unzip the source code into C:\sqlite (you should now have C:\sqlite\sqlite3.c and C:\sqlite\sqlite.h, among others)
-   3. Unzip the DLL into C:\sqlite (you should now have C:\sqlite\sqlite3.dll, among others)
-5. Download [this Apple Cloud Notes Parser as a zip archive](https://github.com/threeplanetssoftware/apple_cloud_notes_parser/archive/master.zip)
-6. Unzip the Zip archive
-7. Launch a command prompt window with "Start a command prompt wqith ruby" from the Start menu and navigate to where you unzipped the archive
-9. Execute the following commands (these set the PATH so SQLite files can be found install SQLite's Gem specifically pointing to them, and then installs the rest of the gems):
-
-```powershell
-powershell
-$env:Path += ";C:\sqlite"
-[Environment]::SetEnvironmentVariable("Path", $env:Path + ";C:\sqlite", "User")
-gem install sqlite3 --platform=ruby -- --with-sqlite-3-dir=C:/sqlite --with-sqlite-3-include=C:/sqlite
-bundle install
-```
 
 ## FAQ
 
