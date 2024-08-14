@@ -175,10 +175,25 @@ The `--range-start` and `--range-end` switches allow the user to specify startin
 By default, these will cover "all time" (i.e. 1970 through to tomorrow) so all notes should match, assuming system time hasn't been messed with. 
 Officially these switches request the date format in "YYYY-MM-DD" format, but technically as long as [Time.parse()](https://ruby-doc.org/stdlib-2.4.1/libdoc/time/rdoc/Time.html#method-c-parse) can understand the format, it should work.
 
-These selections are made on the `ZICCLOUDSYNCINGOBJECT.ZMODIFIEDDATE1` field, which will capture any notes that have a modified date in that range. For example, if you wanted all notes modified after December 1, 2022, you could run: `ruby notes_cloud_ripper.rb -f NoteStore.sqlite --range-start "2022-12-01"`. As another example, if you wanted to look at just the notes that were modified in June of 2022, you could run: `ruby notes_cloud_ripper.rb -f NoteStore.sqlite --range-start "2022-06-01" --range-end "2022-07-01"`
+These selections are made on the `ZICCLOUDSYNCINGOBJECT.ZMODIFIEDDATE1` field, which will capture any notes that have a modified date in that range. 
+For example, if you wanted all notes modified after December 1, 2022, or all the notes modified in the month of June 2022, you could run: 
+
+```shell
+# All notes modified after December 1, 2022
+ruby notes_cloud_ripper.rb -f NoteStore.sqlite --range-start "2022-12-01"
+
+# All notes modified in the month of June 2022
+ruby notes_cloud_ripper.rb -f NoteStore.sqlite --range-start "2022-06-01" --range-end "2022-07-01"
+```
 
 If you ever need to know what dates were used for a given backup, you can check the `debug_log.txt` file by looking for the line that has "Rip Notes" in it. 
-For example: `grep "Rip Notes" output/notes_rip/debug_log.txt`
+For example:
+
+```shell
+[notta@cuppa apple_cloud_notes_parser]$ grep "Rip Notes" output/notes_rip/debug_log.txt 
+D, [2024-05-04T10:26:27.076452 #4548] DEBUG -- : Rip Notes: Ripping notes between 1969-12-31 19:00:00 -0500 and 2024-05-04 10:26:26 -0400
+D, [2024-05-04T10:26:28.552740 #4548] DEBUG -- : Rip Notes: Ripping notes between 1969-12-31 19:00:00 -0500 and 2024-05-04 10:26:26 -0400
+```
 
 ### All Versions
 
