@@ -1,3 +1,5 @@
+require 'rspec/core'
+
 # By default, execute "run"
 task default: %w[run]
 
@@ -15,4 +17,16 @@ end
 # "rake clean" will delete the output folder
 task :clean do 
   FileUtils.rm_rf('output')
+end
+
+task :test do
+  RSpec::Core::Runner.run(["spec/spec.rb", "--tag", "~expensive"])
+end
+
+task :test_expensive do
+  RSpec::Core::Runner.run(["spec/spec.rb", "--tag", "expensive"])
+end
+
+task :test_all do
+  RSpec::Core::Runner.run(["spec/spec.rb", "--tag", "~missing_data"])
 end

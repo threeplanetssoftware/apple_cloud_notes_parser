@@ -68,7 +68,17 @@ class AttributeRun
 
     no_attachment_info = !attachment_info # We don't want to get so greedy with attachments
 
-    return (same_paragraph and same_font and same_font_weight and same_underlined and same_strikethrough and same_superscript and same_link and same_color and same_attachment_info and no_attachment_info and same_block_quote)
+    return (same_paragraph and 
+            same_font and 
+            same_font_weight and 
+            same_underlined and 
+            same_strikethrough and 
+            same_superscript and 
+            same_link and 
+            same_color and 
+            same_attachment_info and 
+            no_attachment_info and 
+            same_block_quote)
   end
 
   ##
@@ -170,7 +180,9 @@ class AttributeRun
   # it has to recursively check the previous AttributeRuns.
   def total_indent
 
-    to_return = 0
+    return @indent if @indent
+
+    @indent = 0
 
     # Determine what this AttributeRun's indent amount is on its own
     my_indent = 0
@@ -180,13 +192,13 @@ class AttributeRun
 
     # If there is no previous AttributeRun, the answer is just this AttributeRun's indent amount
     if !previous_run
-      to_return = my_indent
+      @indent = my_indent
     # If there is something previous, add our indent to its total indent
     else
-      to_return = my_indent + previous_run.total_indent
+      @indent = my_indent + previous_run.total_indent
     end
     
-    return to_return
+    return @indent
   end
 
   def open_html_tag(tag_name, attributes = {})

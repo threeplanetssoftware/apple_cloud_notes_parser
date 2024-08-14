@@ -22,6 +22,7 @@ This program will:
 7. ... displaying tables as actual tables and ripping the embedded images from the backup and putting them into a folder with the other output files for review
 8. ... identifying the CloudKit participants involved in any shared items.
 9. ... producing well-structured JSON for automated backups
+10. ... actually run tests against its output after 5 years of YOLO.
 
 ## Usage
 
@@ -242,6 +243,18 @@ On each OS, you will want to:
 4. Enter the repository's directory.
 5. Use bundler to install the required gems.
 6. Run the program (see Usage section)!
+
+## Tests
+
+As of August 2024, tests have been added using [RSpec](https://rspec.info/). 
+This test suite is not finished and has been in progress for a while, but in order to maintain consistent output with a few key additions, some tests are needed sooner than all tests.
+Because a lot of the test data is inherently sensitive, coming from large Apple Notes backups that contain PII, the tests have been structured to [accept symlinks](spec/data/README.md) and skip tests that require data which is not shareable. 
+While this means that not everyone can benefit from the full test suite, I felt it better to have some data available for tests for PRs rather than keep all of them private. 
+To the extent that data can be extracted and committed into the repo, outside of full backups, that is the preference. 
+
+By default, running `rake test` will skip any tests that are fairly "expensive", primarily in terms of disk IO. 
+If you want to run just the expensive tests, use `rake test_expensive`.
+If you want to run everything, use `rake test_all`. 
 
 ## FAQ
 
