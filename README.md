@@ -49,6 +49,28 @@ Successfully finished at Thu Aug  8 06:33:22 2024
 If you are more comfortable with the command line, you can point the program anywhere you would like on your computer and specify the type of backup you are looking at, see the Options section below for specifics.  
 The benefit of pointing at full backups is this program can pull embedded files out of the notes, such as drawings and pictures.
 
+### Options
+
+The options that are currently supported are:
+
+|Short Switch|Long Switch|Purpose|
+|------------|-----------|-------|
+|-i|--itunes-dir DIRECTORY|Root directory of an iTunes backup folder (i.e. where Manifest.db is). These normally have hashed filenames.|
+|-f|--file FILE|Single NoteStore.sqlite file.|
+|-g|--one-output-folder|Always write to the same output folder.|
+|-p|--physical DIRECTORY|Root directory of a physical backup (i.e. right above /private).|
+|-m|--mac DIRECTORY|Root directory of a Mac application (i.e. /Users/{username}/Library/Group Containers/group.com.apple.notes).|
+|-o|--output-dir DIRECTORY|Change the output directory from the default ./output|
+|-w|--password-file FILE|File with plaintext passwords, one per line.|
+|-r|--retain-display-order|Retain the display order for folders and notes, not the database's order.|
+||--show-password-successes|Toggle the display of password success ON.|
+||--range-start DATE|Set the start date of the date range to extract. Must use YYYY-MM-DD format, defaults to 1970-01-01.|
+||--range-end DATE|Set the end date of the date range to extract. Must use YYYY-MM-DD format, defaults to 2024-08-09.|
+||--individual-files|Output individual HTML files for each note, organized in folders mirroring the Notes folder structure.|
+||--uuid|Use UUIDs in HTML output rather than local database IDs.|
+|-h|--help|Print help information|
+
+
 ### Docker
 
 Thanks to @jareware, if you have [Docker installed already](https://docs.docker.com/get-docker/) you can run this program as a docker container.
@@ -89,58 +111,57 @@ docker run --rm \
  - The [base image](https://hub.docker.com/_/ruby/) that is used for the Docker container is published by Ruby. It relies on a Debian base layer and as of today has multiple "vulnerabilities" identified on Docker (i.e. packages that are out of date). Use the Docker container at your own risk and if you are uncomfortable with it, feel free to clone this repository and use Ruby to run it, instead. 
  - [MacOS permissions](https://docs.docker.com/desktop/mac/permission-requirements/) lead to read errors trying to mount the Notes and iTunes backups from elsewhere in the user's home folder. As a result, the shell scripts create a temporary folder in the present working directory and copy the relevant files into it. This is an ugly hack which will chew up extra disk space and time to perform the copy. If you dislike this tradeoff, feel free to clone this repository and use Ruby to run it, instead. 
 
-### Options
-
-The options that are currently supported are:
-
-|Short Switch|Long Switch|Purpose|
-|------------|-----------|-------|
-|-i|--itunes-dir DIRECTORY|Root directory of an iTunes backup folder (i.e. where Manifest.db is). These normally have hashed filenames.|
-|-f|--file FILE|Single NoteStore.sqlite file.|
-|-g|--one-output-folder|Always write to the same output folder.|
-|-p|--physical DIRECTORY|Root directory of a physical backup (i.e. right above /private).|
-|-m|--mac DIRECTORY|Root directory of a Mac application (i.e. /Users/{username}/Library/Group Containers/group.com.apple.notes).|
-|-o|--output-dir DIRECTORY|Change the output directory from the default ./output|
-|-w|--password-file FILE|File with plaintext passwords, one per line.|
-|-r|--retain-display-order|Retain the display order for folders and notes, not the database's order.|
-||--show-password-successes|Toggle the display of password success ON.|
-||--range-start DATE|Set the start date of the date range to extract. Must use YYYY-MM-DD format, defaults to 1970-01-01.|
-||--range-end DATE|Set the end date of the date range to extract. Must use YYYY-MM-DD format, defaults to 2024-08-09.|
-||--individual-files|Output individual HTML files for each note, organized in folders mirroring the Notes folder structure.|
-||--uuid|Use UUIDs in HTML output rather than local database IDs.|
-|-h|--help|Print help information|
-
 ## How It Works
 
 ### iTunes backup (-i option)
 
 For backups created with iTunes MobileSync, that include a wide range of hashed files inside of folders named after the filename, this program expects to be given the root folder of that backup. With that, it will compute the path to the NoteStore.sqlite file. If it exists, that file will be copied to the output directory and the copy, not the original, will be opened.
 
-For example, if you had an iTunes backup located in `/home/user/phone_rips/iphone/[deviceid]/` (Which means the Manifest.db is located at `/home/whatever/phone_rips/iphone/[deviceid]/Manifest.db`) you would run: `ruby notes_cloud_ripper.rb -i /home/user/phone_rips/iphone/[deviceid]/`
+For example, if you had an iTunes backup located in `/home/user/phone_rips/iphone/[deviceid]/` (Which means the Manifest.db is located at `/home/whatever/phone_rips/iphone/[deviceid]/Manifest.db`) you would run
+
+```shell
+ruby notes_cloud_ripper.rb -i /home/user/phone_rips/iphone/[deviceid]/
+```
 
 ### Physical backup (-p option)
 
 For backups created with a full file system (or at least the `/private` directory) from your tool of choice. This program expects to be given the root folder of that backup. With that, it will compute the path to the NoteStore.sqlite file. If it exists, that file will be copied to the output directory and the copy, not the original, will be opened.
 
-For example, if you had a physical backup located in `/home/user/phone_rips/iphone/physical/` (Which means the phone's `/private` directory is located at `/home/whatever/phone_rips/iphone/physical/private/`) you would run: `ruby notes_cloud_ripper.rb -p /home/user/phone_rips/iphone/physical`
+For example, if you had a physical backup located in `/home/user/phone_rips/iphone/physical/` (Which means the phone's `/private` directory is located at `/home/whatever/phone_rips/iphone/physical/private/`) you would run:
+
+```shell
+ruby notes_cloud_ripper.rb -p /home/user/phone_rips/iphone/physical
+```
 
 ### Single File (-f option)
 
 For single file "backups", this program expects to be given the path of the NoteStore.sqlite file directly, although filename does not matter. If it exists, that file will be copied to the output directory and the copy, not the original, will be opened.
 
-For example, if you had a NoteStore.sqlite file located in `/home/user/phone_rips/iphone/files/NoteStore.sqlite` you would run: `ruby notes_cloud_ripper.rb -f /home/user/phone_rips/iphone/files/NoteStore.sqlite`
+For example, if you had a NoteStore.sqlite file located in `/home/user/phone_rips/iphone/files/NoteStore.sqlite` you would run:
+
+```shell
+ruby notes_cloud_ripper.rb -f /home/user/phone_rips/iphone/files/NoteStore.sqlite
+```
 
 ### Mac backup (-m option)
 
 For backups created from the Notes app as installed on a Mac. This program expects to be given the group.com.apple.notes folder of that Mac. With that, it will compute the path to the NoteStore.sqlite file. If it exists, that file will be copied to the output directory and the copy, not the original, will be opened.
 
-For example, if you were running this on data from a Mac used by 'Logitech' and had the full file system available, you would run: `ruby notes_cloud_ripper.rb -m /Users/Logitech/Library/Group Containers/group.com.apple.notes/`
+For example, if you were running this on data from a Mac used by 'Logitech' and had the full file system available, you would run:
+
+```shell
+ruby notes_cloud_ripper.rb -m /Users/Logitech/Library/Group Containers/group.com.apple.notes/
+```
 
 ### Password (-w | --password-file FILE option)
 
 For backups that may have encrypted notes within them, this option tells the program where to find its password list. This list should have one password per row and any passwords that correctly decrypt an encrypted note will be tried before the rest for future encrypted notes. 
 
-For example, if you were running this on data from a Mac used by 'Logitech,' had the full file system available, and wanted to use a file called "passwords.txt" you would run: `ruby notes_cloud_ripper.rb -m /Users/Logitech/Library/Group Containers/group.com.apple.notes/` -w passwords.txt
+For example, if you were running this on data from a Mac used by 'Logitech,' had the full file system available, and wanted to use a file called "passwords.txt" you would run: 
+
+```shell
+ruby notes_cloud_ripper.rb -m /Users/Logitech/Library/Group Containers/group.com.apple.notes/ -w passwords.txt
+```
 
 Note: As of March 2021, all logging of passwords to the local debug_log.txt file and HTML output has been removed. If you need to see which passwords generated decrypted notes, use the `--show-password-successes` switch and read the console output after the run.
 
