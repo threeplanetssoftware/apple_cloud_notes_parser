@@ -4,7 +4,7 @@ require_relative '../../lib/AppleNotesEmbeddedInlineHashtag.rb'
 require_relative '../../lib/AppleNotesEmbeddedInlineMention.rb'
 
 
-describe AppleNotesEmbeddedInlineAttachment do
+describe AppleNotesEmbeddedInlineAttachment, :missing_data => !TEST_FILE_VERSIONS_CURRENT_FILE_EXIST do
   before(:context) do
     TEST_OUTPUT_DIR.mkpath
     @tmp_backup = AppleBackupFile.new(TEST_FILE_VERSIONS[TEST_CURRENT_VERSION], TEST_OUTPUT_DIR)
@@ -67,7 +67,7 @@ describe AppleNotesEmbeddedInlineAttachment do
 
 end
 
-describe AppleNotesEmbeddedInlineLink do
+describe AppleNotesEmbeddedInlineLink, :missing_data => !TEST_FILE_VERSIONS_CURRENT_FILE_EXIST do
   before(:context) do
     TEST_OUTPUT_DIR.mkpath
     @tmp_backup = AppleBackupFile.new(TEST_FILE_VERSIONS[TEST_CURRENT_VERSION], TEST_OUTPUT_DIR)
@@ -113,7 +113,7 @@ describe AppleNotesEmbeddedInlineLink do
   end
 end
 
-describe AppleNotesEmbeddedInlineHashtag do
+describe AppleNotesEmbeddedInlineHashtag, :missing_data => !TEST_FILE_VERSIONS_CURRENT_FILE_EXIST do
 
   before(:context) do
     TEST_OUTPUT_DIR.mkpath
@@ -160,7 +160,7 @@ describe AppleNotesEmbeddedInlineHashtag do
   end
 end
 
-describe AppleNotesEmbeddedInlineMention do
+describe AppleNotesEmbeddedInlineMention, :missing_data => !TEST_FILE_VERSIONS_CURRENT_FILE_EXIST do
 
   before(:context) do
     TEST_OUTPUT_DIR.mkpath

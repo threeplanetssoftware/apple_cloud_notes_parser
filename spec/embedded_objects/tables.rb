@@ -1,6 +1,6 @@
 require_relative '../../lib/AppleNotesEmbeddedObject.rb'
 
-describe AppleNotesEmbeddedObject do
+describe AppleNotesEmbeddedObject, :missing_data => !TEST_FILE_VERSIONS_CURRENT_FILE_EXIST do
 
   before(:context) do
     TEST_OUTPUT_DIR.mkpath

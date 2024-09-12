@@ -41,6 +41,10 @@ versions_to_test.each do |version|
   version_file = TEST_DATA_DIR + "NoteStore.#{version}.sqlite"
   TEST_FILE_VERSIONS[version] = version_file if version_file.exist?
 end
+
+TEST_FILE_VERSIONS_CURRENT_FILE = TEST_FILE_VERSIONS[TEST_CURRENT_VERSION]
+TEST_FILE_VERSIONS_CURRENT_FILE_EXIST = (TEST_FILE_VERSIONS_CURRENT_FILE != nil)
+
 legacy_version_file = TEST_DATA_DIR + "NoteStore.legacy.sqlite" 
 TEST_FILE_VERSIONS[AppleNoteStoreVersion::IOS_LEGACY_VERSION] = legacy_version_file if legacy_version_file.exist?
 
