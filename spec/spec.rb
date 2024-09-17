@@ -32,7 +32,7 @@ TEST_README_FILE = TEST_DATA_DIR + "README.md"
 TEST_README_FILE_EXIST = TEST_README_FILE.exist?
 
 # The latest version
-TEST_CURRENT_VERSION = 17
+TEST_CURRENT_VERSION = 18
 
 # Build an array of all valid NoteStore.sqlite versions for testing
 TEST_FILE_VERSIONS = Hash.new

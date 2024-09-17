@@ -44,15 +44,18 @@ class AppleNotesEmbeddedGallery < AppleNotesEmbeddedObject
     # If this Gallery is password protected, fetch the mergeable data from the 
     # ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON column and decrypt it. 
     if @is_password_protected
-      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON, ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD " +
+      unapplied_encrypted_record_column = "ZUNAPPLIEDENCRYPTEDRECORD"
+      unapplied_encrypted_record_column = unapplied_encrypted_record_column + "DATA" if @version >= AppleNoteStoreVersion::IOS_VERSION_18
+
+      @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZENCRYPTEDVALUESJSON, ZICCLOUDSYNCINGOBJECT.#{unapplied_encrypted_record_column} " +
                         "FROM ZICCLOUDSYNCINGOBJECT " +
                         "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
                         @uuid) do |row|
 
         encrypted_values = row["ZENCRYPTEDVALUESJSON"]
 
-        if row["ZUNAPPLIEDENCRYPTEDRECORD"]
-          keyed_archive = KeyedArchive.new(:data => row["ZUNAPPLIEDENCRYPTEDRECORD"])
+        if row[unapplied_encrypted_record_column]
+          keyed_archive = KeyedArchive.new(:data => row[unapplied_encrypted_record_column])
           unpacked_top = keyed_archive.unpacked_top()
           ns_keys = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.keys"]
           ns_values = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.objects"]

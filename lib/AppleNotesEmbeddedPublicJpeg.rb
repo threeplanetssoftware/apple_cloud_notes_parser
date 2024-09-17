@@ -106,6 +106,9 @@ class AppleNotesEmbeddedPublicJpeg < AppleNotesEmbeddedObject
   # and reading the ZICCOUDSYNCINGOBJECT.ZFILENAME of the row identified by that number 
   # in the ZICCLOUDSYNCINGOBJECT.Z_PK field.
   def get_media_filename
+    unapplied_encrypted_record_column = "ZUNAPPLIEDENCRYPTEDRECORD"
+    unapplied_encrypted_record_column = unapplied_encrypted_record_column + "DATA" if @version >= AppleNoteStoreVersion::IOS_VERSION_18
+
     @database.execute("SELECT ZICCLOUDSYNCINGOBJECT.ZMEDIA " +
                       "FROM ZICCLOUDSYNCINGOBJECT " +
                       "WHERE ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER=?",
@@ -117,7 +120,7 @@ class AppleNotesEmbeddedPublicJpeg < AppleNotesEmbeddedObject
                         "ZICCLOUDSYNCINGOBJECT.ZCRYPTOSALT, " +
                         "ZICCLOUDSYNCINGOBJECT.ZCRYPTOTAG, " +
                         "ZICCLOUDSYNCINGOBJECT.ZCRYPTOITERATIONCOUNT, " +
-                        "ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD " +
+                        "ZICCLOUDSYNCINGOBJECT.#{unapplied_encrypted_record_column} " +
                         "FROM ZICCLOUDSYNCINGOBJECT " +
                         "WHERE ZICCLOUDSYNCINGOBJECT.Z_PK=?",
                         row["ZMEDIA"]) do |media_row|
@@ -134,8 +137,8 @@ class AppleNotesEmbeddedPublicJpeg < AppleNotesEmbeddedObject
           crypto_key = media_row["ZCRYPTOWRAPPEDKEY"]
           crypto_iv = media_row["ZCRYPTOINITIALIZATIONVECTOR"]
 
-          if media_row["ZUNAPPLIEDENCRYPTEDRECORD"]
-            keyed_archive = KeyedArchive.new(:data => media_row["ZUNAPPLIEDENCRYPTEDRECORD"])
+          if media_row[unapplied_encrypted_record_column]
+            keyed_archive = KeyedArchive.new(:data => media_row[unapplied_encrypted_record_column])
             unpacked_top = keyed_archive.unpacked_top()
             ns_keys = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.keys"]
             ns_values = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.objects"]

@@ -6,6 +6,7 @@ class AppleNoteStoreVersion include Comparable
   VERSION_PLATFORM_IOS = 1
   VERSION_PLATFORM_MAC = 2
 
+  IOS_VERSION_18 = 18
   IOS_VERSION_17 = 17
   IOS_VERSION_16 = 16
   IOS_VERSION_15 = 15

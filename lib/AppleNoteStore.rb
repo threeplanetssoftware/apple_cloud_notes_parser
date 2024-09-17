@@ -74,6 +74,7 @@ class AppleNoteStore
   # This method does a set of database calls to try to guess the version of Apple Notes we are ripping. 
   # It tries to structure the checks to bail out as each specific version is recognized and then assume we are not it.
   # Helpful changelogs: 
+  # 18 (https://support.apple.com/en-mide/121161): Audio recordings inside notes, math auto-completion, text color highlighting
   # 17 (https://support.apple.com/en-us/HT213781): Tons of under-the-hood tweaks
   # 16 (https://support.apple.com/en-us/HT213407): No need for separate password to lock notes
   # 15 (https://support.apple.com/en-us/HT212788): Hashtags, mentions
@@ -93,6 +94,11 @@ class AppleNoteStore
     # If ZICNOTEDATA has no columns, this is a legacy copy
     if zicnotedata_columns.length == 0
       return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_LEGACY_VERSION)
+    end
+
+    # It appears ZDIDRUNPAPERFORMDETECTION showed up in iOS 18's updates
+    if ziccloudsyncingobject_columns.include?("ZDIDRUNPAPERFORMDETECTION: INTEGER")
+      return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_VERSION_18)
     end
 
     # It appears ZGENERATION showed up in iOS 17's updates
@@ -710,6 +716,10 @@ class AppleNoteStore
     server_share_column = "ZSERVERSHARE"
     server_share_column = server_share_column + "DATA" if @version >= AppleNoteStoreVersion::IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
+    # Set the ZUNAPPLIEDENCRYPTEDRECORD column to look at
+    unapplied_encrypted_record_column = "ZUNAPPLIEDENCRYPTEDRECORD"
+    unapplied_encrypted_record_column = unapplied_encrypted_record_column + "DATA" if @version >= AppleNoteStoreVersion::IOS_VERSION_18 # In iOS 17 this was ZUNAPPLIEDENCRYPTEDRECORD, in 18 and later it becomes ZUNAPPLIEDENCRYPTEDRECORDDATA
+
     folder_field = "ZFOLDER"
     account_field = "ZACCOUNT7"
     note_id_field = "ZNOTE"
@@ -738,7 +748,7 @@ class AppleNoteStore
                    "ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1, ZICCLOUDSYNCINGOBJECT.#{creation_date_field}, " +
                    "ZICCLOUDSYNCINGOBJECT.ZTITLE1, ZICCLOUDSYNCINGOBJECT.#{account_field}, " +
                    "ZICCLOUDSYNCINGOBJECT.ZACCOUNT2, ZICCLOUDSYNCINGOBJECT.#{folder_field}, " + 
-                   "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD, " + 
+                   "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.#{unapplied_encrypted_record_column}, " + 
                    "ZICCLOUDSYNCINGOBJECT.#{server_share_column}, ZICCLOUDSYNCINGOBJECT.ZISPINNED, " + 
                    "ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER " + 
                    "FROM ZICNOTEDATA, ZICCLOUDSYNCINGOBJECT " + 
@@ -759,7 +769,7 @@ class AppleNoteStore
                      "ZICCLOUDSYNCINGOBJECT.ZMODIFICATIONDATE1, ZICCLOUDSYNCINGOBJECT.ZCREATIONDATE1, " +
                      "ZICCLOUDSYNCINGOBJECT.ZTITLE1, ZICCLOUDSYNCINGOBJECT.ZACCOUNT2, " +
                      "Z_11NOTES.Z_11FOLDERS, ZICCLOUDSYNCINGOBJECT.#{server_record_column}, " + 
-                     "ZICCLOUDSYNCINGOBJECT.ZUNAPPLIEDENCRYPTEDRECORD, ZICCLOUDSYNCINGOBJECT.#{server_share_column}, " + 
+                     "ZICCLOUDSYNCINGOBJECT.#{unapplied_encrypted_record_column}, ZICCLOUDSYNCINGOBJECT.#{server_share_column}, " + 
                      "ZICCLOUDSYNCINGOBJECT.ZISPINNED, ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER " + 
                      "FROM ZICNOTEDATA, ZICCLOUDSYNCINGOBJECT, Z_11NOTES " + 
                      "WHERE ZICNOTEDATA.ZNOTE=? AND ZICCLOUDSYNCINGOBJECT.Z_PK=ZICNOTEDATA.ZNOTE AND Z_11NOTES.Z_8NOTES=ZICNOTEDATA.ZNOTE"
@@ -850,8 +860,8 @@ class AppleNoteStore
 
         # If they aren't there, we need to use the ZUNAPPLIEDENCRYPTEDRECORD
 
-        if row["ZUNAPPLIEDENCRYPTEDRECORD"]
-          keyed_archive = KeyedArchive.new(:data => row["ZUNAPPLIEDENCRYPTEDRECORD"])
+        if row[unapplied_encrypted_record_column]
+          keyed_archive = KeyedArchive.new(:data => row[unapplied_encrypted_record_column])
           unpacked_top = keyed_archive.unpacked_top()
           ns_keys = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.keys"]
           ns_values = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.objects"]
