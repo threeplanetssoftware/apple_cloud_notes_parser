@@ -46,6 +46,16 @@ types = {
     9: ("string", "Link"),
     10: ("color", "Color"),
     12: ("attachment_info", "Attachment Info"),
+    13: ("varint", "Unknown identifier"),
+    14: ("enum emphasis_enum", "Emphasis Color"),
+  },
+
+  "enum emphasis_enum": {
+    1: "1: Purple",
+    2: "2: Pink",
+    3: "3: Orange",
+    4: "4: Mint",
+    5: "5: Blue",
   },
 
   "paragraph_style": { #

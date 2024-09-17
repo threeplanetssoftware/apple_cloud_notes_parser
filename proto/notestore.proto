@@ -83,6 +83,8 @@ message AttributeRun {
   optional string link = 9;
   optional Color color = 10;
   optional AttachmentInfo attachment_info = 12;
+  optional int32 unknown_identifier = 13;
+  optional int32 emphasis_style = 14;
 }
 
 //
