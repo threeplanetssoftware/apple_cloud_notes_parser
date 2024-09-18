@@ -65,6 +65,7 @@ class AttributeRun
     same_color = (color == other_attribute_run.color)
     same_attachment_info = (attachment_info == other_attribute_run.attachment_info)
     same_block_quote = (is_block_quote? == other_attribute_run.is_block_quote?)
+    same_emphasis_style = (emphasis_style == other_attribute_run.emphasis_style)
 
     no_attachment_info = !attachment_info # We don't want to get so greedy with attachments
 
@@ -78,7 +79,8 @@ class AttributeRun
             same_color and 
             same_attachment_info and 
             no_attachment_info and 
-            same_block_quote)
+            same_block_quote and 
+            same_emphasis_style)
   end
 
   ##
@@ -270,6 +272,24 @@ class AttributeRun
     end
     if color
       style_attrs["color"] = color.full_hex_string
+    end
+    if emphasis_style
+      if emphasis_style == 1 # Purple
+        style_attrs["color"] = "#FF00FF"
+        style_attrs["background-color"] = "#BA55D333"
+      elsif emphasis_style == 2 # Pink
+        style_attrs["color"] = "#FF4081"
+        style_attrs["background-color"] = "#D5000044"
+      elsif emphasis_style == 3 # Orange
+        style_attrs["color"] = "#FBC02D"
+        style_attrs["background-color"] = "#FF6F0022"
+      elsif emphasis_style == 4 # Mint
+        style_attrs["color"] = "#8DE5DB"
+        style_attrs["background-color"] = "#289C8ECC"
+      elsif emphasis_style == 5 # Blue
+        style_attrs["color"] = "#BBDEFB"
+        style_attrs["background-color"] = "#2196F3"
+      end
     end
     if style_attrs.any?
       open_html_tag("span", { style: style_attrs.map { |k, v| "#{k}: #{v}" }.join("; ") })
