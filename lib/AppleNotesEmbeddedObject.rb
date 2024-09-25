@@ -449,6 +449,20 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                                                                         note,
                                                                         row["ZALTTEXT"],
                                                                         row["ZTOKENCONTENTIDENTIFIER"])
+            elsif tmp_uti.uti == "com.apple.notes.inlinetextattachment.calculateresult"
+              tmp_embedded_object = AppleNotesEmbeddedInlineCalculateResult.new(row["Z_PK"],
+                                                                                row["ZIDENTIFIER"],
+                                                                                row["ZTYPEUTI1"],
+                                                                                note,
+                                                                                row["ZALTTEXT"],
+                                                                                row["ZTOKENCONTENTIDENTIFIER"])
+            elsif tmp_uti.uti == "com.apple.notes.inlinetextattachment.calculategraphexpression"
+              tmp_embedded_object = AppleNotesEmbeddedInlineCalculateGraphExpression.new(row["Z_PK"],
+                                                                                         row["ZIDENTIFIER"],
+                                                                                         row["ZTYPEUTI1"],
+                                                                                         note,
+                                                                                         row["ZALTTEXT"],
+                                                                                         row["ZTOKENCONTENTIDENTIFIER"])
             else
               puts "#{row["ZTYPEUTI1"]} is unrecognized ZTYPEUTI1, please submit a bug report to this project's GitHub repo to report this: https://github.com/threeplanetssoftware/apple_cloud_notes_parser/issues"
               logger.debug("Note #{note.note_id}: #{row["ZTYPEUTI1"]} is unrecognized ZTYPEUTI1, check ZICCLOUDSYNCINGOBJECT Z_PK: #{row["Z_PK"]}")
