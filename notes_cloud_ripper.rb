@@ -127,7 +127,7 @@ else
   options = option_parser.parse!
 end
 
-puts "\nStarting Apple Notes Parser at #{DateTime.now.strftime("%c")}"
+puts "\nStarting Apple Notes Parser at #{DateTime.now.strftime("%c")}\n\n"
 
 #
 # Prepare the output folder
@@ -151,10 +151,14 @@ if !output_directory.exist?
   output_directory.mkpath()
 end
 
+puts "Running on Ruby: #{RUBY_DESCRIPTION}\n"
 puts "Storing the results in #{output_directory}\n\n"
+
 
 # Create the Logger
 logger = Logger.new(output_directory + "debug_log.txt")
+
+logger.debug("Ruby version: #{RUBY_DESCRIPTION}")
 
 #
 # Start dealing with the backup
