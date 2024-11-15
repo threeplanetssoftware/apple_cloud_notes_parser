@@ -1,0 +1,14 @@
+FROM ruby:3.3-slim
+
+WORKDIR /app
+COPY Gemfile LICENSE notes_cloud_ripper.rb ./
+COPY lib/ /app/lib
+RUN apt update && \
+	apt-get install -y build-essential pkg-config libsqlite3-dev zlib1g-dev && \
+	bundle config set force_ruby_platform true && \
+	bundle install && \
+	apt-get remove -y build-essential pkg-config && \
+	apt autoremove -y 
+COPY spec/ /app/spec
+COPY Rakefile /app
+ENTRYPOINT ["rake", "test_all"]
