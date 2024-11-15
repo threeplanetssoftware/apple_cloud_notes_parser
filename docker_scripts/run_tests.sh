@@ -4,7 +4,6 @@ do
 	CONTAINER_NAME="apple_cloud_notes_parser-test"
 
 	echo "\n\n###############################\nUsing Docker to test notes_cloud_parser.rb on Ruby "$VERSION"\n###############################\n\n"
-	$VERSION
 
 	docker run --rm --name \
 	  $CONTAINER_NAME \
