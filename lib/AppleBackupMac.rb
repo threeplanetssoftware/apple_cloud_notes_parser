@@ -37,7 +37,10 @@ class AppleBackupMac < AppleBackup
   # that the +root_folder+ given is where the root of the directory structure is and the NoteStore.sqlite 
   # file is directly underneath. 
   def valid?
-    return (@root_folder.directory? and (@root_folder + "NoteStore.sqlite").file? and (@root_folder + "NotesIndexerState-Modern").file?)
+    return (@root_folder.directory? and 
+           (@root_folder + "NoteStore.sqlite").file? and 
+           has_correct_columns?(@root_folder + "NoteStore.sqlite") and 
+           (@root_folder + "NotesIndexerState-Modern").file?)
   end
 
   ##

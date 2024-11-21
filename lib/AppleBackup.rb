@@ -211,6 +211,9 @@ class AppleBackup
   # This method takes a FilePath +file+ and checks to make sure the list of tables looks 
   # a bit like what we expect from a NoteStore.
   def has_correct_columns?(file)
+    to_return = false
+
+    # Open the database and pull the table list
     database = SQLite3::Database.new(file.to_s, {results_as_hash: true})
     results = database.execute("PRAGMA table_list;")
 
@@ -221,17 +224,20 @@ class AppleBackup
       modern_columns.delete(result["name"])
     end
 
+    # Close the database now that we're done with it
+    database.close
+
     # This should be an iOS 9+ database
     if modern_columns.length == 0
-      return true
+      to_return = true
     end
 
     # This is a legacy database
     if legacy_columns.length == 0
-      return true
+      to_return = true
     end
 
-    return false
+    return to_return
   end
 
   ##
