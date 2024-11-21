@@ -33,6 +33,7 @@ spec/data/itunes_backup
 spec/data/physical_backup
 spec/data/mac_backup
 spec/data/mac_backup_old
+spec/data/mac_backup_no_account
 
 ## Documentation cache and generated files:
 /.yardoc/
