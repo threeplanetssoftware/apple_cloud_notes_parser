@@ -9,10 +9,15 @@ describe AppleBackupMac, :expensive => true do
   end
 
   let(:valid_backup) { AppleBackupMac.new(TEST_MAC_DIR, TEST_OUTPUT_DIR) }
+  let(:no_account_backup) { AppleBackupMac.new(TEST_MAC_NO_ACCOUNT_DIR, TEST_OUTPUT_DIR) }
 
   context "validations" do
     it "validates a mac backup folder", :missing_data => !TEST_MAC_DIR_EXIST do
       expect(valid_backup.valid?).to be true
+    end
+
+    it "validates a mac backup folder without accounts", :missing_data => !TEST_MAC_NO_ACCOUNT_DIR_EXIST do
+      expect(no_account_backup.valid?).to be true
     end
 
     it "fails to validate an itunes backup folder", :missing_data => !TEST_ITUNES_DIR_EXIST do

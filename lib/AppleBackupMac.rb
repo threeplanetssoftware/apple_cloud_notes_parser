@@ -47,7 +47,15 @@ class AppleBackupMac < AppleBackup
   # This method returns a Pathname that represents the location on this disk of the requested file or nil.
   # It expects a String +filename+ to look up. 
   def get_real_file_path(filename)
-    return @root_folder + filename
+    tmp_pathname = @root_folder + filename
+    return tmp_pathname if tmp_pathname.exist?
+
+    if (filename.start_with?("Accounts\/") and filename.length > 46)
+      tmp_pathname = @root_folder + filename.slice(46, filename.length - 46)
+      return tmp_pathname if tmp_pathname.exist?
+    end
+
+    return nil
   end
 
 end

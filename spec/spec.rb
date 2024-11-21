@@ -17,6 +17,8 @@ TEST_BLOB_DATA_DIR = TEST_DATA_DIR + "exported_blobs"
 # if they aren't around.
 TEST_MAC_DIR = TEST_DATA_DIR + "mac_backup"
 TEST_MAC_DIR_EXIST = TEST_MAC_DIR.exist?
+TEST_MAC_NO_ACCOUNT_DIR = TEST_DATA_DIR + "mac_backup_no_account"
+TEST_MAC_NO_ACCOUNT_DIR_EXIST = TEST_MAC_DIR.exist?
 TEST_ITUNES_DIR = TEST_DATA_DIR + "itunes_backup"
 TEST_ITUNES_DIR_EXIST = TEST_ITUNES_DIR.exist?
 TEST_PHYSICAL_DIR = TEST_DATA_DIR + "physical_backup"
