@@ -97,7 +97,7 @@ class AppleNoteStore
     end
 
     # It appears ZDIDRUNPAPERFORMDETECTION showed up in iOS 18's updates
-    if ziccloudsyncingobject_columns.include?("ZDIDRUNPAPERFORMDETECTION: INTEGER")
+    if ziccloudsyncingobject_columns.include?("ZUNAPPLIEDENCRYPTEDRECORDDATA: BLOB")
       return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_VERSION_18)
     end
 
