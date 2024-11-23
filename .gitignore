@@ -31,6 +31,7 @@
 passwords.txt
 spec/data/itunes_backup
 spec/data/physical_backup
+spec/data/physical_backup_no_account
 spec/data/mac_backup
 spec/data/mac_backup_old
 spec/data/mac_backup_no_account
