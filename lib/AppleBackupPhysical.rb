@@ -38,6 +38,9 @@ class AppleBackupPhysical < AppleBackup
       # Create the AppleNoteStore objects
       create_and_add_notestore(@note_store_modern_location, modern_note_version)
       create_and_add_notestore(@note_store_legacy_location, legacy_note_version)
+
+      # Call this a second time, now that we know we are valid and have the right file path
+      @uses_account_folder = check_for_accounts_folder
     end
   end
 
@@ -72,6 +75,17 @@ class AppleBackupPhysical < AppleBackup
     end
 
     return app_uuid
+  end
+
+  ##
+  # This method overrides the default check_for_accounts_folder to determine 
+  # if this backup uses an accounts folder or not. It takes no arguments and 
+  # returns true if an accounts folder is used and false if not.
+  def check_for_accounts_folder
+    return true if !@physical_backup_app_folder
+
+    accounts_folder = @physical_backup_app_folder + "Accounts"
+    return accounts_folder.exist?
   end
 
   ##

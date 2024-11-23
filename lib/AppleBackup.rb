@@ -15,6 +15,7 @@ class AppleBackup
                 :output_folder,
                 :logger,
                 :decrypter,
+                :uses_account_folder,
                 :retain_order,
                 :range_start,
                 :range_end
@@ -29,7 +30,7 @@ class AppleBackup
   PHYSICAL_BACKUP_TYPE = 4
   # For times you have a copy of the Mac version of notes (i.e. /Users/{username}/Library/Group Containers/group.com.apple.notes)
   MAC_BACKUP_TYPE = 5
-  
+
   ##
   # Creates a new AppleBackup. Expects a Pathname +root_folder+ that represents the root 
   # of the backup, an Integer +type+ that represents the type of backup, and a Pathname +output_folder+ 
@@ -52,6 +53,9 @@ class AppleBackup
     @range_end = Time.now.to_i
 
     @retain_order = false
+
+    # Track whether the backup uses an accounts folder or not. Default to true
+    @uses_account_folder = check_for_accounts_folder
   end
 
   ## 
@@ -120,6 +124,52 @@ class AppleBackup
       @logger.error("Failed to copy #{filepath} or its journals to #{destination}.")
     end
 
+  end
+
+  ##
+  # This method sanitizes the "Account/[account identifier]" from the front of paths. 
+  # It expects a String +pathstring+ and returns a String having removed the beginngin path
+  def strip_account_path(pathstring)
+    return "" if !pathstring.is_a? String
+    return pathstring if !pathstring.start_with?("Accounts/")
+
+    pathstring.sub(/Accounts\/[^\/]+\//,"")
+  end
+
+  ##
+  # This method should be overridden by each specific backup class to return 
+  # true if the backup is using an accounts folder and false if not.  
+  # It defaults to true, because that's the way it SHOULD be.
+  def check_for_accounts_folder
+    return true
+  end
+
+  ##
+  # This method expects an Array of Strings +possibilities+ representing potential paths on disk. 
+  # It will then iterate over each and use return the first one that is actually found. 
+  # If none are found, it will return `nil`. 
+  def find_valid_file_path(possibilities)
+    return nil if !possibilities.is_a? Array # Make sure we have the input we want
+    return nil if @type == SINGLE_FILE_BACKUP_TYPE # Don't bother running on a single file to spare the log file
+
+    # Loop over all the possibilities
+    possibilities.each do |possibility|
+
+      # If we know not to use an accounts folder, don't try
+      # Rip off prefixes that might not exist (https://github.com/threeplanetssoftware/apple_cloud_notes_parser/issues/24)
+      if (!@uses_account_folder and possibility.start_with?("Accounts\/"))
+        possibility = strip_account_path(possibility)
+      end
+
+      @logger.debug("Checking if #{possibility} exists as a real file on disk")
+      pathname = get_real_file_path(possibility)
+
+      return pathname if pathname.exist?
+
+    end
+
+    @logger.debug("Could not find a matching file on disk for any permutation")
+    return nil
   end
 
   ##
