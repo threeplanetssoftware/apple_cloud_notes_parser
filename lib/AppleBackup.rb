@@ -164,7 +164,7 @@ class AppleBackup
       @logger.debug("Checking if #{possibility} exists as a real file on disk")
       pathname = get_real_file_path(possibility)
 
-      return pathname if pathname.exist?
+      return pathname if pathname and pathname.exist?
 
     end
 

@@ -29,6 +29,8 @@ class AppleBackupMac < AppleBackup
 
       # Create the AppleNoteStore objects
       create_and_add_notestore(@note_store_modern_location, modern_note_version)
+
+      @uses_account_folder = check_for_accounts_folder
     end
   end
 
@@ -44,16 +46,21 @@ class AppleBackupMac < AppleBackup
   end
 
   ##
+  # This method overrides the default check_for_accounts_folder to determine 
+  # if this backup uses an accounts folder or not. It takes no arguments and 
+  # returns true if an accounts folder is used and false if not.
+  def check_for_accounts_folder
+    accounts_folder = @root_folder + "Accounts"
+    return accounts_folder.exist?
+  end
+
+  ##
   # This method returns a Pathname that represents the location on this disk of the requested file or nil.
   # It expects a String +filename+ to look up. 
   def get_real_file_path(filename)
-    tmp_pathname = @root_folder + filename
-    return tmp_pathname if tmp_pathname.exist?
-
-    if (filename.start_with?("Accounts\/") and filename.length > 46)
-      tmp_pathname = @root_folder + filename.slice(46, filename.length - 46)
-      return tmp_pathname if tmp_pathname.exist?
-    end
+    pathname = @root_folder + filename
+    print "Checking #{pathname}"
+    return pathname if pathname and pathname.exist?
 
     return nil
   end
