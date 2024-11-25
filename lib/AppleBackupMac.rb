@@ -59,7 +59,6 @@ class AppleBackupMac < AppleBackup
   # It expects a String +filename+ to look up. 
   def get_real_file_path(filename)
     pathname = @root_folder + filename
-    print "Checking #{pathname}"
     return pathname if pathname and pathname.exist?
 
     return nil
