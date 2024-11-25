@@ -55,6 +55,9 @@ class AppleBackupHashed < AppleBackup
         create_and_add_notestore(@note_store_modern_location, modern_note_version)
         create_and_add_notestore(@note_store_legacy_location, legacy_note_version)
         @hashed_backup_manifest_database = SQLite3::Database.new((@output_folder + "Manifest.db").to_s, {results_as_hash: true})
+
+        # Rerun the check for an Accounts folder now that the database is open
+        @uses_account_folder = check_for_accounts_folder
     end
   end
 
@@ -66,24 +69,30 @@ class AppleBackupHashed < AppleBackup
   end
 
   ##
+  # This method overrides the default check_for_accounts_folder to determine 
+  # if this backup uses an accounts folder or not. It takes no arguments and 
+  # returns true if an accounts folder is used and false if not.
+  def check_for_accounts_folder
+    return true if !@hashed_backup_manifest_database
+
+    # Check for any files that have Accounts in front of them, if so this should be true
+    @hashed_backup_manifest_database.execute("SELECT fileID FROM Files WHERE relativePath LIKE 'Accounts/%' AND domain='AppDomainGroup-group.com.apple.notes' LIMIT 1") do |row|
+      return true
+    end
+
+    # If we get here, there isn't an accounts folder
+    return false
+  end
+
+  ##
   # This method returns a Pathname that represents the location on this disk of the requested file or nil.
   # It expects a String +filename+ to look up. For hashed backups, that involves checking Manifest.db 
   # to get the appropriate hash value.
   def get_real_file_path(filename)
 
-    @hashed_backup_manifest_database.execute("SELECT fileID FROM Files WHERE relativePath=?", filename) do |row|
-      tmp_filename = row["fileID"]
-      tmp_filefolder = tmp_filename[0,2]
-      return @root_folder + tmp_filefolder + tmp_filename
-    end
-
-    # If we didn't find the file the first time, it might be bug #24 (https://github.com/threeplanetssoftware/apple_cloud_notes_parser/issues/24).
-    # Let's check without the Account in front, if it exists, being slightly more careful with the domain
-    filename.gsub!(/^Accounts\/.{36}\//,"")
     @hashed_backup_manifest_database.execute("SELECT fileID FROM Files WHERE relativePath=? AND domain='AppDomainGroup-group.com.apple.notes'", filename) do |row|
       tmp_filename = row["fileID"]
       tmp_filefolder = tmp_filename[0,2]
-      @logger.debug("Found a filepath that lacked the account portion: #{tmp_filename}")
       return @root_folder + tmp_filefolder + tmp_filename
     end
 
