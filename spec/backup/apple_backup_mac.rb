@@ -44,7 +44,7 @@ describe AppleBackupMac, :expensive => true do
   context "files with account folders", :missing_data => !TEST_MAC_DIR_EXIST do 
     it "knows how to find an appropriate file" do
       expect(valid_backup.get_real_file_path("NoteStore.sqlite").to_s).to match(/spec\/data\/mac_backup\/NoteStore.sqlite/)
-      expect(valid_backup.find_valid_file_path(test_files_to_find).to_s).to match(/spec\/data\/mac_backup\/Accounts\/LocalAccount\/FallbackImages\/8FD55434-3E94-4818-8784-132F41B480DD.jpg/)
+      expect(valid_backup.find_valid_file_path(test_files_to_find).backup_location.to_s).to match(/spec\/data\/mac_backup\/Accounts\/LocalAccount\/FallbackImages\/8FD55434-3E94-4818-8784-132F41B480DD.jpg/)
     end
 
     it "correctly identifies the use of an accounts folder when one exists" do
@@ -55,7 +55,7 @@ describe AppleBackupMac, :expensive => true do
   context "files without account folders", :missing_data => !TEST_MAC_DIR_EXIST do 
     it "knows how to find an appropriate file" do
       expect(no_account_backup.get_real_file_path("NoteStore.sqlite").to_s).to match(/spec\/data\/mac_backup_no_account\/NoteStore.sqlite/)
-      expect(no_account_backup.find_valid_file_path(test_files_to_find).to_s).to match(/spec\/data\/mac_backup_no_account\/FallbackImages\/8FD55434-3E94-4818-8784-132F41B480DD.jpg/)
+      expect(no_account_backup.find_valid_file_path(test_files_to_find).backup_location.to_s).to match(/spec\/data\/mac_backup_no_account\/FallbackImages\/8FD55434-3E94-4818-8784-132F41B480DD.jpg/)
     end
 
     it "correctly identifies the lack of an accounts folder when one doesn't exist" do

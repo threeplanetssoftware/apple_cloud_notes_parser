@@ -40,7 +40,7 @@ describe AppleBackupHashed, :expensive => true do
   context "files with account folders", :missing_data => !TEST_ITUNES_DIR_EXIST do 
     it "knows how to find an appropriate file" do
       expect(valid_backup.get_real_file_path("NoteStore.sqlite").to_s).to match(/spec\/data\/itunes_backup\/4f\/4f98687d8ab0d6d1a371110e6b7300f6e465bef2/)
-      expect(valid_backup.find_valid_file_path(test_files_to_find).to_s).to match(/spec\/data\/itunes_backup\/10\/1097c74e05dccdf5bd77ca48d22f6116854b78d2/)
+      expect(valid_backup.find_valid_file_path(test_files_to_find).backup_location.to_s).to match(/spec\/data\/itunes_backup\/10\/1097c74e05dccdf5bd77ca48d22f6116854b78d2/)
     end
 
     it "correctly identifies the use of an accounts folder when one exists" do
@@ -51,7 +51,7 @@ describe AppleBackupHashed, :expensive => true do
   context "files without account folders", :missing_data => !TEST_ITUNES_NO_ACCOUNT_DIR_EXIST do 
     it "knows how to find an appropriate file" do
       expect(no_account_backup.get_real_file_path("NoteStore.sqlite").to_s).to match(/spec\/data\/itunes_backup_no_account\/4f\/4f98687d8ab0d6d1a371110e6b7300f6e465bef2/)
-      expect(no_account_backup.find_valid_file_path(test_files_to_find).to_s).to match(/spec\/data\/itunes_backup_no_account\/fc\/fc97b386b2a39b503682d5fb9c20f684dfe1ed93/)
+      expect(no_account_backup.find_valid_file_path(test_files_to_find).backup_location.to_s).to match(/spec\/data\/itunes_backup_no_account\/fc\/fc97b386b2a39b503682d5fb9c20f684dfe1ed93/)
     end
 
     it "correctly identifies the lack of an accounts folder when one doesn't exist" do
