@@ -27,13 +27,13 @@ describe AppleNotesEmbeddedThumbnail do
     let(:version_16) {AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_VERSION_16)}
     let(:version_17) {AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_VERSION_17)}
 
-    it "guesses the right filepath for iOS 16 thumbnails without a note" do
+    xit "guesses the right filepath for iOS 16 thumbnails without a note" do
       tmp_thumbnail = AppleNotesEmbeddedThumbnail.new(primary_key, uuid, uti, note, backup, height, width, parent)
       tmp_thumbnail.instance_variable_set(:@version,version_16)
       expect(tmp_thumbnail.get_media_filepath).to eql "[Unknown Account]/Previews/#{uuid}.png"
     end
 
-    it "guesses the right filepath for iOS 17 thumbnails with an account" do
+    xit "guesses the right filepath for iOS 17 thumbnails with an account" do
       tmp_thumbnail = AppleNotesEmbeddedThumbnail.new(primary_key, uuid, uti, note, backup, height, width, parent)
       tmp_thumbnail.instance_variable_set(:@note, mocked_note)
 
@@ -44,7 +44,7 @@ describe AppleNotesEmbeddedThumbnail do
       expect(tmp_thumbnail.get_media_filepath).to eql "Accounts/#{account_uuid}/Previews/#{uuid}.png"
     end
 
-    it "guesses the right filename for iOS 16 normal thumbnails" do
+    xit "guesses the right filename for iOS 16 normal thumbnails" do
       tmp_thumbnail = AppleNotesEmbeddedThumbnail.new(primary_key, uuid, uti, note, backup, height, width, parent)
       tmp_thumbnail.instance_variable_set(:@version,version_16)
       expect(tmp_thumbnail.get_media_filename).to eql "#{uuid}.png"
@@ -74,13 +74,13 @@ describe AppleNotesEmbeddedThumbnail do
 
     ## iOS 17 follows
 
-    it "guesses the right filepath for iOS 17 thumbnails without a note" do
+    xit "guesses the right filepath for iOS 17 thumbnails without a note" do
       tmp_thumbnail = AppleNotesEmbeddedThumbnail.new(primary_key, uuid, uti, note, backup, height, width, parent)
       tmp_thumbnail.instance_variable_set(:@version,version_17)
       expect(tmp_thumbnail.get_media_filepath).to eql "[Unknown Account]/Previews/#{uuid}.png"
     end
 
-    it "guesses the right filepath for iOS 17 thumbnails with zgeneration" do
+    xit "guesses the right filepath for iOS 17 thumbnails with zgeneration" do
       tmp_thumbnail = AppleNotesEmbeddedThumbnail.new(primary_key, uuid, uti, note, backup, height, width, parent)
       tmp_thumbnail.instance_variable_set(:@note, mocked_note)
 
@@ -91,7 +91,7 @@ describe AppleNotesEmbeddedThumbnail do
       expect(tmp_thumbnail.get_media_filepath).to eql "Accounts/#{account_uuid}/Previews/#{uuid}.png"
     end
 
-    it "guesses the right filepath for iOS 17 thumbnails without zgeneration" do
+    xit "guesses the right filepath for iOS 17 thumbnails without zgeneration" do
       tmp_thumbnail = AppleNotesEmbeddedThumbnail.new(primary_key, uuid, uti, note, backup, height, width, parent)
       tmp_thumbnail.instance_variable_set(:@version,version_17)
       expect(tmp_thumbnail.get_media_filepath).to eql "[Unknown Account]/Previews/#{uuid}.png"

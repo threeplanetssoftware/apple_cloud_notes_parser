@@ -22,10 +22,20 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
     @height = height
     @width = width
     @parent = parent
-    @filename = get_media_filename
-    @filepath = get_media_filepath
+    @filename = ""
+    @filepath = ""
     @backup = backup 
     @zgeneration = get_zgeneration_for_thumbnail
+
+    compute_all_filepaths
+    tmp_stored_file_result = find_valid_file_path
+
+    if tmp_stored_file_result
+      @logger.debug("Embedded Thumbnail #{@uuid}: \n\tExpected Filepath: '#{@filepath}' (length: #{@filepath.length}), \n\tExpected location: '#{@backup_location}'")
+      @filepath = tmp_stored_file_result.filepath
+      @filename = tmp_stored_file_result.filename
+      @backup_location = tmp_stored_file_result.backup_location
+    end  
 
     # Find where on this computer that file is stored
     back_up_file if (@backup and @filepath.length > 0 and @filename.length > 0)
@@ -36,8 +46,6 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
   # and then backing up the file, if it exists.
   def back_up_file
     return if (!@backup or !@filepath or @filepath.length == 0)
-    @backup_location = @backup.get_real_file_path(@filepath)
-    @logger.debug("Embedded Thumbnail #{@uuid}: \n\tExpected Filepath: '#{@filepath}' (length: #{@filepath.length}), \n\tExpected location: '#{@backup_location}', \n\tOrphaned Parent: #{@parent}")
 
     # Copy the file to our output directory if we can
     @reference_location = @backup.back_up_file(@filepath, 
@@ -105,6 +113,23 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
 
     return "[Unknown Account]/Previews/#{@filename}" if !@note
     return "#{@note.account.account_folder}Previews/#{zgeneration_string}#{@filename}"
+  end
+
+  ##
+  # This method computes the various filename permutations seen in iOS. 
+  def compute_all_filepaths
+
+    # Set up account folder location, default to no where
+    tmp_account_string = "[Unknown Account]/Previews/"
+    tmp_account_string = "#{@note.account.account_folder}Previews/" if @note # Update to somewhere if we know where
+
+    ["jpeg","png"].each do |extension| 
+      add_possible_location("#{tmp_account_string}#{@uuid}.#{extension}.encrypted") if @is_password_protected
+      add_possible_location("#{tmp_account_string}#{@uuid}/#{@zgeneration}/OrientedPreview.#{extension}") if (!@is_password_protected and @zgeneration)
+      add_possible_location("#{tmp_account_string}#{@uuid}/#{@zgeneration}/Preview.#{extension}") if (!@is_password_protected and @zgeneration)
+      add_possible_location("#{tmp_account_string}#{@uuid}.#{extension}") if !@is_password_protected
+      add_possible_location("#{tmp_account_string}#{@uuid}-oriented.#{extension}") if !@is_password_protected
+    end
   end
 
   ##
