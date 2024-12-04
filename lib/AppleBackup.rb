@@ -3,6 +3,7 @@ require 'logger'
 require 'pathname'
 require_relative 'AppleNote.rb'
 require_relative 'AppleNoteStore.rb'
+require_relative 'AppleStoredFileResult.rb'
 
 ##
 # This class represents an Apple backup. It might be an iTunes backup, or a logical backup. 
@@ -164,7 +165,17 @@ class AppleBackup
       @logger.debug("Checking if #{possibility} exists as a real file on disk")
       pathname = get_real_file_path(possibility)
 
-      return pathname if pathname and pathname.exist?
+      # If this file exists on disk, create a new AppleStoredFileResult, calculate 
+      # the filename and on disk fields, and return it.
+      if pathname and pathname.exist?
+        @logger.debug("Found #{possibility}! Creating a new AppleStoredFileResult")
+        tmp_stored_file_result = AppleStoredFileResult.new
+        tmp_stored_file_result.original_filepath = possibility
+        tmp_stored_file_result.original_filename = Pathname.new(possibility).basename.to_s
+        tmp_stored_file_result.storage_filepath = pathname
+
+        return tmp_stored_file_result
+      end
 
     end
 

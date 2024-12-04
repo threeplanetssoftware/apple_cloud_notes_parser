@@ -14,6 +14,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                 :filepath,
                 :filename,
                 :backup_location,
+                :possible_locations,
                 :parent,
                 :conforms_to,
                 :thumbnails,
@@ -41,6 +42,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
     @filepath = ""
     @filename = ""
     @backup_location = nil
+    @possible_locations = Array.new
 
     # Variable to hold ZMERGEABLEDATA objects
     @gzipped_data = nil
@@ -198,6 +200,21 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
   def add_child(child_object)
     child_object.parent = self # Make sure the parent is set
     @child_objects.push(child_object)
+  end
+
+  ## 
+  # This method adds a +possible_location+ to the +@possible_locations+ 
+  # Array. 
+  def add_possible_location(possible_location)
+    possible_locations.push(possible_location)
+  end
+
+  ##
+  # This method uses the object's +@backup.find_valid_file_path+ method 
+  # to determine the right location on disk to find the file. 
+  def find_valid_file_path
+    return nil if !@backup
+    @backup.find_valid_file_path(@possible_locations)
   end
 
   ##
