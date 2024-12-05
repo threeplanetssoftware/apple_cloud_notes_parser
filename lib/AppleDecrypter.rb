@@ -82,6 +82,19 @@ class AppleDecrypter
     return decrypt_result
   end
 
+  ##
+  # This function checks a suspected password, salt, iteration count, and wrapped key 
+  # to determine if the settings are valid. It does this by checking that the unwrapped key 
+  # has the correct iv. It returns true if the settings are valid, false otherwise. 
+  # It expects the +password+ as a String, the +salt+ as a binary String, and the number of 
+  # +iterations+ as an integer, and the +wrapped_key+ as a binary String.
+  def check_cryptographic_settings(password, salt, iterations, wrapped_key)
+    tmp_key_encrypting_key = generate_key_encrypting_key(password, salt, iterations)
+    tmp_unwrapped_key = aes_key_unwrap(wrapped_key, tmp_key_encrypting_key) if tmp_key_encrypting_key
+
+    return (tmp_unwrapped_key != nil)
+  end 
+
   ## 
   # This function calls PBKDF2 with Apple's settings to generate a key encrypting key. 
   # It expects the +password+ as a String, the +salt+ as a binary String, and the number of 
