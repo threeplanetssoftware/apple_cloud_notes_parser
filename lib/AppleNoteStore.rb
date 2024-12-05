@@ -858,20 +858,8 @@ class AppleNoteStore
         crypto_verifier = row["ZCRYPTOVERIFIER"]
         crypto_wrapped_key = row["ZCRYPTOWRAPPEDKEY"]
 
-        # If they aren't there, we need to use the ZUNAPPLIEDENCRYPTEDRECORD
-
-        if row[unapplied_encrypted_record_column]
-          keyed_archive = KeyedArchive.new(:data => row[unapplied_encrypted_record_column])
-          unpacked_top = keyed_archive.unpacked_top()
-          ns_keys = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.keys"]
-          ns_values = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.objects"]
-          crypto_iv = ns_values[ns_keys.index("CryptoInitializationVector")]
-          crypto_tag = ns_values[ns_keys.index("CryptoTag")]
-          crypto_salt = ns_values[ns_keys.index("CryptoSalt")]
-          crypto_iterations = ns_values[ns_keys.index("CryptoIterationCount")]
-          crypto_wrapped_key = ns_values[ns_keys.index("CryptoWrappedKey")]
-        end
-
+        # Try the initial set of credentials, this is cheap if they are 
+        # missing, decrypt just returns false.
         tmp_note.add_cryptographic_settings(crypto_iv, 
                                             crypto_tag, 
                                             crypto_salt,
@@ -881,6 +869,30 @@ class AppleNoteStore
 
         # Try each password and see if any generate a decrypt.
         found_password = tmp_note.decrypt
+
+        # If they aren't there, we need to use the ZUNAPPLIEDENCRYPTEDRECORD
+
+        if row[unapplied_encrypted_record_column] and !found_password
+          keyed_archive = KeyedArchive.new(:data => row[unapplied_encrypted_record_column])
+          unpacked_top = keyed_archive.unpacked_top()
+          ns_keys = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.keys"]
+          ns_values = unpacked_top["root"]["ValueStore"]["RecordValues"]["NS.objects"]
+          crypto_iv = ns_values[ns_keys.index("CryptoInitializationVector")]
+          crypto_tag = ns_values[ns_keys.index("CryptoTag")]
+          crypto_salt = ns_values[ns_keys.index("CryptoSalt")]
+          crypto_iterations = ns_values[ns_keys.index("CryptoIterationCount")]
+          crypto_wrapped_key = ns_values[ns_keys.index("CryptoWrappedKey")]
+
+          tmp_note.add_cryptographic_settings(crypto_iv, 
+                                              crypto_tag, 
+                                              crypto_salt,
+                                              crypto_iterations,
+                                              crypto_verifier,
+                                              crypto_wrapped_key)
+
+          # Try each password and see if any generate a decrypt.
+          found_password = tmp_note.decrypt
+        end
 
         if !found_password
           @logger.debug("Apple Note Store: Note #{tmp_note.note_id} could not be decrypted with our passwords.")
