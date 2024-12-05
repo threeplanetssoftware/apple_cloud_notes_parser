@@ -271,12 +271,26 @@ Apple changed the format of its Notes database in different versions of iOS. Whi
 * The results of `SELECT name,sql FROM sqlite_master WHERE type="table"` when the database is open in sqlitebrowser (or your editor of choice). This can be in any columned format (Excel, CSV, SQL, etc)
 * If possible, the database file directly (I can receive it through other means if it needs to stay confidential). If this is possible, the above results are not needed.
 
+#### Why do I get a "Blah" error?
+
+Example (from debug.log): `AppleNote: Note 123 somehow tried to decompress something that was GZIP but had to rescue error: Zlib::DataError`
+
+There are instances where the NoteStore.sqlite database is corrupted or malformed for one reason or another. 
+If the SQLite file can't open as a whole, it would be obvious, but individual records could also be individually affected, particularly fields that are compressed. 
+Currently, this program will catch any errors when trying to inflate compressed data and provide a note in the `debug.log` file indicating such occurred, without crashing the entire program. 
+
+Issue [#108](https://github.com/threeplanetssoftware/apple_cloud_notes_parser/issues/108) provides some very helpful debugging tips. 
+However, it needs to be cautioned that these will actively change the database, which might not be acceptable for some use cases if file integrity must be maintained. 
+To determine if there are structural issues, try this command: `sqlite3 [filename] pragma integrity_check`
+To attempt to fix structural issues with the database file, try this command (this WILL change the database): `sqlite3 [filename] .recover`
+
 #### Why Ruby instead of Python or Perl?
 
 Programming languages are like human languages, there are many and which you choose (for those with multiple) can largely be a personal preference, assuming mutual intelligibility. I chose Ruby as the previous Perl code was a nice little script, but I wanted a bit more substance behind with with solid object oriented programming principals. For those new to Ruby, hopefully these classes will give you an idea of what Ruby has to offer and spark an interest in trying a new language.
 
 ## Known Bugs
-
+If it is known, is it a bug, or a feature?
+Kidding aside, if you believe you have found a bug, PLEASE open an issue and provide as much information as possible to help recreate the problem. 
 
 ## Acknowledgements
 
