@@ -271,7 +271,7 @@ Apple changed the format of its Notes database in different versions of iOS. Whi
 * The results of `SELECT name,sql FROM sqlite_master WHERE type="table"` when the database is open in sqlitebrowser (or your editor of choice). This can be in any columned format (Excel, CSV, SQL, etc)
 * If possible, the database file directly (I can receive it through other means if it needs to stay confidential). If this is possible, the above results are not needed.
 
-#### Why do I get a "Blah" error?
+#### Why do I get a "Zlib::DataError" error?
 
 Example (from debug.log): `AppleNote: Note 123 somehow tried to decompress something that was GZIP but had to rescue error: Zlib::DataError`
 
