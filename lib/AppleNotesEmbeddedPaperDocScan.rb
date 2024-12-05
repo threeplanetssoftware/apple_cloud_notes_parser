@@ -109,9 +109,9 @@ class AppleNotesEmbeddedPaperDocScan < AppleNotesEmbeddedObject
     tmp_account_string = "#{@note.account.account_folder}FallbackPDFs/" if @note # Update to somewhere if we know where
     zgeneration = get_zgeneration_for_fallback_pdf
 
-    add_possible_location("#{tmp_account_string}/FallbackPDF.pdf.encrypted") if @is_password_protected
+    #add_possible_location("#{tmp_account_string}FallbackPDF.pdf.encrypted") if @is_password_protected # This didn't exist before iOS 17
+    #add_possible_location("#{tmp_account_string}FallbackPDF.pdf") if !@is_password_protected
     add_possible_location("#{tmp_account_string}#{@uuid}/#{zgeneration}/FallbackPDF.pdf.encrypted") if (@is_password_protected and zgeneration and zgeneration.length > 0)
-    add_possible_location("#{tmp_account_string}/FallbackPDF.pdf") if !@is_password_protected
     add_possible_location("#{tmp_account_string}#{@uuid}/#{zgeneration}/FallbackPDF.pdf") if (!@is_password_protected and zgeneration and zgeneration.length > 0)
     
   end
