@@ -27,6 +27,16 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
     @backup = backup 
     @zgeneration = get_zgeneration_for_thumbnail
 
+    # Find where on this computer that file is stored
+    back_up_file if @backup 
+  end
+
+  ##
+  # This method handles setting the relevant +@backup_location+ variable
+  # and then backing up the file, if it exists.
+  def back_up_file
+    return if !@backup 
+
     compute_all_filepaths
     tmp_stored_file_result = find_valid_file_path
 
@@ -35,29 +45,19 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
       @filepath = tmp_stored_file_result.filepath
       @filename = tmp_stored_file_result.filename
       @backup_location = tmp_stored_file_result.backup_location
+
+      # Copy the file to our output directory if we can
+      @reference_location = @backup.back_up_file(@filepath, 
+                                                 @filename, 
+                                                 @backup_location, 
+                                                 @is_password_protected,
+                                                 @crypto_password,
+                                                 @crypto_salt,
+                                                 @crypto_iterations,
+                                                 @crypto_key,
+                                                 @crypto_iv,
+                                                 @crypto_tag)
     end  
-
-    # Find where on this computer that file is stored
-    back_up_file if (@backup and @filepath.length > 0 and @filename.length > 0)
-  end
-
-  ##
-  # This method handles setting the relevant +@backup_location+ variable
-  # and then backing up the file, if it exists.
-  def back_up_file
-    return if (!@backup or !@filepath or @filepath.length == 0)
-
-    # Copy the file to our output directory if we can
-    @reference_location = @backup.back_up_file(@filepath, 
-                                               @filename, 
-                                               @backup_location, 
-                                               @is_password_protected,
-                                               @crypto_password,
-                                               @crypto_salt,
-                                               @crypto_iterations,
-                                               @crypto_key,
-                                               @crypto_iv,
-                                               @crypto_tag)
   end
 
   ##
