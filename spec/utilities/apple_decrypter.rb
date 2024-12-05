@@ -23,9 +23,12 @@ describe AppleDecrypter do
 
     @test_password = "password"
     @test_salt = "\x11\x65\x10\x6b\x6b\x28\x8b\xda\x1e\x6e\xcb\x18\xe6\x5c\x78\x76".force_encoding("US-ASCII")
+    @test_bad_salt = "\x11\x65\x10\x6b\x6b\x28\x8b\xda\x1e\x6e\xcb\x18\xe6\x5c\x78\x75".force_encoding("US-ASCII")
     @test_iterations = 20000
     @test_key_encrypting_key = "\x65\x2b\xe8\x61\x43\x34\x8a\x6e\x01\x06\x09\x58\x80\xbc\xf3\x1b".force_encoding("US-ASCII")
+    @test_bad_key_encrypting_key = "\xC5\x15\xE6\x55\x61\xDD\xE6\x9D\x9E\xB9\xC3\xF8\x4A\x22\x56\xA0".force_encoding("US-ASCII")
     @test_wrapped_key = "\x98\xc0\xe5\x6b\x43\xb5\x07\xe6\x0c\x54\x65\xec\x5e\x1b\xb0\xc7\x4b\x75\x6f\x7d\x4f\x4a\x9b\xff".force_encoding("US-ASCII")
+    @test_bad_wrapped_key = "\x98\xc0\xe5\x6b\x43\xb5\x07\xe6\x0c\x54\x65\xec\x5e\x1b\xb0\xc7\x4b\x75\x6f\x7d\x4f\x4a\x9c\xff".force_encoding("US-ASCII")
     @test_unwrapped_key = "\x02\x3a\xae\x7c\x45\x0a\x28\x3b\x23\xe3\xd7\xc1\x41\x6a\xd6\x44".force_encoding("US-ASCII")
     @test_iv = "\x15\x1f\x64\xde\x7b\xe3\x4d\x15\xda\xcd\xae\xa9\xb3\x34\x71\xf9".force_encoding("US-ASCII")
     @test_tag = "\x80\x6b\xf2\xbb\xd3\xbf\x83\xcf\x12\x40\xb0\x3e\x7c\x4d\x6a\xb1".force_encoding("US-ASCII")
@@ -102,6 +105,26 @@ describe AppleDecrypter do
 
     it "properly unwraps a wrapped key" do
       expect(@decrypter.aes_key_unwrap(@test_wrapped_key, @test_key_encrypting_key).force_encoding("US-ASCII")).to eql(@test_unwrapped_key)
+    end
+
+    it "properly returns nil when unable to unwrap a key" do
+      expect(@decrypter.aes_key_unwrap(@test_wrapped_key, @test_bad_key_encrypting_key)).to eql(nil)
+    end
+
+    it "properly identifies good cryptographic settings as good" do
+      expect(@decrypter.check_cryptographic_settings(@test_password, @test_salt, @test_iterations, @test_wrapped_key)).to be true
+    end
+
+    it "properly identifies bad cryptographic settings (salt) as bad" do
+      expect(@decrypter.check_cryptographic_settings(@test_password, @test_bad_salt, @test_iterations, @test_wrapped_key)).to be false
+    end
+
+    it "properly identifies bad cryptographic settings (iterations) as bad" do
+      expect(@decrypter.check_cryptographic_settings(@test_password, @test_salt, @test_iterations - 1, @test_wrapped_key)).to be false
+    end
+
+    it "properly identifies bad cryptographic settings (key) as bad" do
+      expect(@decrypter.check_cryptographic_settings(@test_password, @test_salt, @test_iterations, @test_bad_wrapped_key)).to be false
     end
 
     it "properly uses an unwrapped key to decrypt a blob" do
