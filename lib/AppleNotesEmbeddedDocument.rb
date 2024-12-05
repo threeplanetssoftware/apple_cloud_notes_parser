@@ -23,11 +23,28 @@ class AppleNotesEmbeddedDocument < AppleNotesEmbeddedObject
     @filepath = get_media_filepath
     @backup = backup
 
+    add_possible_location(@filepath)
+
     # Find where on this computer that file is stored
-    @backup_location = @backup.get_real_file_path(@filepath)
-    
-    # Copy the file to our output directory if we can
-    @reference_location = @backup.back_up_file(@filepath, @filename, @backup_location)
+    tmp_stored_file_result = find_valid_file_path
+
+    if tmp_stored_file_result
+      @backup_location = tmp_stored_file_result.backup_location
+      @filepath = tmp_stored_file_result.filepath
+      @filename = tmp_stored_file_result.filename
+      
+      # Copy the file to our output directory if we can
+      @reference_location = @backup.back_up_file(@filepath, 
+                                                 @filename, 
+                                                 @backup_location, 
+                                                 @is_password_protected,
+                                                 @crypto_password,
+                                                 @crypto_salt,
+                                                 @crypto_iterations,
+                                                 @crypto_key,
+                                                 @crypto_asset_iv,
+                                                 @crypto_asset_tag)
+    end
   end
 
   ##

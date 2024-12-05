@@ -19,24 +19,29 @@ class AppleNotesEmbeddedDrawing < AppleNotesEmbeddedObject
   def initialize(primary_key, uuid, uti, note, backup)
     # Set this folder's variables
     super(primary_key, uuid, uti, note)
-    @filename = get_media_filename
-    @filepath = get_media_filepath
-    @backup = backup
+    @filename = ""
+    @filepath = ""
+    @backup = backup 
+    @zgeneration = get_zgeneration_for_fallback_image
 
-    # Find where on this computer that file is stored
-    @backup_location = @backup.get_real_file_path(@filepath)
-    
-    # Copy the file to our output directory if we can
-    @reference_location = @backup.back_up_file(@filepath, 
-                                               @filename, 
-                                               @backup_location, 
-                                               @is_password_protected,
-                                               @crypto_password,
-                                               @crypto_salt,
-                                               @crypto_iterations,
-                                               @crypto_key,
-                                               @crypto_fallback_iv,
-                                               @crypto_fallback_tag)
+    compute_all_filepaths
+    tmp_stored_file_result = find_valid_file_path
+
+    if tmp_stored_file_result
+      @filepath = tmp_stored_file_result.filepath
+      @filename = tmp_stored_file_result.filename
+      @backup_location = tmp_stored_file_result.backup_location
+      @reference_location = @backup.back_up_file(@filepath, 
+                                                 @filename, 
+                                                 @backup_location, 
+                                                 @is_password_protected,
+                                                 @crypto_password,
+                                                 @crypto_salt,
+                                                 @crypto_iterations,
+                                                 @crypto_key,
+                                                 @crypto_fallback_iv,
+                                                 @crypto_fallback_tag)
+    end  
   end
 
   ##
@@ -95,34 +100,19 @@ class AppleNotesEmbeddedDrawing < AppleNotesEmbeddedObject
   end
 
   ##
-  # This method returns the +filepath+ of this object. 
-  # This is computed based on the assumed default storage location.
-  def get_media_filepath
-    zgeneration = get_zgeneration_for_fallback_image
-    zgeneration = "#{@uuid}/#{zgeneration}/" if (zgeneration and zgeneration.length > 0)
+  # This method computes the various filename permutations seen in iOS. 
+  def compute_all_filepaths
 
-    return "#{@note.account.account_folder}FallbackImages/#{zgeneration}#{@filename}"
-  end
+    # Set up account folder location, default to no where
+    tmp_account_string = "[Unknown Account]/FallbackImages/"
+    tmp_account_string = "#{@note.account.account_folder}FallbackImages/" if @note # Update to somewhere if we know where
 
-  ##
-  # Determine filename based on iOS version
-  def get_media_filename
-    return get_media_filename_ios17 if @note.notestore.version >= AppleNoteStoreVersion::IOS_VERSION_17
-    return get_media_filename_ios16_and_prior
-  end
-
-  ##
-  # Prior to iOS 17, this was made with the object's UUID and the JPG extension.
-  def get_media_filename_ios16_and_prior
-    return "#{@uuid}.jpg.encrypted" if @is_password_protected
-    return "#{@uuid}.jpg"
-  end
-
-  ##
-  # Starting with iOS 17 this is created as a PNG using the "FallbackImage.png" as the filename.
-  def get_media_filename_ios17
-    return "FallbackImage.png.encrypted" if @is_password_protected
-    return "FallbackImage.png"
+    ["jpeg","png"].each do |extension| 
+      add_possible_location("#{tmp_account_string}#{@uuid}.#{extension}.encrypted") if @is_password_protected
+      add_possible_location("#{tmp_account_string}#{@uuid}.#{extension}") if !@is_password_protected
+      add_possible_location("#{tmp_account_string}#{@uuid}/#{@zgeneration}/FallbackImage.#{extension}.encrypted") if @is_password_protected
+      add_possible_location("#{tmp_account_string}#{@uuid}/#{@zgeneration}/FallbackImage.#{extension}") if !@is_password_protected
+    end
   end
 
   ##

@@ -16,29 +16,34 @@ class AppleNotesEmbeddedPublicVideo < AppleNotesEmbeddedObject
   # Finally, it attempts to copy the file to the output folder.
   def initialize(primary_key, uuid, uti, note, backup, parent)
     # Set this object's variables
-
     @parent = parent # Do this first so thumbnails don't break
 
     super(primary_key, uuid, uti, note)
-
     @filename = get_media_filename
     @filepath = get_media_filepath
 
-    # Find where on this computer that file is stored
-    @backup_location = @backup.get_real_file_path(@filepath)
-  
-    # Copy the file to our output directory if we can
-    @reference_location = @backup.back_up_file(@filepath, 
-                                               @filename, 
-                                               @backup_location, 
-                                               @is_password_protected,
-                                               @crypto_password,
-                                               @crypto_salt,
-                                               @crypto_iterations,
-                                               @crypto_key,
-                                               @crypto_asset_iv,
-                                               @crypto_asset_tag)
+    add_possible_location(@filepath)
 
+    # Find where on this computer that file is stored
+    tmp_stored_file_result = find_valid_file_path
+
+    if tmp_stored_file_result
+      @backup_location = tmp_stored_file_result.backup_location
+      @filepath = tmp_stored_file_result.filepath
+      @filename = tmp_stored_file_result.filename
+      
+      # Copy the file to our output directory if we can
+      @reference_location = @backup.back_up_file(@filepath, 
+                                                 @filename, 
+                                                 @backup_location, 
+                                                 @is_password_protected,
+                                                 @crypto_password,
+                                                 @crypto_salt,
+                                                 @crypto_iterations,
+                                                 @crypto_key,
+                                                 @crypto_asset_iv,
+                                                 @crypto_asset_tag)
+    end
   end
 
   ##

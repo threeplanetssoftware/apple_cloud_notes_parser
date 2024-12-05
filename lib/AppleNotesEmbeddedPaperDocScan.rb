@@ -20,24 +20,29 @@ class AppleNotesEmbeddedPaperDocScan < AppleNotesEmbeddedObject
   def initialize(primary_key, uuid, uti, note, backup)
     # Set this objects's variables
     super(primary_key, uuid, uti, note)
-    @filename = get_media_filename
-    @filepath = get_media_filepath
-    @backup = backup
+    @filename = ""
+    @filepath = ""
+    @backup = backup 
+    @zgeneration = get_zgeneration_for_fallback_pdf
 
-    # Find where on this computer that file is stored
-    @backup_location = @backup.get_real_file_path(@filepath)
-    
-    # Copy the file to our output directory if we can
-    @reference_location = @backup.back_up_file(@filepath, 
-                                               @filename, 
-                                               @backup_location, 
-                                               @is_password_protected,
-                                               @crypto_password,
-                                               @crypto_salt,
-                                               @crypto_iterations,
-                                               @crypto_key,
-                                               @crypto_fallback_iv,
-                                               @crypto_fallback_tag)
+    compute_all_filepaths
+    tmp_stored_file_result = find_valid_file_path
+
+    if tmp_stored_file_result
+      @filepath = tmp_stored_file_result.filepath
+      @filename = tmp_stored_file_result.filename
+      @backup_location = tmp_stored_file_result.backup_location
+      @reference_location = @backup.back_up_file(@filepath, 
+                                                 @filename, 
+                                                 @backup_location, 
+                                                 @is_password_protected,
+                                                 @crypto_password,
+                                                 @crypto_salt,
+                                                 @crypto_iterations,
+                                                 @crypto_key,
+                                                 @crypto_iv,
+                                                 @crypto_tag)
+    end  
   end
 
   ##
@@ -96,34 +101,19 @@ class AppleNotesEmbeddedPaperDocScan < AppleNotesEmbeddedObject
   end
 
   ##
-  # This method returns the +filepath+ of this object. 
-  # This is computed based on the assumed default storage location.
-  def get_media_filepath
+  # This method computes the various filename permutations seen in iOS. 
+  def compute_all_filepaths
+
+    # Set up account folder location, default to no where
+    tmp_account_string = "[Unknown Account]/FallbackPDFs/"
+    tmp_account_string = "#{@note.account.account_folder}FallbackPDFs/" if @note # Update to somewhere if we know where
     zgeneration = get_zgeneration_for_fallback_pdf
-    zgeneration = "#{@uuid}/#{zgeneration}/" if (zgeneration and zgeneration.length > 0)
 
-    return "#{@note.account.account_folder}FallbackPDFs/#{zgeneration}#{@filename}"
-  end
-
-  ##
-  # Determine filename based on iOS version
-  def get_media_filename
-    return get_media_filename_ios17 if @note.notestore.version >= AppleNoteStoreVersion::IOS_VERSION_17
-    return get_media_filename_ios16_and_prior
-  end
-
-  ##
-  # Unsure how this will look on legacy devices, assuming it will be the same?
-  def get_media_filename_ios16_and_prior
-    return "FallbackPDF.pdf.encrypted" if @is_password_protected
-    return "FallbackPDF.pdf"
-  end
-
-  ##
-  # Starting with iOS 17 this is created as a PNG using the "FallbackImage.png" as the filename.
-  def get_media_filename_ios17
-    return "FallbackPDF.pdf.encrypted" if @is_password_protected
-    return "FallbackPDF.pdf"
+    add_possible_location("#{tmp_account_string}/FallbackPDF.pdf.encrypted") if @is_password_protected
+    add_possible_location("#{tmp_account_string}#{@uuid}/#{zgeneration}/FallbackPDF.pdf.encrypted") if (@is_password_protected and zgeneration and zgeneration.length > 0)
+    add_possible_location("#{tmp_account_string}/FallbackPDF.pdf") if !@is_password_protected
+    add_possible_location("#{tmp_account_string}#{@uuid}/#{zgeneration}/FallbackPDF.pdf") if (!@is_password_protected and zgeneration and zgeneration.length > 0)
+    
   end
 
   ##

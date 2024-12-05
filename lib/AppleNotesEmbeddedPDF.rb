@@ -24,10 +24,21 @@ class AppleNotesEmbeddedPDF < AppleNotesEmbeddedObject
     @backup = backup
 
     # Find where on this computer that file is stored
-    @backup_location = @backup.get_real_file_path(@filepath)
+    add_possible_location(@filepath)
+
+    tmp_stored_file_result = find_valid_file_path
     
     # Copy the file to our output directory if we can
-    @reference_location = @backup.back_up_file(@filepath, @filename, @backup_location)
+    if tmp_stored_file_result
+      @backup_location = tmp_stored_file_result.backup_location
+      @filepath = tmp_stored_file_result.filepath
+      @filename = tmp_stored_file_result.filename
+      
+      # Copy the file to our output directory if we can
+      @reference_location = @backup.back_up_file(@filepath, 
+                                                 @filename, 
+                                                 @backup_location)
+    end
   end
 
   ##
