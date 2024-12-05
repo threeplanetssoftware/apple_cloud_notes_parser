@@ -96,7 +96,7 @@ class AppleBackupHashed < AppleBackup
       return @root_folder + tmp_filefolder + tmp_filename
     end
 
-    @logger.error("AppleBackupHashed: Could note find a real file path for #{filename}")
+    #@logger.debug("AppleBackupHashed: Could not find a real file path for #{filename}")
     return nil
   end
 
