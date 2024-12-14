@@ -687,6 +687,7 @@ class AppleNoteStore
         rescue StandardError => error
           # warn "\033[101m#{e}\033[m"
           @logger.error("AppleNoteStore: NoteStore tried to rip Note#{row["ZNOTE"]} but had to rescue error: #{error}")
+          puts "Rescued an error, please include this backtrace: #{error.backtrace}"
         end
       end
     end
