@@ -312,7 +312,7 @@ class AppleNote < AppleCloudKitRecord
   # This function checks if specified +data+ is a GZip object by matching the first two bytes.
   def is_gzip(data)
     return false if !data.is_a?(String)
-    return data.force_encoding("US-ASCII").start_with?("\x1F\x8B".force_encoding("US-ASCII"))
+    return data.start_with?("\x1F\x8B")
   end
 
   ##
