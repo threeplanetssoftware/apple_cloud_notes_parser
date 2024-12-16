@@ -130,8 +130,8 @@ describe AppleNote do
   
     it "properly decompresses the gzipped copy of modern notes" do
       tmp_note.decompress_data
-      expected_data = File.read(TEST_BLOB_DATA_DIR + "simple_note_protobuf.bin").force_encoding("US-ASCII")
-      expect(tmp_note.decompressed_data.force_encoding("US-ASCII")).to eql(expected_data)
+      expected_data = File.read(TEST_BLOB_DATA_DIR + "simple_note_protobuf.bin")
+      expect(tmp_note.decompressed_data.force_encoding("UTF-8")).to eql(expected_data)
     end
   
     it "properly extracts text from the protobuf of modern notes" do
