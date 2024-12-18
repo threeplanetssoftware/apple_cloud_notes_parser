@@ -686,7 +686,8 @@ class AppleNoteStore
           self.rip_note(row["ZNOTE"])
         rescue StandardError => error
           # warn "\033[101m#{e}\033[m"
-          @logger.error("AppleNoteStore: NoteStore tried to rip Note#{row["ZNOTE"]} but had to rescue error: #{error}")
+          @logger.error("AppleNoteStore: NoteStore tried to rip Note #{row["ZNOTE"]} but had to rescue error: #{error}")
+          @logger.error("Backtrace: #{error.backtrace.join("\n\t")}") if error.is_a? FrozenError
         end
       end
     end

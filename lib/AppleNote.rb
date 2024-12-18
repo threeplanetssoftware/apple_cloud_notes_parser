@@ -115,7 +115,7 @@ class AppleNote < AppleCloudKitRecord
     @primary_key = z_pk
     @note_id = znote
     @title = ztitle
-    @compressed_data = zdata.force_encoding("UTF-8")
+    @compressed_data = zdata
     @creation_time = convert_core_time(creation_time)
     @modify_time = convert_core_time(modify_time)
     @account = account
