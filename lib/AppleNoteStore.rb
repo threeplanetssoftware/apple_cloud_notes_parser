@@ -717,6 +717,10 @@ class AppleNoteStore
     server_share_column = "ZSERVERSHARE"
     server_share_column = server_share_column + "DATA" if @version >= AppleNoteStoreVersion::IOS_VERSION_12 # In iOS 11 this was ZSERVERRECORD, in 12 and later it became ZSERVERRECORDDATA
 
+    # Set the ZWIDGETSNIPPET column, blank if earlier than iOS 17
+    widget_snippet_column = ""
+    widget_snippet_column = ", ZWIDGETSNIPPET" if @version >= AppleNoteStoreVersion::IOS_VERSION_17
+
     # Set the ZUNAPPLIEDENCRYPTEDRECORD column to look at
     unapplied_encrypted_record_column = "ZUNAPPLIEDENCRYPTEDRECORD"
     unapplied_encrypted_record_column = unapplied_encrypted_record_column + "DATA" if @version >= AppleNoteStoreVersion::IOS_VERSION_18 # In iOS 17 this was ZUNAPPLIEDENCRYPTEDRECORD, in 18 and later it becomes ZUNAPPLIEDENCRYPTEDRECORDDATA
@@ -751,7 +755,7 @@ class AppleNoteStore
                    "ZICCLOUDSYNCINGOBJECT.ZACCOUNT2, ZICCLOUDSYNCINGOBJECT.#{folder_field}, " + 
                    "ZICCLOUDSYNCINGOBJECT.#{server_record_column}, ZICCLOUDSYNCINGOBJECT.#{unapplied_encrypted_record_column}, " + 
                    "ZICCLOUDSYNCINGOBJECT.#{server_share_column}, ZICCLOUDSYNCINGOBJECT.ZISPINNED, " + 
-                   "ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER " + 
+                   "ZICCLOUDSYNCINGOBJECT.ZIDENTIFIER #{widget_snippet_column} " + 
                    "FROM ZICNOTEDATA, ZICCLOUDSYNCINGOBJECT " + 
                    "WHERE ZICNOTEDATA.ZNOTE=? AND ZICCLOUDSYNCINGOBJECT.Z_PK=ZICNOTEDATA.ZNOTE"
 
@@ -829,6 +833,11 @@ class AppleNoteStore
       # Set the UUID, if it exists
       if row["ZIDENTIFIER"]
         tmp_note.uuid = row["ZIDENTIFIER"]
+      end
+
+      # Set the widget snippet, if it exists
+      if row["ZWIDGETSNIPPET"]
+        tmp_note.widget_snippet = row["ZWIDGETSNIPPET"]
       end
 
       tmp_account.add_note(tmp_note) if tmp_account

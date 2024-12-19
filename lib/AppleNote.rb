@@ -81,7 +81,8 @@ class AppleNote < AppleCloudKitRecord
                 :cloudkit_modify_device,
                 :notestore,
                 :is_pinned,
-                :uuid
+                :uuid,
+                :widget_snippet
 
   ##
   # Creates a new AppleNote. Expects an Integer +z_pk+, an Integer +znote+ representing the ZICNOTEDATA.ZNOTE field, 
@@ -97,6 +98,7 @@ class AppleNote < AppleCloudKitRecord
     @plaintext = nil
     @decompressed_data = nil
     @encrypted_data = nil
+    @widget_snippet = nil
     @note_proto = nil
     @crypto_iv = nil
     @crypto_tag = nil
@@ -224,6 +226,7 @@ class AppleNote < AppleCloudKitRecord
      "Creation Time", 
      "Modify Time", 
      "Note Plaintext", 
+     "Widget Snippet", 
      "Is Password protected",
      "Crypto Interations",
      "Crypto Salt (hex)",
@@ -254,6 +257,7 @@ class AppleNote < AppleCloudKitRecord
      @creation_time, 
      @modify_time, 
      @plaintext, 
+     @widget_snippet,
      @is_password_protected,
      @crypto_iterations,
      get_crypto_salt_hex,
@@ -554,6 +558,17 @@ class AppleNote < AppleCloudKitRecord
           }
         end
 
+        if @widget_snippet
+          doc.div {
+            doc.b {
+              doc.text "Widget Snippet:"
+            }
+
+            doc.text " "
+            doc.text @widget_snippet
+          }
+        end
+
         doc.div(class: "note-content") {
           # Handle the text to insert, only if we have plaintext to run
           if @plaintext
@@ -714,6 +729,7 @@ class AppleNote < AppleCloudKitRecord
     to_return[:is_password_protected] = @is_password_protected
     to_return[:title] = @title
     to_return[:plaintext] = @plaintext if @plaintext
+    to_return[:widget_snippet] = @widget_snippet if @widget_snippet
     to_return[:html] = generate_html
     to_return[:note_proto] = @note_proto if @note_proto
 
