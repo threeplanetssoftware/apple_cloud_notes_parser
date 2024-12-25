@@ -175,7 +175,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                                                                  @crypto_iv,
                                                                  @crypto_tag,
                                                                  encrypted_values,
-                                                                 "{self.class} #{uuid}")
+                                                                 "#{self.class} #{uuid}")
         parsed_json = JSON.parse(decrypt_result[:plaintext])
         gzipped_data = Base64.decode64(parsed_json["mergeableData"])
       end
