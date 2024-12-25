@@ -38,7 +38,7 @@ class AppleBackup
   # which will hold the results of this run. Backup +types+ 
   # are defined in this class. The child classes will immediately set the NoteStore database file, based on the +type+ 
   # of backup.
-  def initialize(root_folder, type, output_folder)
+  def initialize(root_folder, type, output_folder, decrypter=AppleDecrypter.new)
     @root_folder = root_folder
     @type = type
     @output_folder = output_folder
@@ -47,7 +47,8 @@ class AppleBackup
     @note_store_modern_location = @output_folder + "NoteStore.sqlite"
     @note_store_legacy_location = @output_folder + "notes.sqlite"
     @note_store_temporary_location = @output_folder + "test.sqlite"
-    @decrypter = AppleDecrypter.new(self)
+    @decrypter = decrypter
+    @decrypter.logger = @logger
 
     # Set up date ranges, if desired
     @range_start = 0
@@ -239,18 +240,22 @@ class AppleBackup
     # Decrypt and write a new file, or copy the file depending on if we are password protected
     tmp_target_filepath = file_output_directory + filename_on_phone
     @logger.debug("Copying #{filepath_on_disk} to #{tmp_target_filepath}")
+    begin
+      FileUtils.cp(filepath_on_disk, tmp_target_filepath)
+    rescue
+      @logger.error("Failed to copy #{filepath_on_disk} to #{tmp_target_filepath}")
+    end
+
+    # Handle encrypted iTunes backups
+    if (@type == HASHED_BACKUP_TYPE and is_encrypted?)
+      decrypt_in_place(phone_filepath.to_s, 'files')
+    end
+
+    # If the file was password protected, go ahead and decrypt it
     if is_password_protected
-      File.open(filepath_on_disk, 'rb') do |file|
-        encrypted_data = file.read
-        decrypt_result = @decrypter.decrypt_with_password(password, salt, iterations, key, iv, tag, encrypted_data, "Apple Backup encrypted file")
-        File.write(file_output_directory + filename_on_phone.sub(/\.encrypted$/,""), decrypt_result[:plaintext])
-      end
-    else
-      begin
-        FileUtils.cp(filepath_on_disk, tmp_target_filepath)
-      rescue
-        @logger.error("Failed to copy #{filepath_on_disk} to #{tmp_target_filepath}")
-      end
+      encrypted_data = File.read(tmp_target_filepath)
+      decrypt_result = @decrypter.decrypt_with_password(password, salt, iterations, key, iv, tag, encrypted_data, "Apple Backup encrypted file")
+      File.write(tmp_target_filepath.sub(/\.encrypted$/,""), decrypt_result[:plaintext]) if decrypt_result
     end
 
     # return where we put it 

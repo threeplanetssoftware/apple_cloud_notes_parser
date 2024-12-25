@@ -1,6 +1,7 @@
 require 'csv'
 require 'json'
 require 'logger'
+require 'io/console'
 require 'optparse'
 require 'pathname'
 require_relative 'lib/AppleBackup.rb'
@@ -18,6 +19,7 @@ one_output_folder = false
 output_directory = Pathname.new("./output")
 password_file = nil
 password_success_display = false
+password_to_add = nil
 retain_order = false
 target_directory = nil
 range_start = nil
@@ -78,6 +80,11 @@ end
 # Display password successes on the console
 option_parser.on("--show-password-successes", "Toggle the display of password success ON.") do 
   password_success_display = true
+end
+
+# Provider terminal prompt to input a password to avoid keeping it on disk
+option_parser.on("--manual-password", "Input a password manually at the start of the script") do 
+  password_to_add = IO::console.getpass("Please enter the password, followed by enter: ")
 end
 
 # Add in a start date to bound the notes that are extracted
@@ -164,21 +171,28 @@ logger.debug("Ruby version: #{RUBY_DESCRIPTION}")
 # Start dealing with the backup
 #
 
+# Create the decrypter backups will use. 
+# We do this here to ensure we have appropriate credentials upon creation of a new
+# AppleBackup
+decrypter = AppleDecrypter.new
+decrypter.add_passwords_from_file(password_file)
+decrypter.add_password(password_to_add) if password_to_add
+
 # Create a new AppleBackup object, based on the appropriate type
 apple_backup = nil
 case backup_type
   when AppleBackup::HASHED_BACKUP_TYPE
     logger.debug("User asserted this is a HASHED_BACKUP")
-    apple_backup = AppleBackupHashed.new(target_directory, output_directory)
+    apple_backup = AppleBackupHashed.new(target_directory, output_directory, decrypter)
   when AppleBackup::PHYSICAL_BACKUP_TYPE
     logger.debug("User asserted this is a PHYSICAL_BACKUP")
-    apple_backup = AppleBackupPhysical.new(target_directory, output_directory)
+    apple_backup = AppleBackupPhysical.new(target_directory, output_directory, decrypter)
   when AppleBackup::SINGLE_FILE_BACKUP_TYPE
     logger.debug("User asserted this is a SINGLE_FILE_BACKUP")
-    apple_backup = AppleBackupFile.new(target_directory, output_directory)
+    apple_backup = AppleBackupFile.new(target_directory, output_directory, decrypter)
   when AppleBackup::MAC_BACKUP_TYPE
     logger.debug("User asserted this is a MAC_BACKUP")
-    apple_backup = AppleBackupMac.new(target_directory, output_directory)
+    apple_backup = AppleBackupMac.new(target_directory, output_directory, decrypter)
 end
 
 # Check for a valid AppleBackup, if it is ready, rip the notes and spit out CSVs
@@ -190,9 +204,6 @@ if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid
   logger.debug("Backup is valid, ripping notes")
 
   apple_backup.retain_order = retain_order
-
-  # Add the password file
-  apple_backup.decrypter.add_passwords_from_file(password_file)
 
   # Tell the backup to rip notes
   apple_backup.rip_notes
@@ -218,7 +229,7 @@ if apple_backup and apple_backup.valid? and apple_backup.note_stores.first.valid
 
   if password_success_display and apple_backup.decrypter.successful_passwords.length > 0
     puts "------------------------------"
-    puts "Successfully decrypted notes using passwords: #{apple_backup.decrypter.successful_passwords.sort.join(", ")}"
+    puts "Successfully decrypted notes using passwords: #{apple_backup.decrypter.successful_passwords.uniq.sort.join(", ")}"
     puts "These are NOT logged, note it down now if you need it."
     puts "------------------------------"
   end

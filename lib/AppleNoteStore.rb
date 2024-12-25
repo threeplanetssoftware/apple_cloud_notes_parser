@@ -96,7 +96,7 @@ class AppleNoteStore
       return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_LEGACY_VERSION)
     end
 
-    # It appears ZDIDRUNPAPERFORMDETECTION showed up in iOS 18's updates
+    # It appears ZUNAPPLIEDENCRYPTEDRECORDDATA showed up in iOS 18's updates
     if ziccloudsyncingobject_columns.include?("ZUNAPPLIEDENCRYPTEDRECORDDATA: BLOB")
       return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_VERSION_18)
     end
@@ -687,7 +687,7 @@ class AppleNoteStore
         rescue StandardError => error
           # warn "\033[101m#{e}\033[m"
           @logger.error("AppleNoteStore: NoteStore tried to rip Note #{row["ZNOTE"]} but had to rescue error: #{error}")
-          @logger.error("Backtrace: #{error.backtrace.join("\n\t")}") if error.is_a? FrozenError
+          @logger.error("Backtrace: #{error.backtrace.join("\n\t")}") # if error.is_a? FrozenError
         end
       end
     end

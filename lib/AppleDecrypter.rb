@@ -2,6 +2,7 @@
 gem 'openssl'
 
 require 'aes_key_wrap'
+require 'logger'
 require 'openssl'
 
 ##
@@ -9,18 +10,28 @@ require 'openssl'
 # This class plays a supporting role in decrypting data Apple encrypts at rest.
 class AppleDecrypter
 
-  attr_accessor :successful_passwords
+  attr_accessor :passwords,
+                :successful_passwords
+
+  EMPTY_IV = Array.new(16, 0x00).pack("C*")
 
   ##
-  # Creates a new AppleDecrypter. Expects an AppleBackup +backup+ to make use of the logger.
+  # Creates a new AppleDecrypter.
   # Immediately initalizes +@passwords+ and +@successful_passwords+ as Arrays to keep track of loaded 
   # passwords and the ones that worked. Also sets +@warned_about_empty_password_list+ to false in order 
-  # to nicely warn the user ones if they should be trying to decrypt. 
-  def initialize(backup)
-    @logger = backup.logger
+  # to nicely warn the user ones if they should be trying to decrypt. Make sure to call logger= at some 
+  # point if you don't want to dump to STDOUT. 
+  def initialize
+    @logger = Logger.new(STDOUT)
     @passwords = Array.new
     @successful_passwords = Array.new
     @warned_about_empty_password_list = false
+  end
+
+  ##
+  # Sets the logger for the AppleDecrypter
+  def logger=(logger)
+    @logger = logger
   end
 
   ##
@@ -39,6 +50,13 @@ class AppleDecrypter
       puts "Added #{@passwords.length} passwords to the AppleDecrypter from #{password_file}"
     end
     return @passwords.length
+  end
+
+  ##
+  # This function takes a String +password+ and appends it to the overall +@passwords+ Array. 
+  # Make sure to chomp the password prior to calling this function. 
+  def add_password(password)
+    @passwords.push(password)
   end
 
   ##
@@ -92,6 +110,8 @@ class AppleDecrypter
     tmp_key_encrypting_key = generate_key_encrypting_key(password, salt, iterations)
     tmp_unwrapped_key = aes_key_unwrap(wrapped_key, tmp_key_encrypting_key) if tmp_key_encrypting_key
 
+    @successful_passwords.push(password) if (tmp_unwrapped_key and !@successful_passwords.include?(password))
+
     return (tmp_unwrapped_key != nil)
   end 
 
@@ -100,13 +120,13 @@ class AppleDecrypter
   # It expects the +password+ as a String, the +salt+ as a binary String, and the number of 
   # +iterations+ as an integer. It returns either nil or the generated key as a binary String. 
   # It an error occurs, it will rescue a OpenSSL::Cipher::CipherError and log it.
-  def generate_key_encrypting_key(password, salt, iterations, debug_text=nil)
+  def generate_key_encrypting_key(password, salt, iterations, debug_text=nil, key_size=16, hash_function=OpenSSL::Digest::SHA256.new)
     # Key length in bytes, multiple by 8 for bits. Apple is using 16 (128-bit)
-    key_size = 16
+    # key_size = 16
     generated_key = nil
 
     begin
-      generated_key = OpenSSL::PKCS5.pbkdf2_hmac(password, salt, iterations, key_size, OpenSSL::Digest::SHA256.new)
+      generated_key = OpenSSL::PKCS5.pbkdf2_hmac(password, salt, iterations, key_size, hash_function)
     rescue OpenSSL::Cipher::CipherError
       puts "Caught CipherError trying to generate PBKDF2 key"
       @logger.error("Apple Decrypter: #{debug_text} caught a CipherError while trying to generate PBKDF2 key.")
@@ -120,18 +140,45 @@ class AppleDecrypter
 
   ##
   # This function performs an AES key unwrap function. It expects the +wrapped_key+ as a binary String 
-  # and the +key_encrypting_key+ as a binary String. It returns either nil of the unwrapped key as a binary 
+  # and the +key_encrypting_key+ as a binary String. It returns either nil or the unwrapped key as a binary 
   # String. 
   def aes_key_unwrap(wrapped_key, key_encrypting_key)
     unwrapped_key = nil
 
     begin
       unwrapped_key = AESKeyWrap.unwrap!(wrapped_key, key_encrypting_key)
-    rescue AESKeyWrap::UnwrapFailedError
+    rescue AESKeyWrap::UnwrapFailedError => error
+      puts error
       # Not logging this because it will get spammy if different accounts have different passwords
     end
 
     return unwrapped_key
+  end
+
+  ##
+  # This function performs an AES-CBC decryption. It expects the +key+ as a binary String, an +iv+ as a binary String, which
+  # should be 16 0x00 bytes if you don't have another, and the +encrypted_data+ as a binary String. 
+  # It returns either nil or the decrypted data as a binary String.
+  def aes_cbc_decrypt(key, encrypted_data, iv=EMPTY_IV, debug_text=nil)
+    decrypted_data = nil
+
+    if (!key or !iv or !encrypted_data)
+      @logger.error("AES CBC Decrypt called without either key, iv, or encrypted data.")
+    end
+
+    begin
+      decrypter = OpenSSL::Cipher.new('aes-256-cbc').decrypt
+      decrypter.decrypt
+      decrypter.padding = 0 # If this is not set to 0, openssl appears to generate an extra block
+      decrypter.key = key
+      decrypter.iv = iv
+      decrypted_data = decrypter.update(encrypted_data) + decrypter.final
+    rescue OpenSSL::Cipher::CipherError => error
+      puts "Failed to decrypt #{debug_text}, unwrapped key likely isn't right."
+      @logger.error("Apple Decrypter: #{debug_text} caught a CipherError while trying final decrypt, likely the unwrapped key is not correct.")
+    end
+
+    return decrypted_data
   end
 
   ## 
@@ -143,17 +190,17 @@ class AppleDecrypter
   def aes_gcm_decrypt(key, iv, tag, encrypted_data, debug_text=nil)
     plaintext = nil
 
-      begin
-        decrypter = OpenSSL::Cipher.new('aes-128-gcm').decrypt
-        decrypter.key = key
-        decrypter.iv_len = iv.length # Just in case the IV isn't 16-bytes
-        decrypter.iv = iv
-        decrypter.auth_tag = tag
-        plaintext = decrypter.update(encrypted_data) + decrypter.final
-      rescue OpenSSL::Cipher::CipherError
-        puts "Failed to decrypt #{debug_text}, unwrapped key likely isn't right."
-        @logger.error("Apple Decrypter: #{debug_text} caught a CipherError while trying final decrypt, likely the unwrapped key is not correct.")
-      end
+    begin
+      decrypter = OpenSSL::Cipher.new('aes-128-gcm').decrypt
+      decrypter.key = key
+      decrypter.iv_len = iv.length # Just in case the IV isn't 16-bytes
+      decrypter.iv = iv
+      decrypter.auth_tag = tag
+      plaintext = decrypter.update(encrypted_data) + decrypter.final
+    rescue OpenSSL::Cipher::CipherError
+      puts "Failed to decrypt #{debug_text}, unwrapped key likely isn't right."
+      @logger.error("Apple Decrypter: #{debug_text} caught a CipherError while trying final decrypt, likely the unwrapped key is not correct.")
+    end
 
     return plaintext
   end
@@ -166,7 +213,6 @@ class AppleDecrypter
   # This starts by unwrapping the +wrapped_key+ using the given +password+ by computing the PBDKF2 with the given +salt+ and +iterations+.
   # With the unwrapped key, we can then use the +iv+ to decrypt the +data+ and authenticate it with the +tag+.
   def decrypt_with_password(password, salt, iterations, key, iv, tag, data, debug_text=nil)
-
 
     # Create the key with our password
     @logger.debug("Apple Decrypter: #{debug_text} Attempting decryption.")

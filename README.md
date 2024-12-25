@@ -64,6 +64,7 @@ The options that are currently supported are:
 |-o|--output-dir DIRECTORY|Change the output directory from the default ./output|
 |-w|--password-file FILE|File with plaintext passwords, one per line.|
 |-r|--retain-display-order|Retain the display order for folders and notes, not the database's order.|
+||--manual-password|Enter a password from the command prompt, without having to use a file on disk.|
 ||--show-password-successes|Toggle the display of password success ON.|
 ||--range-start DATE|Set the start date of the date range to extract. Must use YYYY-MM-DD format, defaults to 1970-01-01.|
 ||--range-end DATE|Set the end date of the date range to extract. Must use YYYY-MM-DD format, defaults to 2024-08-09.|

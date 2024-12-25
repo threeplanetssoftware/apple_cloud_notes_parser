@@ -107,7 +107,7 @@ class AppleNotesEmbeddedDrawing < AppleNotesEmbeddedObject
     tmp_account_string = "[Unknown Account]/FallbackImages/"
     tmp_account_string = "#{@note.account.account_folder}FallbackImages/" if @note # Update to somewhere if we know where
 
-    ["jpeg","png"].each do |extension| 
+    ["jpeg","png", "jpg"].each do |extension| 
       add_possible_location("#{tmp_account_string}#{@uuid}.#{extension}.encrypted") if @is_password_protected
       add_possible_location("#{tmp_account_string}#{@uuid}.#{extension}") if !@is_password_protected
       add_possible_location("#{tmp_account_string}#{@uuid}/#{@zgeneration}/FallbackImage.#{extension}.encrypted") if @is_password_protected

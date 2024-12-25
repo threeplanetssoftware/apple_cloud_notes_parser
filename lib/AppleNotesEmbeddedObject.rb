@@ -115,10 +115,11 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
       @crypto_key = row["ZCRYPTOVERIFIER"] if row["ZCRYPTOVERIFIER"]
       @crypto_key = row["ZCRYPTOWRAPPEDKEY"] if row["ZCRYPTOWRAPPEDKEY"]
 
-      correct_settings = @backup.decrypter.check_cryptographic_settings(@crypto_password,
+      correct_settings = (@backup.decrypter.check_cryptographic_settings(@crypto_password,
                                                                         @crypto_salt,
                                                                         @crypto_iterations,
-                                                                        @crypto_key)
+                                                                        @crypto_key) and 
+                          @crypto_iv)
 
       # If there is a blob in ZUNAPPLIEDENCRYPTEDRECORD, we need to use it instead of the database values
       if row[unapplied_encrypted_record_column] and !correct_settings

@@ -18,7 +18,7 @@ describe AppleDecrypter do
 
   before(:all) do
     @backup = AppleBackup.new(Pathname.new(""), 0, TEST_OUTPUT_DIR)
-    @decrypter = AppleDecrypter.new(@backup)
+    @decrypter = AppleDecrypter.new()
     @decrypter.add_passwords_from_file(TEST_PASSWORD_FILE)
 
     @test_password = "password"
@@ -51,6 +51,11 @@ describe AppleDecrypter do
                            "\x76\xe5\x9e\x7a\xf4\x72\xfb\x1b\x21\x26\x0e\x79\x20\x66" + 
                            "\xd4\xe2\xe0\x10\x10\x02\x9a\x29\xc1\xa8\x05\xe2\xb1\x71" + 
                            "\xf0\x09\x31\x49\x30\x02\x00\xd1\x69\x5a\x2d\x9d\x00\x00\x00").force_encoding("US-ASCII")
+
+    #AES 256 CBC Test Vectors
+    # https://csrc.nist.gov/CSRC/media/Projects/Cryptographic-Algorithm-Validation-Program/documents/aes/AESAVS.pdf
+    @aes_266_key = Array.new(40, 0x00)
+    #@aes_256_iv = 
   end
 
   #let!(:decrypter) {AppleDecrypter.new(AppleBackup.new(Pathname.new(""), 0, TEST_OUTPUT_DIR))}
@@ -60,7 +65,7 @@ describe AppleDecrypter do
 
   context "passwords" do
     it "loads passwords from a file" do
-      tmp_decrypter = AppleDecrypter.new(@backup)
+      tmp_decrypter = AppleDecrypter.new()
       expect(tmp_decrypter.add_passwords_from_file(TEST_PASSWORD_FILE)).to be 3
     end
 
@@ -71,13 +76,13 @@ describe AppleDecrypter do
     end
 
     it "handles passwords with right to left languages well" do 
-      tmp_decrypter = AppleDecrypter.new(@backup)
+      tmp_decrypter = AppleDecrypter.new()
       expect(tmp_decrypter.add_passwords_from_file(TEST_PASSWORD_DIR + "right_to_left_password")).to be 1
       expect(tmp_decrypter.instance_variable_get(:@passwords)[0].bytes).to eql([217, 131, 217, 132, 217, 133, 216, 169, 32, 216, 167, 217, 132, 217, 133, 216, 177, 217, 136, 216, 177])
     end
 
     it "handles passwords with wide characters well" do 
-      tmp_decrypter = AppleDecrypter.new(@backup)
+      tmp_decrypter = AppleDecrypter.new()
       expect(tmp_decrypter.add_passwords_from_file(TEST_PASSWORD_DIR + "wide_character_password")).to be 1
       expect(tmp_decrypter.instance_variable_get(:@passwords)[0].bytes).to eql([229, 175, 134, 231, 160, 129])
     end
@@ -85,13 +90,13 @@ describe AppleDecrypter do
     # Please, please, please, do not ever use emojis in passwords. You really never know what character codes
     # your device of choice is going to use.
     it "handles passwords with emojis well" do 
-      tmp_decrypter = AppleDecrypter.new(@backup)
+      tmp_decrypter = AppleDecrypter.new()
       expect(tmp_decrypter.add_passwords_from_file(TEST_PASSWORD_DIR + "emoji_password")).to be 1
       expect(tmp_decrypter.instance_variable_get(:@passwords)[0].bytes).to eql([226, 140, 155, 239, 184, 142, 226, 157, 164, 239, 184, 142, 226, 156, 146, 239, 184, 142])
     end
 
     it "doesn't split password at spaces" do 
-      tmp_decrypter = AppleDecrypter.new(@backup)
+      tmp_decrypter = AppleDecrypter.new()
       expect(tmp_decrypter.add_passwords_from_file(TEST_PASSWORD_DIR + "spaces_in_password")).to be 1
       expect(tmp_decrypter.instance_variable_get(:@passwords)[0].length).to be 23
     end

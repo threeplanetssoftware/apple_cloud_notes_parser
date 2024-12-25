@@ -13,9 +13,9 @@ class AppleBackupFile < AppleBackup
   # Creates a new AppleBackupFile. Expects a Pathname +root_folder+ that represents the root 
   # of the backup and a Pathname +output_folder+ which will hold the results of this run. 
   # Immediately sets the NoteStore database file.
-  def initialize(root_folder, output_folder)
+  def initialize(root_folder, output_folder, decrypter=AppleDecrypter.new)
   
-    super(root_folder, AppleBackup::SINGLE_FILE_BACKUP_TYPE, output_folder)
+    super(root_folder, AppleBackup::SINGLE_FILE_BACKUP_TYPE, output_folder, decrypter)
 
     # Check to make sure we're all good
     if self.valid?

@@ -123,7 +123,7 @@ class AppleNotesEmbeddedThumbnail < AppleNotesEmbeddedObject
     tmp_account_string = "[Unknown Account]/Previews/"
     tmp_account_string = "#{@note.account.account_folder}Previews/" if @note # Update to somewhere if we know where
 
-    ["jpeg","png"].each do |extension| 
+    ["jpg","png", "jpeg"].each do |extension| 
       add_possible_location("#{tmp_account_string}#{@uuid}.#{extension}.encrypted") if @is_password_protected
       add_possible_location("#{tmp_account_string}#{@uuid}/#{@zgeneration}/OrientedPreview.#{extension}") if (!@is_password_protected and @zgeneration)
       add_possible_location("#{tmp_account_string}#{@uuid}/#{@zgeneration}/Preview.#{extension}") if (!@is_password_protected and @zgeneration)
