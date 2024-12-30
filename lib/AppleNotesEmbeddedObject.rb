@@ -540,7 +540,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                                                                  row["ZTYPEUTI"],
                                                                  note,
                                                                  backup)
-          elsif tmp_uti.uti == "com.adobe.pdf" or tmp_uti.uti == "com.apple.paper.doc.pdf"
+          elsif tmp_uti.uti == "com.adobe.pdf" 
             tmp_embedded_object = AppleNotesEmbeddedPDF.new(row["Z_PK"],
                                                             row["ZIDENTIFIER"],
                                                             row["ZTYPEUTI"],
@@ -560,7 +560,7 @@ class AppleNotesEmbeddedObject < AppleCloudKitRecord
                                                                 note,
                                                                 backup)
             tmp_embedded_object.conforms_to = "gallery"
-          elsif tmp_uti.uti == "com.apple.paper.doc.scan"
+          elsif tmp_uti.uti == "com.apple.paper.doc.scan" or tmp_uti.uti == "com.apple.paper.doc.pdf"
             tmp_embedded_object = AppleNotesEmbeddedPaperDocScan.new(row["Z_PK"],
                                                                      row["ZIDENTIFIER"],
                                                                      row["ZTYPEUTI"],
