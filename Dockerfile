@@ -1,4 +1,4 @@
-FROM ruby:3.4-slim
+FROM ruby:3.3-slim
 
 LABEL org.opencontainers.image.source=https://github.com/threeplanetssoftware/apple_cloud_notes_parser
 LABEL org.opencontainers.image.description="This program is a parser for the current version of Apple Notes data syncable with iCloud as seen on Apple handsets in iOS 9 and later."
