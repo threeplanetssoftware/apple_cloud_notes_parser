@@ -1,3 +1,6 @@
+# Ruby 3.4
+docker build -f dockerfiles/Dockerfile-Test-3.4 -t apple_notes_cloud_parser:test-3.4 .
+
 # Ruby 3.3
 docker build -f dockerfiles/Dockerfile-Test-3.3 -t apple_notes_cloud_parser:test-3.3 .
 

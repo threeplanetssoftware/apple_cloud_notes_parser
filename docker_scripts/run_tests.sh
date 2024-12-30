@@ -1,4 +1,4 @@
-for VERSION in "3.0" "3.1" "3.2" "3.3"
+for VERSION in "3.0" "3.1" "3.2" "3.3" "3.4"
 do
 	IMAGE_NAME="apple_notes_cloud_parser:test-"$VERSION
 	CONTAINER_NAME="apple_cloud_notes_parser-test"
