@@ -235,7 +235,7 @@ class AppleBackup
     file_relative_output_path = Pathname.new("files") + phone_filepath.parent + filename_on_phone
 
     # Create the output directory
-    file_output_directory.mkpath
+    file_output_directory.mkpath if !file_output_directory.exist?
 
     # Decrypt and write a new file, or copy the file depending on if we are password protected
     tmp_target_filepath = file_output_directory + filename_on_phone
