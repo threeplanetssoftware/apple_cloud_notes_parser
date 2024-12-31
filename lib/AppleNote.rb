@@ -595,8 +595,7 @@ class AppleNote < AppleCloudKitRecord
   # a Hash of AppleNotesEmbeddedObjects as +embedded_objects+. It returns a String containing 
   # appropriate HTML for the document.
   def self.htmlify_document(document_proto, embedded_objects, individual_files=false)
-    doc = Nokogiri::HTML5::Document.parse("", nil, "utf-8")
-    node = doc.at_css("body")
+    node = Nokogiri::HTML5::DocumentFragment.parse("", nil, encoding: "utf-8")
 
     # Tables cells will be a MergableDataProto
     root_node = document_proto
@@ -685,7 +684,7 @@ class AppleNote < AppleCloudKitRecord
 
     end
 
-    doc
+    node
   end
 
   ##
