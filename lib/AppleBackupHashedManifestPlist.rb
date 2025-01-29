@@ -55,8 +55,8 @@ class AppleBackupHashedManifestPlist
 
     if @encrypted
       tmp_manifest_string = @manifest_plist_data["ManifestKey"]
-      @manifest_key_class = tmp_manifest_string[0,4].reverse.unpack("N")[0]
-      @manifest_key = tmp_manifest_string.slice(4,tmp_manifest_string.length)
+      @manifest_key_class = tmp_manifest_string[0,4].unpack("V")[0]
+      @manifest_key = tmp_manifest_string[4,40]
       self.parse_keybag
     end
 
