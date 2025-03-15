@@ -1062,7 +1062,7 @@ class AppleNoteStore
     end
 
     @notes.each do |note_id, note|
-      note_file_name = note.title_as_filename('.html', use_uuid: use_uuid)
+      note_file_name = note.title_as_filename('.html', use_uuid: use_uuid).gsub(/[\/*"\<>?|:]/,"")
       note_path = if note.folder
                     backup_dir.join(note.folder.to_path, note_file_name)
                   else
