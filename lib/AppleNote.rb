@@ -433,8 +433,8 @@ class AppleNote < AppleCloudKitRecord
 
   ##
   # Generate a file name for exporting this note to an HTML file
-  def title_as_filename(ext = '', use_uuid: false)
-    file_title = title ? title.tr('/:', '_') : "Untitled"
+  def title_as_filename(ext = '', use_uuid = false)
+    file_title = title ? title.tr('[\\/*"<>?|:]\'', '_') : "Untitled"
     "#{unique_id(use_uuid)} - #{file_title}#{ext}"
   end
 

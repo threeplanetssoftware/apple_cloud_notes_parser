@@ -510,6 +510,22 @@ describe AppleNote do
       tmp_note.add_cloudkit_server_record_data(binary_plist)
       expect(tmp_note.generate_html.text).to include("CloudKit Last Modified Device: Tester’s iPhone")
     end
+
+    it "removes troublesome characters when using the title as a filename" do
+      bad_title = AppleNote.new(3, 
+                                22, 
+                                "Busted[Title], Do not use?\'\/*<>?|:\'", 
+                                File.read(TEST_BLOB_DATA_DIR + "simple_note_protobuf_gzipped.bin"), 
+                                608413790,
+                                608413790,
+                                tmp_account,
+                                tmp_folder)
+      bad_title.uuid = note_uuid
+      expect(bad_title.title_as_filename('', false)).to eq "#{bad_title.note_id} - Busted_Title_, Do not use__________"
+      expect(bad_title.title_as_filename('.html', false)).to eq "#{bad_title.note_id} - Busted_Title_, Do not use__________.html"
+      expect(bad_title.title_as_filename('', true)).to eq "#{note_uuid} - Busted_Title_, Do not use__________"
+      expect(bad_title.title_as_filename('.html', true)).to eq "#{note_uuid} - Busted_Title_, Do not use__________.html"
+    end
   end
 
 end
