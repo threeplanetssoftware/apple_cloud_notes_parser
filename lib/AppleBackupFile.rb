@@ -24,6 +24,12 @@ class AppleBackupFile < AppleBackup
       # Copy the database to a temporary spot to fingerprint
       copy_notes_database(@root_folder, @note_store_temporary_location)
 
+      # Ensure this looks like a NoteStore database
+      if !has_correct_columns?(@note_store_temporary_location)
+        @logger.error("The alleged backup file doesn't have the right columns for a NoteStore database.")
+        return
+      end
+
       # Fingerprint it
       note_version = AppleNoteStore.guess_ios_version(@note_store_temporary_location)
 
@@ -43,7 +49,7 @@ class AppleBackupFile < AppleBackup
   # This method returns true if it is a value backup of the specified type. For the SINGLE_FILE_BACKUP_TYPE this means 
   # that the +root_folder+ given is the NoteStore.sqlite directly. 
   def valid?
-    return (@root_folder.file? and is_sqlite?(@root_folder) and has_correct_columns?(@root_folder))
+    return (@root_folder.file? and is_sqlite?(@root_folder))
   end
 
   ##

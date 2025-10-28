@@ -93,6 +93,7 @@ class AppleUniformTypeIdentifier
     return true if @uti == "com.microsoft.excel.xls"
     return true if @uti == "com.microsoft.powerpoint.ppt"
     return true if @uti == "com.netscape.javascript-source"
+    return true if @uti == "net.daringfireball.markdown"
     return true if @uti == "net.openvpn.formats.ovpn"
     return true if @uti == "org.idpf.epub-container"
     return true if @uti == "org.oasis-open.opendocument.text"

@@ -21,4 +21,6 @@ The files that are needed and their corresponding globals are:
 |NoteStore.15.sqlite|Valid NoteStore file from iOS 15|Y||
 |NoteStore.16.sqlite|Valid NoteStore file from iOS 16|Y||
 |NoteStore.17.sqlite|Valid NoteStore file from iOS 17|Y||
+|NoteStore.18.sqlite|Valid NoteStore file from iOS 18|Y||
+|NoteStore.26.sqlite|Valid NoteStore file from iOS 26|Y||
 

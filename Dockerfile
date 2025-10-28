@@ -8,7 +8,7 @@ WORKDIR /app
 COPY Gemfile LICENSE notes_cloud_ripper.rb ./
 COPY lib/ /app/lib
 RUN apt update && \
-	apt-get install -y build-essential pkg-config libsqlite3-dev zlib1g-dev && \
+	apt-get install -y build-essential pkg-config libsqlite3-dev zlib1g-dev libssl-dev && \
 	bundle config set force_ruby_platform true && \
 	bundle install && \
 	apt-get remove -y build-essential pkg-config && \

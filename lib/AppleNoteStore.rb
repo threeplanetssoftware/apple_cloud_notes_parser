@@ -96,6 +96,11 @@ class AppleNoteStore
       return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_LEGACY_VERSION)
     end
 
+    # It appears ZATTRIBUTEDSNIPPET showed up in iOS 26's updates. Note that 26 was the next release after 18
+    if ziccloudsyncingobject_columns.include?("ZATTRIBUTEDSNIPPET: BLOB")
+      return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_VERSION_26)
+    end
+
     # It appears ZUNAPPLIEDENCRYPTEDRECORDDATA showed up in iOS 18's updates
     if ziccloudsyncingobject_columns.include?("ZUNAPPLIEDENCRYPTEDRECORDDATA: BLOB")
       return AppleNoteStoreVersion.new(AppleNoteStoreVersion::IOS_VERSION_18)

@@ -41,7 +41,6 @@ class AppleBackupMac < AppleBackup
   def valid?
     return (@root_folder.directory? and 
            (@root_folder + "NoteStore.sqlite").file? and 
-           has_correct_columns?(@root_folder + "NoteStore.sqlite") and 
            (@root_folder + "NotesIndexerState-Modern").file?)
   end
 
