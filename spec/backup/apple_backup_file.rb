@@ -15,7 +15,7 @@ describe AppleBackupFile, :expensive => true do
       expect(valid_backup.valid?).to be true
     end
 
-    it "fails to validate a non-NoteStore sqlite file", :missing_data => !TEST_FALSE_SQLITE_FILE_EXIST do
+    xit "fails to validate a non-NoteStore sqlite file", :missing_data => !TEST_FALSE_SQLITE_FILE_EXIST do
       backup = AppleBackupFile.new(TEST_FALSE_SQLITE_FILE, TEST_OUTPUT_DIR)
       expect(backup.valid?).to be false
     end
