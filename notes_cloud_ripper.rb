@@ -163,7 +163,7 @@ puts "Storing the results in #{output_directory}\n\n"
 
 
 # Create the Logger
-logger = Logger.new(output_directory + "debug_log.txt")
+logger = Logger.new((output_directory + "debug_log.txt").to_s)
 
 logger.debug("Ruby version: #{RUBY_DESCRIPTION}")
 

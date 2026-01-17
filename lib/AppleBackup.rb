@@ -42,7 +42,7 @@ class AppleBackup
     @root_folder = root_folder
     @type = type
     @output_folder = output_folder
-    @logger = Logger.new(@output_folder + "debug_log.txt")
+    @logger = Logger.new((@output_folder + "debug_log.txt").to_s)
     @note_stores = Array.new
     @note_store_modern_location = @output_folder + "NoteStore.sqlite"
     @note_store_legacy_location = @output_folder + "notes.sqlite"
