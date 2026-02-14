@@ -5,6 +5,8 @@ For reference, the structure of this program is as follows:
 ```
 apple_cloud_notes_parser
   |
+  |-.github: Github Continuous Integration
+  |
   |-docker_scripts
   |  |
   |  |-build_all.sh: A shell script to build all relevant versions of the Docker container.
@@ -43,7 +45,6 @@ apple_cloud_notes_parser
   |  |-utilities: Test specs related to utility classes like AppleDecrypter.
   |  
   |-.gitignore
-  |-.travis.yml
   |-Dockerfile: The Dockerfile for Github's Docker registry
   |-Gemfile
   |-LICENSE
