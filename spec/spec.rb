@@ -1,3 +1,4 @@
+require_relative '../lib/KeyedArchive.rb'
 require_relative '../lib/AppleNoteStore.rb'
 require_relative '../lib/AppleNoteStoreVersion.rb'
 

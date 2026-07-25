@@ -30,7 +30,7 @@ sudo yum install sqlite sqlite-devel zlib zlib-devel openssl openssl-devel ruby 
 git clone https://github.com/threeplanetssoftware/apple_cloud_notes_parser.git
 cd apple_cloud_notes_parser
 bundle install
-sudo gem pristine sqlite3 zlib openssl aes_key_wrap keyed_archive
+sudo gem pristine sqlite3 zlib openssl aes_key_wrap 
 ```
 
 ### Without Git (If you want to download it every now and then)
@@ -42,7 +42,7 @@ curl https://codeload.github.com/threeplanetssoftware/apple_cloud_notes_parser/z
 unzip apple_cloud_notes_parser.zip
 cd apple_cloud_notes_parser-master
 bundle install
-sudo gem pristine sqlite3 zlib openssl aes_key_wrap keyed_archive
+sudo gem pristine sqlite3 zlib openssl aes_key_wrap
 ```
 
 ## MacOS 

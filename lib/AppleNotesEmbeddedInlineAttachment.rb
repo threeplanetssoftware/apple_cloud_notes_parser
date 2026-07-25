@@ -1,5 +1,5 @@
-require 'keyed_archive'
 require 'sqlite3'
+require_relative 'KeyedArchive.rb'
 require_relative 'AppleCloudKitRecord'
 
 ##

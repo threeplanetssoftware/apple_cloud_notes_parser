@@ -1,4 +1,4 @@
-require 'keyed_archive'
+require_relative 'KeyedArchive.rb'
 require_relative 'AppleCloudKitShareParticipant'
 
 ##

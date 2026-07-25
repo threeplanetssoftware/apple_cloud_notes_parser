@@ -1,5 +1,5 @@
 require 'json'
-require 'keyed_archive'
+require_relative 'KeyedArchive.rb'
 
 ##
 # This class represents a public.url object embedded

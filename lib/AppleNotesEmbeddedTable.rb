@@ -1,6 +1,6 @@
 require 'base64'
 require 'json'
-require 'keyed_archive'
+require_relative 'KeyedArchive.rb'
 require_relative 'AppleNoteStore.rb'
 
 ##
