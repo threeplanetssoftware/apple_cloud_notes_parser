@@ -8,6 +8,7 @@ gem 'openssl', ">= 3.2" # Ruby official
 gem 'rake', "~> 13.2" # Ruby official
 gem 'zlib', "~> 3.1" # Ruby official
 gem 'nkf', "~> 0.2.0" # Ruby official
+gem 'logger', "~> 1.7" # Ruby Official
 
 # Gems owned by Google
 gem 'google-protobuf', ">= 4.26" # Google official
